@@ -14,6 +14,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { isCacheEnabled, setCacheEnabled } from '@/utils/conversionUtils';
 
 interface FileItem {
   id: string;
@@ -74,6 +75,12 @@ const ConversionPanel: React.FC<ConversionPanelProps> = ({
   const [statusFilter, setStatusFilter] = React.useState('All');
   const [showResetDialog, setShowResetDialog] = React.useState(false);
   const [isMinimized, setIsMinimized] = React.useState(false);
+  const [cacheEnabled, setCacheEnabledState] = React.useState(isCacheEnabled());
+
+  const handleToggleCache = () => {
+    setCacheEnabled(!cacheEnabled);
+    setCacheEnabledState(!cacheEnabled);
+  };
 
   if (files.length === 0) {
     return (
@@ -187,6 +194,13 @@ const ConversionPanel: React.FC<ConversionPanelProps> = ({
                 Files to Convert
               </CardTitle>
               <div className="flex items-center gap-2">
+                <Button
+                  variant={cacheEnabled ? 'outline' : 'secondary'}
+                  onClick={handleToggleCache}
+                  className={`text-xs px-3 py-1 h-7 border ${cacheEnabled ? 'border-green-400 text-green-700' : 'border-red-400 text-red-700'}`}
+                >
+                  {cacheEnabled ? 'Cache On' : 'Cache Off'}
+                </Button>
                 <Button variant="destructive" onClick={handleResetMigration} className="text-xs px-3 py-1 h-7">
                     Reset
                 </Button>
