@@ -80,8 +80,9 @@ export const convertSybaseToOracle = async (
   const originalComplexity = analyzeCodeComplexity(file.content);
 
   // Use custom prompt if provided, otherwise use default
-  const prompt = customPrompt && customPrompt.trim().length > 0
-    ? `${customPrompt}\n\nSybase code:\n${file.content}`
+  const safePrompt = typeof customPrompt === 'string' ? customPrompt : '';
+  const prompt = safePrompt.trim().length > 0
+    ? `${safePrompt}\n\nSybase code:\n${file.content}`
     : `Convert the following Sybase SQL code to Oracle PL/SQL. Ensure 100% accuracy and best practices. Output only the converted Oracle code.\n\nSybase code:\n${file.content}`;
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
   let convertedCode = '';
