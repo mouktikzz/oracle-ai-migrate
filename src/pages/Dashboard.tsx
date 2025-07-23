@@ -53,6 +53,7 @@ const Dashboard = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingCompleteMigration, setPendingCompleteMigration] = useState(false);
   const [cacheEnabled, setCacheEnabledState] = useState(isCacheEnabled());
+  const [customPrompt, setCustomPrompt] = useState('Convert the following Sybase SQL code to Oracle PL/SQL. Ensure 100% accuracy and best practices. Output only the converted Oracle code.');
 
   const handleToggleCache = () => {
     setCacheEnabled(!cacheEnabled);
@@ -77,7 +78,7 @@ const Dashboard = () => {
     handleConvertAll,
     handleFixFile,
     handleGenerateReport,
-  } = useConversionLogic(files, setFiles, setConversionResults, selectedAiModel);
+  } = useConversionLogic(files, setFiles, setConversionResults, selectedAiModel, customPrompt);
 
   // Enable Complete Migration in Conversion tab if there is at least one successfully converted file
   const canCompleteMigration = activeTab === 'conversion'
@@ -428,6 +429,8 @@ const Dashboard = () => {
               onMoveToDevReview={handleMoveToDevReview}
               canCompleteMigration={canCompleteMigration}
               onDeleteFiles={handleDeleteFiles}
+              customPrompt={customPrompt}
+              setCustomPrompt={setCustomPrompt}
             />
           </TabsContent>
 

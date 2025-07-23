@@ -48,6 +48,8 @@ interface ConversionPanelProps {
   onMoveToDevReview: () => void;
   canCompleteMigration: boolean;
   onDeleteFiles: (fileIds: string[]) => void;
+  customPrompt: string;
+  setCustomPrompt: (prompt: string) => void;
 }
 
 const ConversionPanel: React.FC<ConversionPanelProps> = ({
@@ -68,6 +70,8 @@ const ConversionPanel: React.FC<ConversionPanelProps> = ({
   onMoveToDevReview,
   canCompleteMigration,
   onDeleteFiles,
+  customPrompt,
+  setCustomPrompt,
 }) => {
   const [selectedFileIds, setSelectedFileIds] = React.useState<string[]>([]);
   const [isSelectMode, setIsSelectMode] = React.useState(false);
@@ -76,6 +80,7 @@ const ConversionPanel: React.FC<ConversionPanelProps> = ({
   const [showResetDialog, setShowResetDialog] = React.useState(false);
   const [isMinimized, setIsMinimized] = React.useState(false);
   const [cacheEnabled, setCacheEnabledState] = React.useState(isCacheEnabled());
+  const DEFAULT_PROMPT = 'Convert the following Sybase SQL code to Oracle PL/SQL. Ensure 100% accuracy and best practices. Output only the converted Oracle code.';
 
   const handleToggleCache = () => {
     setCacheEnabled(!cacheEnabled);
@@ -208,6 +213,17 @@ const ConversionPanel: React.FC<ConversionPanelProps> = ({
                     <ChevronLeft className="h-5 w-5" />
                 </Button>
               </div>
+            </div>
+            {/* Custom Prompt Textarea */}
+            <div className="mb-2">
+              <label htmlFor="customPrompt" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Conversion Prompt</label>
+              <textarea
+                id="customPrompt"
+                className="w-full rounded border border-gray-300 dark:border-slate-700 p-2 text-xs font-mono resize-vertical min-h-[60px]"
+                value={customPrompt}
+                onChange={e => setCustomPrompt(e.target.value)}
+                placeholder={DEFAULT_PROMPT}
+              />
             </div>
             <div className="flex gap-2 w-full">
               <input

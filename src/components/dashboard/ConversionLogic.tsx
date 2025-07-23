@@ -24,7 +24,8 @@ export const useConversionLogic = (
   files: FileItem[],
   setFiles: React.Dispatch<React.SetStateAction<FileItem[]>>,
   setConversionResults: React.Dispatch<React.SetStateAction<ConversionResult[]>>,
-  selectedAiModel: string
+  selectedAiModel: string,
+  customPrompt?: string
 ) => {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -43,7 +44,7 @@ export const useConversionLogic = (
     }
   };
 
-  const handleConvertFile = useCallback(async (fileId: string) => {
+  const handleConvertFile = useCallback(async (fileId: string, promptOverride?: string) => {
     const file = files.find(f => f.id === fileId);
     if (!file) return;
 
@@ -51,7 +52,7 @@ export const useConversionLogic = (
     setIsConverting(true);
     
     try {
-      const result = await convertSybaseToOracle(file, selectedAiModel);
+      const result = await convertSybaseToOracle(file, selectedAiModel, promptOverride || customPrompt);
       
       const conversionResult: ConversionResult = {
         id: result.id,
@@ -98,9 +99,9 @@ export const useConversionLogic = (
       setConvertingFileIds([]);
       setIsConverting(false);
     }
-  }, [files, selectedAiModel, setFiles, setConversionResults]);
+  }, [files, selectedAiModel, setFiles, setConversionResults, customPrompt]);
 
-  const handleConvertAllByType = useCallback(async (type: 'table' | 'procedure' | 'trigger' | 'other') => {
+  const handleConvertAllByType = useCallback(async (type: 'table' | 'procedure' | 'trigger' | 'other', promptOverride?: string) => {
     const typeFiles = files.filter(f => f.type === type && f.conversionStatus === 'pending');
     if (typeFiles.length === 0) return;
 
@@ -109,7 +110,7 @@ export const useConversionLogic = (
     for (const file of typeFiles) {
       setConvertingFileIds([file.id]);
       try {
-        const result = await convertSybaseToOracle(file, selectedAiModel);
+        const result = await convertSybaseToOracle(file, selectedAiModel, promptOverride || customPrompt);
         
         const conversionResult: ConversionResult = {
           id: result.id,
@@ -157,9 +158,9 @@ export const useConversionLogic = (
     
     setConvertingFileIds([]);
     setIsConverting(false);
-  }, [files, selectedAiModel, setFiles, setConversionResults]);
+  }, [files, selectedAiModel, setFiles, setConversionResults, customPrompt]);
 
-  const handleConvertAll = useCallback(async () => {
+  const handleConvertAll = useCallback(async (promptOverride?: string) => {
     const pendingFiles = files.filter(f => f.conversionStatus === 'pending');
     if (pendingFiles.length === 0) return;
 
@@ -171,7 +172,7 @@ export const useConversionLogic = (
       await Promise.all(
         batch.map(async (file) => {
           try {
-            const result = await convertSybaseToOracle(file, selectedAiModel);
+            const result = await convertSybaseToOracle(file, selectedAiModel, promptOverride || customPrompt);
 
             const conversionResult: ConversionResult = {
               id: result.id,
@@ -228,9 +229,9 @@ export const useConversionLogic = (
     }
 
     setIsConverting(false);
-  }, [files, selectedAiModel, setFiles, setConversionResults]);
+  }, [files, selectedAiModel, setFiles, setConversionResults, customPrompt]);
 
-  const handleFixFile = useCallback(async (fileId: string) => {
+  const handleFixFile = useCallback(async (fileId: string, promptOverride?: string) => {
     setIsConverting(true);
     setConvertingFileIds([fileId]);
     try {
@@ -240,7 +241,7 @@ export const useConversionLogic = (
         return;
       }
       // Re-run the conversion logic for the failed file
-      const result = await convertSybaseToOracle(fileToFix, selectedAiModel);
+      const result = await convertSybaseToOracle(fileToFix, selectedAiModel, promptOverride || customPrompt);
       const conversionResult: ConversionResult = {
         id: result.id,
         originalFile: {
@@ -290,7 +291,7 @@ export const useConversionLogic = (
       setConvertingFileIds([]);
       setIsConverting(false);
     }
-  }, [files, selectedAiModel, setFiles, setConversionResults, toast, mapConversionStatus]);
+  }, [files, selectedAiModel, setFiles, setConversionResults, toast, mapConversionStatus, customPrompt]);
 
   const handleGenerateReport = useCallback(async (): Promise<ConversionReport & { id: string }> => {
     const conversionResults: ConversionResult[] = files.map(file => ({
