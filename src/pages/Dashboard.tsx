@@ -20,6 +20,7 @@ import PerformanceMetricsDashboard from '@/components/PerformanceMetricsDashboar
 import { useConversionLogic } from '@/components/dashboard/ConversionLogic';
 import { useMigrationManager } from '@/components/dashboard/MigrationManager';
 import { useUnreviewedFiles } from '@/hooks/useUnreviewedFiles';
+import { isCacheEnabled, setCacheEnabled } from '@/utils/conversionUtils';
 
 interface FileItem {
   id: string;
@@ -51,6 +52,12 @@ const Dashboard = () => {
   const [showHelp, setShowHelp] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingCompleteMigration, setPendingCompleteMigration] = useState(false);
+  const [cacheEnabled, setCacheEnabledState] = useState(isCacheEnabled());
+
+  const handleToggleCache = () => {
+    setCacheEnabled(!cacheEnabled);
+    setCacheEnabledState(!cacheEnabled);
+  };
 
   const { handleCodeUpload } = useMigrationManager();
   const {
@@ -361,6 +368,16 @@ const Dashboard = () => {
         onGoHome={handleGoHome}
         onShowHelp={() => setShowHelp(true)}
       />
+
+      {/* Cache Toggle Button */}
+      <div className="flex justify-end mb-4">
+        <button
+          className={`px-4 py-2 rounded font-medium border ${cacheEnabled ? 'bg-green-100 text-green-800 border-green-300' : 'bg-red-100 text-red-800 border-red-300'}`}
+          onClick={handleToggleCache}
+        >
+          {cacheEnabled ? 'Disable Cache' : 'Enable Cache'}
+        </button>
+      </div>
 
       <main className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'upload' | 'conversion' | 'devReview' | 'metrics')}>
