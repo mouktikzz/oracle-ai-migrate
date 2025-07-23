@@ -370,16 +370,6 @@ const Dashboard = () => {
         onShowHelp={() => setShowHelp(true)}
       />
 
-      {/* Cache Toggle Button */}
-      <div className="flex justify-end mb-4">
-        <button
-          className={`px-4 py-2 rounded font-medium border ${cacheEnabled ? 'bg-green-100 text-green-800 border-green-300' : 'bg-red-100 text-red-800 border-red-300'}`}
-          onClick={handleToggleCache}
-        >
-          {cacheEnabled ? 'Disable Cache' : 'Enable Cache'}
-        </button>
-      </div>
-
       <main className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'upload' | 'conversion' | 'devReview' | 'metrics')}>
           <TabsList className="grid w-full grid-cols-4 max-w-2xl mx-auto mb-8">
