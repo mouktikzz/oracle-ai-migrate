@@ -25,7 +25,8 @@ export const useConversionLogic = (
   setFiles: React.Dispatch<React.SetStateAction<FileItem[]>>,
   setConversionResults: React.Dispatch<React.SetStateAction<ConversionResult[]>>,
   selectedAiModel: string,
-  conversionPrompt: string
+  conversionPrompt: string,
+  cacheEnabled: boolean
 ) => {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -52,7 +53,7 @@ export const useConversionLogic = (
     setIsConverting(true);
     
     try {
-      const result = await convertSybaseToOracle(file, selectedAiModel, conversionPrompt);
+      const result = await convertSybaseToOracle(file, selectedAiModel, conversionPrompt, cacheEnabled);
       
       const conversionResult: ConversionResult = {
         id: result.id,
@@ -99,7 +100,7 @@ export const useConversionLogic = (
       setConvertingFileIds([]);
       setIsConverting(false);
     }
-  }, [files, selectedAiModel, setFiles, setConversionResults]);
+  }, [files, selectedAiModel, setFiles, setConversionResults, cacheEnabled]);
 
   const handleConvertAllByType = useCallback(async (type: 'table' | 'procedure' | 'trigger' | 'other') => {
     const typeFiles = files.filter(f => f.type === type && f.conversionStatus === 'pending');
@@ -110,7 +111,7 @@ export const useConversionLogic = (
     for (const file of typeFiles) {
       setConvertingFileIds([file.id]);
       try {
-        const result = await convertSybaseToOracle(file, selectedAiModel, conversionPrompt);
+        const result = await convertSybaseToOracle(file, selectedAiModel, conversionPrompt, cacheEnabled);
         
         const conversionResult: ConversionResult = {
           id: result.id,
@@ -158,7 +159,7 @@ export const useConversionLogic = (
     
     setConvertingFileIds([]);
     setIsConverting(false);
-  }, [files, selectedAiModel, setFiles, setConversionResults]);
+  }, [files, selectedAiModel, setFiles, setConversionResults, cacheEnabled]);
 
   const handleConvertAll = useCallback(async () => {
     const pendingFiles = files.filter(f => f.conversionStatus === 'pending');
@@ -172,7 +173,7 @@ export const useConversionLogic = (
       await Promise.all(
         batch.map(async (file) => {
           try {
-            const result = await convertSybaseToOracle(file, selectedAiModel, conversionPrompt);
+            const result = await convertSybaseToOracle(file, selectedAiModel, conversionPrompt, cacheEnabled);
 
             const conversionResult: ConversionResult = {
               id: result.id,
@@ -229,7 +230,7 @@ export const useConversionLogic = (
     }
 
     setIsConverting(false);
-  }, [files, selectedAiModel, setFiles, setConversionResults]);
+  }, [files, selectedAiModel, setFiles, setConversionResults, cacheEnabled]);
 
   const handleFixFile = useCallback(async (fileId: string) => {
     setIsConverting(true);
@@ -241,7 +242,7 @@ export const useConversionLogic = (
         return;
       }
       // Re-run the conversion logic for the failed file
-      const result = await convertSybaseToOracle(fileToFix, selectedAiModel, conversionPrompt);
+      const result = await convertSybaseToOracle(fileToFix, selectedAiModel, conversionPrompt, cacheEnabled);
       const conversionResult: ConversionResult = {
         id: result.id,
         originalFile: {
@@ -291,7 +292,7 @@ export const useConversionLogic = (
       setConvertingFileIds([]);
       setIsConverting(false);
     }
-  }, [files, selectedAiModel, setFiles, setConversionResults, toast, mapConversionStatus]);
+  }, [files, selectedAiModel, setFiles, setConversionResults, toast, mapConversionStatus, cacheEnabled]);
 
   const handleGenerateReport = useCallback(async (): Promise<ConversionReport & { id: string }> => {
     const conversionResults: ConversionResult[] = files.map(file => ({

@@ -54,6 +54,7 @@ const Dashboard = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingCompleteMigration, setPendingCompleteMigration] = useState(false);
   const [conversionPrompt, setConversionPrompt] = useState<string>(DEFAULT_CONVERSION_PROMPT);
+  const [cacheEnabled, setCacheEnabled] = useState(true);
 
   const { handleCodeUpload } = useMigrationManager();
   const {
@@ -73,7 +74,7 @@ const Dashboard = () => {
     handleConvertAll,
     handleFixFile,
     handleGenerateReport,
-  } = useConversionLogic(files, setFiles, setConversionResults, selectedAiModel, conversionPrompt);
+  } = useConversionLogic(files, setFiles, setConversionResults, selectedAiModel, conversionPrompt, cacheEnabled);
 
   // Enable Complete Migration in Conversion tab if there is at least one successfully converted file
   const canCompleteMigration = activeTab === 'conversion'
@@ -416,6 +417,8 @@ const Dashboard = () => {
               onDeleteFiles={handleDeleteFiles}
               conversionPrompt={conversionPrompt}
               setConversionPrompt={setConversionPrompt}
+              cacheEnabled={cacheEnabled}
+              setCacheEnabled={setCacheEnabled}
             />
           </TabsContent>
 

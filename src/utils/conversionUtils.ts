@@ -12,6 +12,7 @@ export const convertSybaseToOracle = async (
   file: CodeFile,
   aiModel: string = 'default',
   customPrompt?: string,
+  cacheEnabled: boolean = true,
   skipExplanation: boolean = true
 ): Promise<ConversionResult> => {
   // Normalize content for cache key
@@ -19,39 +20,43 @@ export const convertSybaseToOracle = async (
   const hash = getConversionCacheKey(normalizedContent, aiModel);
 
   // 1. Check backend (DB) cache
-  const backendCached = await getBackendCachedConversion(hash, aiModel);
-  if (backendCached) {
-    console.log('[DB CACHE HIT]', file.name);
-    const result = {
-      id: backendCached.id,
-      originalFile: file,
-      convertedCode: backendCached.converted_code,
-      aiGeneratedCode: '',
-      issues: backendCached.issues || [],
-      dataTypeMapping: backendCached.data_type_mapping || [],
-      performance: backendCached.metrics,
-      status: 'success',
-      explanations: [],
-    };
-    if (result.performance) {
-      result.performance.conversionTimeMs = 1;
+  if (cacheEnabled) {
+    const backendCached = await getBackendCachedConversion(hash, aiModel);
+    if (backendCached) {
+      console.log('[DB CACHE HIT]', file.name);
+      const result = {
+        id: backendCached.id,
+        originalFile: file,
+        convertedCode: backendCached.converted_code,
+        aiGeneratedCode: '',
+        issues: backendCached.issues || [],
+        dataTypeMapping: backendCached.data_type_mapping || [],
+        performance: backendCached.metrics,
+        status: 'success',
+        explanations: [],
+      };
+      if (result.performance) {
+        result.performance.conversionTimeMs = 1;
+      }
+      return result;
+    } else {
+      console.log('[DB CACHE MISS]', file.name);
     }
-    return result;
-  } else {
-    console.log('[DB CACHE MISS]', file.name);
   }
 
   // 2. Check local cache
-  const cached = getCachedConversion(normalizedContent, aiModel);
-  if (cached) {
-    console.log('[LOCAL CACHE HIT]', file.name);
-    const result = { ...cached };
-    if (result.performance) {
-      result.performance.conversionTimeMs = 1;
+  if (cacheEnabled) {
+    const cached = getCachedConversion(normalizedContent, aiModel);
+    if (cached) {
+      console.log('[LOCAL CACHE HIT]', file.name);
+      const result = { ...cached };
+      if (result.performance) {
+        result.performance.conversionTimeMs = 1;
+      }
+      return result;
+    } else {
+      console.log('[LOCAL CACHE MISS]', file.name);
     }
-    return result;
-  } else {
-    console.log('[LOCAL CACHE MISS]', file.name);
   }
 
   console.log(`[CONVERT] Starting conversion for file: ${file.name} with model: ${aiModel}`);
@@ -152,7 +157,7 @@ export const convertMultipleFiles = async (
 ): Promise<ConversionResult[]> => {
   // Map each file to a conversion promise using the improved convertSybaseToOracle
   const conversionPromises = files.map(file =>
-    convertSybaseToOracle(file, aiModel, customPrompt, skipExplanation)
+    convertSybaseToOracle(file, aiModel, customPrompt, true, skipExplanation) // Pass true for cacheEnabled
   );
   return Promise.all(conversionPromises);
 };

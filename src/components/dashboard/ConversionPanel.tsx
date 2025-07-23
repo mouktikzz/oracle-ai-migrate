@@ -49,6 +49,8 @@ interface ConversionPanelProps {
   onDeleteFiles: (fileIds: string[]) => void;
   conversionPrompt: string;
   setConversionPrompt: (prompt: string) => void;
+  cacheEnabled: boolean;
+  setCacheEnabled: (enabled: boolean) => void;
 }
 
 const ConversionPanel: React.FC<ConversionPanelProps> = ({
@@ -71,6 +73,8 @@ const ConversionPanel: React.FC<ConversionPanelProps> = ({
   onDeleteFiles,
   conversionPrompt,
   setConversionPrompt,
+  cacheEnabled,
+  setCacheEnabled,
 }) => {
   const [selectedFileIds, setSelectedFileIds] = React.useState<string[]>([]);
   const [isSelectMode, setIsSelectMode] = React.useState(false);
@@ -261,6 +265,17 @@ const ConversionPanel: React.FC<ConversionPanelProps> = ({
               onChange={e => setConversionPrompt(e.target.value)}
               disabled={isConverting}
             />
+            <div className="flex items-center mt-4">
+              <input
+                type="checkbox"
+                checked={cacheEnabled}
+                onChange={e => setCacheEnabled(e.target.checked)}
+                id="cache-toggle"
+                className="mr-2"
+                disabled={isConverting}
+              />
+              <label htmlFor="cache-toggle" className="text-sm">Enable Cache</label>
+            </div>
           </CardContent>
         </Card>
         {/* Confirmation Dialog for Reset Migration */}
