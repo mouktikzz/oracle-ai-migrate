@@ -211,7 +211,6 @@ const ConversionPanel: React.FC<ConversionPanelProps> = ({
                 </Button>
                 <Button variant="ghost" size="icon" onClick={() => setIsMinimized(true)}>
                   <ChevronLeft className="h-5 w-5" />
-                    <ChevronLeft className="h-5 w-5" />
                 </Button>
               </div>
             </div>
