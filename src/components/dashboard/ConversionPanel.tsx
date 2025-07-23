@@ -199,10 +199,18 @@ const ConversionPanel: React.FC<ConversionPanelProps> = ({
                 Files to Convert
               </CardTitle>
               <div className="flex items-center gap-2">
+                <Button
+                  variant={cacheEnabled ? 'outline' : 'secondary'}
+                  onClick={handleToggleCache}
+                  className={`text-xs px-3 py-1 h-7 border ${cacheEnabled ? 'border-green-400 text-green-700' : 'border-red-400 text-red-700'}`}
+                >
+                  {cacheEnabled ? 'Cache On' : 'Cache Off'}
+                </Button>
                 <Button variant="destructive" onClick={handleResetMigration} className="text-xs px-3 py-1 h-7">
-                    Reset
+                  Reset
                 </Button>
                 <Button variant="ghost" size="icon" onClick={() => setIsMinimized(true)}>
+                  <ChevronLeft className="h-5 w-5" />
                     <ChevronLeft className="h-5 w-5" />
                 </Button>
               </div>
