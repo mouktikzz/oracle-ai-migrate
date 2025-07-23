@@ -47,6 +47,8 @@ interface ConversionPanelProps {
   onMoveToDevReview: () => void;
   canCompleteMigration: boolean;
   onDeleteFiles: (fileIds: string[]) => void;
+  conversionPrompt: string;
+  setConversionPrompt: (prompt: string) => void;
 }
 
 const ConversionPanel: React.FC<ConversionPanelProps> = ({
@@ -67,6 +69,8 @@ const ConversionPanel: React.FC<ConversionPanelProps> = ({
   onMoveToDevReview,
   canCompleteMigration,
   onDeleteFiles,
+  conversionPrompt,
+  setConversionPrompt,
 }) => {
   const [selectedFileIds, setSelectedFileIds] = React.useState<string[]>([]);
   const [isSelectMode, setIsSelectMode] = React.useState(false);
@@ -242,6 +246,23 @@ const ConversionPanel: React.FC<ConversionPanelProps> = ({
           </CardContent>
         </Card>
         )}
+        {/* Prompt Editor */}
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle>Conversion Prompt</CardTitle>
+            <CardDescription>
+              Edit the prompt below to customize how the AI converts your code. This will affect all conversions.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <textarea
+              className="w-full min-h-[180px] p-2 border rounded font-mono text-sm bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-gray-100"
+              value={conversionPrompt}
+              onChange={e => setConversionPrompt(e.target.value)}
+              disabled={isConverting}
+            />
+          </CardContent>
+        </Card>
         {/* Confirmation Dialog for Reset Migration */}
         <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
           <DialogContent>

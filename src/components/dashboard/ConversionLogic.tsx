@@ -24,7 +24,8 @@ export const useConversionLogic = (
   files: FileItem[],
   setFiles: React.Dispatch<React.SetStateAction<FileItem[]>>,
   setConversionResults: React.Dispatch<React.SetStateAction<ConversionResult[]>>,
-  selectedAiModel: string
+  selectedAiModel: string,
+  conversionPrompt: string
 ) => {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -51,7 +52,7 @@ export const useConversionLogic = (
     setIsConverting(true);
     
     try {
-      const result = await convertSybaseToOracle(file, selectedAiModel);
+      const result = await convertSybaseToOracle(file, selectedAiModel, conversionPrompt);
       
       const conversionResult: ConversionResult = {
         id: result.id,
@@ -109,7 +110,7 @@ export const useConversionLogic = (
     for (const file of typeFiles) {
       setConvertingFileIds([file.id]);
       try {
-        const result = await convertSybaseToOracle(file, selectedAiModel);
+        const result = await convertSybaseToOracle(file, selectedAiModel, conversionPrompt);
         
         const conversionResult: ConversionResult = {
           id: result.id,
@@ -171,7 +172,7 @@ export const useConversionLogic = (
       await Promise.all(
         batch.map(async (file) => {
           try {
-            const result = await convertSybaseToOracle(file, selectedAiModel);
+            const result = await convertSybaseToOracle(file, selectedAiModel, conversionPrompt);
 
             const conversionResult: ConversionResult = {
               id: result.id,
@@ -240,7 +241,7 @@ export const useConversionLogic = (
         return;
       }
       // Re-run the conversion logic for the failed file
-      const result = await convertSybaseToOracle(fileToFix, selectedAiModel);
+      const result = await convertSybaseToOracle(fileToFix, selectedAiModel, conversionPrompt);
       const conversionResult: ConversionResult = {
         id: result.id,
         originalFile: {

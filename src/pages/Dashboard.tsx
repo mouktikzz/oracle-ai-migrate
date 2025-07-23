@@ -35,6 +35,8 @@ interface FileItem {
   performanceMetrics?: any;
 }
 
+const DEFAULT_CONVERSION_PROMPT = `Convert the following SQL code to Oracle PL/SQL.\n\nWhen generating the Oracle code, always:\n- Favor set-based SQL operations over procedural loops and cursors wherever possible.\n- Use cursor FOR loops instead of explicit OPEN/FETCH/CLOSE blocks for better performance and readability.\n- Minimize the use of temporary tables; use Oracle GLOBAL TEMPORARY TABLES only when necessary, and do not drop/recreate them in the main script.\n- Use bulk operations (BULK COLLECT, FORALL) for large data manipulations instead of row-by-row processing.\n- Keep transaction blocks as short and efficient as possible.\n- Use exception handling only where necessary, and keep it concise.\n- Modularize complex or lengthy logic into smaller, reusable procedures or functions.\n- Use Oracle best practices for data types, string concatenation (||), and date handling (TO_DATE, SYSDATE, etc.).\n- Add comments to explain any non-trivial logic or Oracle-specific changes.\n- Optimize for maintainability and performance, aiming to reduce cyclomatic complexity and code size where possible.\n- Avoid unnecessary procedural constructs and boilerplate.\n- Ensure the code is clean, idiomatic, and efficient for Oracle PL/SQL.\n\nThe output should be production-ready Oracle PL/SQL code that is easy to maintain and performs efficiently.`;
+
 const Dashboard = () => {
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
@@ -51,6 +53,7 @@ const Dashboard = () => {
   const [showHelp, setShowHelp] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingCompleteMigration, setPendingCompleteMigration] = useState(false);
+  const [conversionPrompt, setConversionPrompt] = useState<string>(DEFAULT_CONVERSION_PROMPT);
 
   const { handleCodeUpload } = useMigrationManager();
   const {
@@ -70,7 +73,7 @@ const Dashboard = () => {
     handleConvertAll,
     handleFixFile,
     handleGenerateReport,
-  } = useConversionLogic(files, setFiles, setConversionResults, selectedAiModel);
+  } = useConversionLogic(files, setFiles, setConversionResults, selectedAiModel, conversionPrompt);
 
   // Enable Complete Migration in Conversion tab if there is at least one successfully converted file
   const canCompleteMigration = activeTab === 'conversion'
@@ -411,6 +414,8 @@ const Dashboard = () => {
               onMoveToDevReview={handleMoveToDevReview}
               canCompleteMigration={canCompleteMigration}
               onDeleteFiles={handleDeleteFiles}
+              conversionPrompt={conversionPrompt}
+              setConversionPrompt={setConversionPrompt}
             />
           </TabsContent>
 
