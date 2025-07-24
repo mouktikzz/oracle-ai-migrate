@@ -336,26 +336,8 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
         </TabsContent>
         
         <TabsContent value="performance" className="space-y-4">
-          <CodeDiffViewer
-            originalCode={file.aiGeneratedCode || file.content}
-            convertedCode={file.convertedContent || ''}
-            readOnly={true}
-          />
           {file.performanceMetrics ? (
-            <div className="space-y-6">
-              <h3 className="text-lg font-medium">Quantitative Performance Analysis</h3>
-
-              {/* Performance Score */}
-              <Card className="p-6">
-                <div className="text-center">
-                  <h4 className="text-sm font-medium text-gray-600 mb-2">Overall Performance Score</h4>
-                  <div className="text-4xl font-bold text-blue-600 mb-2">
-                    {file.performanceMetrics.performanceScore ?? '-'} /100
-                  </div>
-                </div>
-              </Card>
-
-              {/* Scalability & Maintainability */}
+            <>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card className="p-4 text-center">
                   <h4 className="text-sm font-medium text-gray-600 mb-2">Scalability Score</h4>
@@ -378,7 +360,11 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
                   <div className="text-xs text-muted-foreground">% of code changed by a human after AI conversion</div>
                 </Card>
               </div>
-
+              <CodeDiffViewer
+                originalCode={file.aiGeneratedCode || file.content}
+                convertedCode={file.convertedContent || ''}
+                readOnly={true}
+              />
               {/* Recommendations */}
               {file.performanceMetrics.recommendations && file.performanceMetrics.recommendations.length > 0 && (
                 <Card className="p-6">
@@ -393,7 +379,7 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
                   </ul>
                 </Card>
               )}
-            </div>
+            </>
           ) : (
             <div className="text-center py-8">
               <p className="text-gray-500">No performance metrics available</p>
