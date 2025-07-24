@@ -360,11 +360,6 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
                   <div className="text-xs text-muted-foreground">% of code changed by a human after AI conversion</div>
                 </Card>
               </div>
-              <CodeDiffViewer
-                originalCode={file.aiGeneratedCode || file.content}
-                convertedCode={file.convertedContent || ''}
-                readOnly={true}
-              />
               {/* Recommendations */}
               {file.performanceMetrics.recommendations && file.performanceMetrics.recommendations.length > 0 && (
                 <Card className="p-6">
@@ -385,6 +380,14 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
               <p className="text-gray-500">No performance metrics available</p>
             </div>
           )}
+        </TabsContent>
+        <TabsContent value="devreview" className="space-y-4">
+          <h3 className="text-lg font-medium">Code Comparison</h3>
+          <CodeDiffViewer
+            originalCode={file.aiGeneratedCode || file.content}
+            convertedCode={file.convertedContent || ''}
+            readOnly={true}
+          />
         </TabsContent>
       </Tabs>
     </>
