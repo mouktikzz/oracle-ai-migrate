@@ -336,6 +336,11 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
         </TabsContent>
         
         <TabsContent value="performance" className="space-y-4">
+          <CodeDiffViewer
+            originalCode={file.aiGeneratedCode || file.content}
+            convertedCode={file.convertedContent || ''}
+            readOnly={true}
+          />
           {file.performanceMetrics ? (
             <div className="space-y-6">
               <h3 className="text-lg font-medium">Quantitative Performance Analysis</h3>
