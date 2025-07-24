@@ -262,6 +262,7 @@ const convertSybaseToOracle = async (file: CodeFile): Promise<ConversionResult> 
         performanceOptimizations: aiOutput.performance_optimizations,
         oracleFeatures: aiOutput.oracle_features
     };
+    console.log('ConversionResult:', result);
     if (isCacheEnabled()) {
       // Save to local cache
       setCachedConversion(normalizedContent, aiModel, result);

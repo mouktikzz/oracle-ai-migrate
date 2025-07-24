@@ -252,7 +252,11 @@ const Dashboard = () => {
           original_code: file.content,
           data_type_mapping: file.dataTypeMapping,
           issues: file.issues,
-          performance_metrics: file.performanceMetrics || {},
+          performance_metrics: {
+            ...file.performanceMetrics,
+            scalabilityScore: file.scalabilityScore,
+            maintainabilityScore: file.maintainabilityScore,
+          },
         });
       }
     }

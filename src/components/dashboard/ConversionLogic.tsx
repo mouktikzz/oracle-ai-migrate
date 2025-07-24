@@ -80,7 +80,9 @@ export const useConversionLogic = (
               convertedContent: result.convertedCode,
               dataTypeMapping: result.dataTypeMapping,
               issues: result.issues,
-              performanceMetrics: result.performance
+              performanceMetrics: result.performance,
+              scalabilityScore: result.scalabilityScore,
+              maintainabilityScore: result.maintainabilityScore
             }
           : f
       ));
@@ -138,7 +140,9 @@ export const useConversionLogic = (
                 convertedContent: result.convertedCode,
                 dataTypeMapping: result.dataTypeMapping,
                 issues: result.issues,
-                performanceMetrics: result.performance
+                performanceMetrics: result.performance,
+                scalabilityScore: result.scalabilityScore,
+                maintainabilityScore: result.maintainabilityScore
               }
             : f
         ));
@@ -200,7 +204,9 @@ export const useConversionLogic = (
                     convertedContent: result.convertedCode,
                     dataTypeMapping: result.dataTypeMapping,
                     issues: result.issues,
-                    performanceMetrics: result.performance
+                    performanceMetrics: result.performance,
+                    scalabilityScore: result.scalabilityScore,
+                    maintainabilityScore: result.maintainabilityScore
                   }
                 : f
             ));
@@ -266,7 +272,9 @@ export const useConversionLogic = (
               convertedContent: result.convertedCode,
               dataTypeMapping: result.dataTypeMapping,
               issues: result.issues,
-              performanceMetrics: result.performance
+              performanceMetrics: result.performance,
+              scalabilityScore: result.scalabilityScore,
+              maintainabilityScore: result.maintainabilityScore
             }
           : f
       ));
