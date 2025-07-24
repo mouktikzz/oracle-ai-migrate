@@ -339,194 +339,41 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
           {file.performanceMetrics ? (
             <div className="space-y-6">
               <h3 className="text-lg font-medium">Quantitative Performance Analysis</h3>
-              
+
               {/* Performance Score */}
               <Card className="p-6">
                 <div className="text-center">
                   <h4 className="text-sm font-medium text-gray-600 mb-2">Overall Performance Score</h4>
                   <div className="text-4xl font-bold text-blue-600 mb-2">
-                    {file.performanceMetrics.performanceScore || 0}/100
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${file.performanceMetrics.performanceScore || 0}%` }}
-                    ></div>
+                    {file.performanceMetrics.performanceScore ?? '-'} /100
                   </div>
                 </div>
               </Card>
 
-              {/* Human Edits Metric */}
-              <Card className="p-6">
-                <div className="text-center">
-                  <h4 className="text-sm font-medium text-gray-600 mb-2">Human Edits</h4>
-                  <div className="text-4xl font-bold text-purple-600 mb-2">
-                    {humanEditPercent}%
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-purple-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${humanEditPercent}%` }}
-                    ></div>
-                  </div>
-                  <p className="text-sm text-gray-600 mt-2">
-                    Percentage of code changed by a human after AI conversion
-                  </p>
-                </div>
-              </Card>
-
-              {/* Human Edits Diff Viewer */}
-              {humanEditPercent > 0 && (
-                <div className="p-0">
-                  <CodeDiffViewer 
-                    originalCode={aiCode}
-                    convertedCode={finalCode}
-                  />
-                </div>
-              )}
-
-              {/* Complexity Metrics */}
+              {/* Scalability & Maintainability */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card className="p-4 text-center">
-                  <h4 className="text-sm font-medium text-gray-600 mb-2">Original Complexity</h4>
-                  <p className="text-2xl font-bold text-red-600">
-                    {file.performanceMetrics.originalComplexity || 0}
-                  </p>
-                  <p className="text-xs text-gray-500">Cyclomatic Complexity</p>
+                  <h4 className="text-sm font-medium text-gray-600 mb-2">Scalability Score</h4>
+                  <p className="text-2xl font-bold text-blue-600">{file.performanceMetrics?.scalabilityScore ?? file.scalabilityScore ?? '-'} /10</p>
+                  {file.performanceMetrics?.scalabilityMetrics && (
+                    <div className="text-xs text-gray-500 mt-2">
+                      BulkOps: {file.performanceMetrics.scalabilityMetrics.bulkOperationsUsed ? 'Yes' : 'No'},
+                      BulkCollect: {file.performanceMetrics.scalabilityMetrics.bulkCollectUsed ? 'Yes' : 'No'},
+                      Modern: {file.performanceMetrics.scalabilityMetrics.modernOracleFeaturesCount}
+                    </div>
+                  )}
                 </Card>
-                
                 <Card className="p-4 text-center">
-                  <h4 className="text-sm font-medium text-gray-600 mb-2">Converted Complexity</h4>
-                  <p className={`text-2xl font-bold ${
-                    file.performanceMetrics.convertedComplexity < file.performanceMetrics.originalComplexity
-                      ? 'text-green-600'
-                      : file.performanceMetrics.convertedComplexity > file.performanceMetrics.originalComplexity
-                        ? 'text-red-600'
-                        : 'text-gray-600'
-                  }`}>
-                    {file.performanceMetrics.convertedComplexity || 0}
-                  </p>
-                  <p className="text-xs text-gray-500">Cyclomatic Complexity</p>
+                  <h4 className="text-sm font-medium text-gray-600 mb-2">Maintainability Score</h4>
+                  <p className="text-2xl font-bold text-green-600">{file.performanceMetrics?.maintainabilityScore ?? file.maintainabilityScore ?? '-'} /10</p>
                 </Card>
-                
                 <Card className="p-4 text-center">
-                  <h4 className="text-sm font-medium text-gray-600 mb-2">Improvement</h4>
-                  <p className={`text-2xl font-bold ${
-                    file.performanceMetrics.improvementPercentage > 0
-                      ? 'text-blue-600'
-                      : file.performanceMetrics.improvementPercentage < 0
-                        ? 'text-red-600'
-                        : 'text-gray-600'
-                  }`}>
-                    {file.performanceMetrics.improvementPercentage > 0
-                      ? `+${file.performanceMetrics.improvementPercentage}`
-                      : file.performanceMetrics.improvementPercentage}
-                    %
-                  </p>
-                  <p className="text-xs text-gray-500">Performance Gain</p>
+                  <h4 className="text-sm font-medium text-gray-600 mb-2">Human Edits</h4>
+                  <p className="text-2xl font-bold text-purple-600">{humanEditPercent}%</p>
+                  <div className="text-xs text-muted-foreground">% of code changed by a human after AI conversion</div>
                 </Card>
               </div>
 
-              {/* Code Quality Metrics */}
-              {file.performanceMetrics.codeQuality && (
-                <Card className="p-6">
-                  <h4 className="text-lg font-medium mb-4">Code Quality Metrics</h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-gray-800">{file.performanceMetrics.codeQuality.totalLines}</p>
-                      <p className="text-sm text-gray-600">Total Lines</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-gray-800">{file.performanceMetrics.codeQuality.codeLines}</p>
-                      <p className="text-sm text-gray-600">Code Lines</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-gray-800">{file.performanceMetrics.codeQuality.commentRatio}%</p>
-                      <p className="text-sm text-gray-600">Comment Ratio</p>
-                    </div>
-                    <div className="text-center">
-                      <Badge variant={
-                        file.performanceMetrics.codeQuality.complexityLevel === 'Low' ? 'default' :
-                        file.performanceMetrics.codeQuality.complexityLevel === 'Medium' ? 'secondary' : 'destructive'
-                      }>
-                        {file.performanceMetrics.codeQuality.complexityLevel}
-                      </Badge>
-                      <p className="text-sm text-gray-600 mt-1">Complexity</p>
-                    </div>
-                  </div>
-                </Card>
-              )}
-
-              {/* Maintainability Index */}
-              {file.performanceMetrics.maintainabilityIndex && (
-                <Card className="p-6">
-                  <h4 className="text-lg font-medium mb-4">Maintainability Index</h4>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-purple-600 mb-2">
-                      {file.performanceMetrics.maintainabilityIndex}/100
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-3">
-                      <div 
-                        className="bg-purple-600 h-3 rounded-full transition-all duration-300"
-                        style={{ width: `${file.performanceMetrics.maintainabilityIndex}%` }}
-                      ></div>
-                    </div>
-                    <p className="text-sm text-gray-600 mt-2">
-                      {file.performanceMetrics.maintainabilityIndex >= 80 ? 'Excellent' :
-                       file.performanceMetrics.maintainabilityIndex >= 60 ? 'Good' :
-                       file.performanceMetrics.maintainabilityIndex >= 40 ? 'Fair' : 'Poor'} Maintainability
-                    </p>
-                  </div>
-                </Card>
-              )}
-
-              {/* Enhanced Performance Metrics */}
-              {/* Lines Reduced/Increased */}
-              <Card className="p-4 text-center">
-                <h4 className="text-sm font-medium text-gray-600 mb-2">{(() => {
-                  const diff = (file.performanceMetrics.convertedLines || 0) - (file.performanceMetrics.originalLines || 0);
-                  if (diff < 0) return 'Lines Reduced';
-                  if (diff > 0) return 'Lines Increased';
-                  return 'No Change';
-                })()}</h4>
-                <p className={`text-2xl font-bold ${(() => {
-                  const diff = (file.performanceMetrics.convertedLines || 0) - (file.performanceMetrics.originalLines || 0);
-                  if (diff < 0) return 'text-green-600';
-                  if (diff > 0) return 'text-red-600';
-                  return 'text-gray-600';
-                })()}`}>{Math.abs((file.performanceMetrics.convertedLines || 0) - (file.performanceMetrics.originalLines || 0))}</p>
-                <p className="text-xs text-gray-500">
-                  {(file.performanceMetrics.originalLines || 0)} → {(file.performanceMetrics.convertedLines || 0)}
-                </p>
-              </Card>
-              {/* Loops Reduced/Increased */}
-              <Card className="p-4 text-center">
-                <h4 className="text-sm font-medium text-gray-600 mb-2">{(() => {
-                  const diff = (file.performanceMetrics.convertedLoops || 0) - (file.performanceMetrics.originalLoops || 0);
-                  if (diff < 0) return 'Loops Reduced';
-                  if (diff > 0) return 'Loops Increased';
-                  return 'No Change';
-                })()}</h4>
-                <p className={`text-2xl font-bold ${(() => {
-                  const diff = (file.performanceMetrics.convertedLoops || 0) - (file.performanceMetrics.originalLoops || 0);
-                  if (diff < 0) return 'text-blue-600';
-                  if (diff > 0) return 'text-red-600';
-                  return 'text-gray-600';
-                })()}`}>{Math.abs((file.performanceMetrics.convertedLoops || 0) - (file.performanceMetrics.originalLoops || 0))}</p>
-                <p className="text-xs text-gray-500">
-                  {(file.performanceMetrics.originalLoops || 0)} → {(file.performanceMetrics.convertedLoops || 0)}
-                </p>
-              </Card>
-              
-              {/* Conversion Time */}
-              <Card className="p-4 text-center">
-                <h4 className="text-sm font-medium text-gray-600 mb-2">Conversion Time</h4>
-                <p className="text-2xl font-bold text-orange-600">
-                  {file.performanceMetrics.conversionTimeMs || 0}ms
-                </p>
-                <p className="text-xs text-gray-500">Processing Time</p>
-              </Card>
-              
               {/* Recommendations */}
               {file.performanceMetrics.recommendations && file.performanceMetrics.recommendations.length > 0 && (
                 <Card className="p-6">

@@ -67,6 +67,16 @@ export interface PerformanceMetrics {
   convertedLoops?: number;
   recommendations?: string[];
   notes?: string[];
+  // New metrics for scalability and maintainability
+  scalabilityScore?: number;
+  maintainabilityScore?: number;
+  scalabilityMetrics?: {
+    bulkOperationsUsed: boolean;
+    bulkCollectUsed: boolean;
+    modernOracleFeaturesCount: number;
+    scalabilityScore: number;
+    maintainabilityScore: number;
+  };
 }
 
 export interface ConversionReport {
