@@ -21,6 +21,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { toast } from '@/components/ui/use-toast';
+import { analyzeCodeComplexity, generateBalancedPerformanceMetrics } from '@/utils/componentUtilswithlangchain';
 
 interface DevReviewPanelProps {
   canCompleteMigration: boolean;
@@ -115,6 +116,8 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
       dataTypeMapping: f.data_type_mapping || [],
       issues: f.issues || [],
       performanceMetrics: f.performance_metrics || {},
+      scalabilityScore: f.performance_metrics?.scalabilityScore,
+      maintainabilityScore: f.performance_metrics?.maintainabilityScore,
     };
   };
 
@@ -170,13 +173,25 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
   };
 
   // Update handleSaveEdit to accept newMetrics and update local state
-  const handleSaveEdit = async (file: UnreviewedFile, newCode: string, newMetrics?: any) => {
-    // Always use ai_generated_code as the AI baseline
-    // Remove ai_generated_code if not in UnreviewedFileUpdate type
+  const handleSaveEdit = async (file: UnreviewedFile, newCode: string) => {
+    // Recalculate all metrics
+    const originalComplexity = analyzeCodeComplexity(file.original_code);
+    const convertedComplexity = analyzeCodeComplexity(newCode);
+    const conversionTime = 0;
+    const newMetrics = generateBalancedPerformanceMetrics(
+      originalComplexity,
+      convertedComplexity,
+      conversionTime,
+      file.original_code,
+      newCode
+    );
+    // Ensure top-level metrics are set
+    newMetrics.scalabilityScore = newMetrics.scalabilityScore ?? newMetrics.scalabilityMetrics?.scalabilityScore;
+    newMetrics.maintainabilityScore = newMetrics.maintainabilityScore ?? newMetrics.scalabilityMetrics?.maintainabilityScore;
     const updateData: UnreviewedFileUpdate = {
       id: file.id,
       converted_code: newCode,
-      ...(newMetrics ? { performance_metrics: newMetrics } : {}),
+      performance_metrics: newMetrics,
     };
     const success = await updateUnreviewedFile(updateData);
     if (success) {
@@ -625,7 +640,7 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
                 <ConversionViewer
                   key={selectedFile.id} /* Add key to force re-render */
                   file={mapToFileItem(selectedFile)}
-                  onManualEdit={(newContent, newMetrics) => handleSaveEdit(selectedFile, newContent, newMetrics)}
+                  onManualEdit={(newContent, newMetrics) => handleSaveEdit(selectedFile, newContent)}
                   onDismissIssue={() => {}}
                   onSaveEdit={(newContent) => handleSaveEdit(selectedFile, newContent)}
                   hideEdit={selectedFile.status === 'reviewed'}
