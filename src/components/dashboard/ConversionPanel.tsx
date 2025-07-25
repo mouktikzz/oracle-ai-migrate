@@ -336,6 +336,11 @@ const ConversionPanel: React.FC<ConversionPanelProps> = ({
                   onNextFile={hasNext ? () => onFileSelect(allFilteredFiles[currentIndex + 1]) : undefined}
                   hasPrev={hasPrev}
                   hasNext={hasNext}
+                  onAiAnalysis={(explanation) => {
+                    // Update selectedFile and files state with new ai_analysis
+                    setSelectedFile(prev => prev ? { ...prev, ai_analysis: explanation } : prev);
+                    setFiles(prev => prev.map(f => f.id === selectedFile.id ? { ...f, ai_analysis: explanation } : f));
+                  }}
                 />
               </CardContent>
             </Card>

@@ -79,6 +79,8 @@ interface FileItem {
   issues?: ConversionIssue[];
   performanceMetrics?: PerformanceMetrics;
   status: 'reviewed' | 'unreviewed'; // New field for status
+  ai_analysis?: string; // Add this field for persistent analysis
+  migration_id?: string; // Add this field for migration files
 }
 
 interface ConversionViewerProps {
@@ -91,6 +93,7 @@ interface ConversionViewerProps {
   onNextFile?: () => void;
   hasPrev?: boolean;
   hasNext?: boolean;
+  onAiAnalysis?: (explanation: string) => void; // Called after new analysis is generated
 }
 
 const ConversionViewer: React.FC<ConversionViewerProps> = ({
@@ -103,6 +106,7 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
   onNextFile,
   hasPrev,
   hasNext,
+  onAiAnalysis,
 }) => {
   const { toast } = useToast();
   const { addUnreviewedFile } = useUnreviewedFiles();
@@ -116,6 +120,15 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
   const [showExplainDialog, setShowExplainDialog] = useState(false);
   const [isExplaining, setIsExplaining] = useState(false);
   const [explanation, setExplanation] = useState('');
+
+  useEffect(() => {
+    // Prefer persistent analysis if available
+    if (file.ai_analysis) {
+      setExplanation(file.ai_analysis);
+    } else {
+      setExplanation('');
+    }
+  }, [file.ai_analysis]);
 
   useEffect(() => {
     setEditedContent(file.convertedContent || '');
@@ -682,13 +695,24 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
                   setIsExplaining(true);
                   setExplanation('');
                   try {
+                    // Determine fileType for API
+                    let fileType = file.migration_id ? 'migration_files' : 'unreviewed_files';
                     const res = await fetch('/api/ai-explain', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ code: file.convertedContent, language: 'oracle sql' }),
+                      body: JSON.stringify({
+                        code: file.convertedContent,
+                        language: 'oracle sql',
+                        fileId: file.id,
+                        fileType
+                      }),
                     });
                     const data = await res.json();
                     setExplanation(data.explanation || 'No explanation returned.');
+                    if (onAiAnalysis && data.explanation) {
+                      onAiAnalysis(data.explanation);
+                    }
+                    // Optionally update file.ai_analysis in parent state if possible
                   } catch (err) {
                     setExplanation('Failed to get explanation.');
                   } finally {

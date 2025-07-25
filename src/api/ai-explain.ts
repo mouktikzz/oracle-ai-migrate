@@ -1,5 +1,6 @@
 import type { ViteDevServer } from 'vite';
 import type { IncomingMessage, ServerResponse } from 'http';
+import { supabase } from '@/integrations/supabase/client';
 
 const OPENROUTER_API_KEY = process.env.VITE_OPENROUTER_API_KEY;
 if (!OPENROUTER_API_KEY) throw new Error('Missing VITE_OPENROUTER_API_KEY in environment');
@@ -35,7 +36,7 @@ export async function aiExplainHandler(req: IncomingMessage, res: ServerResponse
   });
   req.on('end', async () => {
     try {
-      const { code, language } = JSON.parse(body);
+      const { code, language, fileId, fileType } = JSON.parse(body);
       if (!code) {
         res.statusCode = 400;
         res.setHeader('Content-Type', 'application/json');
@@ -69,6 +70,10 @@ export async function aiExplainHandler(req: IncomingMessage, res: ServerResponse
         res.setHeader('Content-Type', 'application/json');
         res.end(JSON.stringify({ explanation: 'AI service returned no explanation. Please try again later.' }));
         return;
+      }
+      // Persist explanation to DB if fileId and fileType are provided
+      if (fileId && fileType && (fileType === 'migration_files' || fileType === 'unreviewed_files')) {
+        await supabase.from(fileType).update({ ai_analysis: explanation }).eq('id', fileId);
       }
       res.statusCode = 200;
       res.setHeader('Content-Type', 'application/json');
