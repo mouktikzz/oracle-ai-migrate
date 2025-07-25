@@ -156,7 +156,8 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
       file.performanceMetrics?.complexityAssessment || 'moderate',
       file.performanceMetrics?.optimizationLevel || 'basic',
       (convertedComplexity.totalLines || 1) / (originalComplexity.totalLines || 1),
-      newCode
+      newCode,
+      originalCode // Pass originalCode as the 8th argument
     );
 
     // 2. Update in Supabase
@@ -193,11 +194,12 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
     <>
       {/* Removed top bar with filename, badges, and download button. Now only tabs and code sections remain. */}
       <Tabs defaultValue="code" className="w-full">
-        <TabsList className={`grid w-full grid-cols-${file.type === 'trigger' ? '3' : '4'}`}>
+        <TabsList className="flex flex-row w-full">
           <TabsTrigger value="code">Code</TabsTrigger>
           {file.type !== 'trigger' && <TabsTrigger value="mapping">Data Types</TabsTrigger>}
           <TabsTrigger value="issues">Issues {file.issues && file.issues.length > 0 && (<Badge variant="outline" className="ml-1">{file.issues.length}</Badge>)}</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
+          <TabsTrigger value="analysis">AI Analysis</TabsTrigger>
         </TabsList>
         
         <TabsContent value="code" className="space-y-4">
@@ -293,32 +295,6 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
                           >
                             <Edit className="h-4 w-4 mr-1" />
                             Edit
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={async () => {
-                              setShowExplainDialog(true);
-                              setIsExplaining(true);
-                              setExplanation('');
-                              try {
-                                const res = await fetch('/api/ai-explain', {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ code: file.convertedContent, language: 'oracle sql' }),
-                                });
-                                const data = await res.json();
-                                setExplanation(data.explanation || 'No explanation returned.');
-                              } catch (err) {
-                                setExplanation('Failed to get explanation.');
-                              } finally {
-                                setIsExplaining(false);
-                              }
-                            }}
-                            className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0 shadow-md hover:from-blue-600 hover:to-cyan-700 transition-all duration-200 flex items-center gap-2"
-                          >
-                            <Sparkles className="h-4 w-4 mr-1 text-yellow-200" />
-                            AI Code Analyzer
                           </Button>
                         </div>
                       )}
@@ -690,6 +666,40 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
               <p className="text-gray-500">No performance metrics available</p>
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="analysis" className="space-y-4">
+          <div className="prose whitespace-pre-wrap">
+            {isExplaining ? (
+              <div>Loading analysis...</div>
+            ) : explanation ? (
+              <div>{explanation}</div>
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={async () => {
+                  setIsExplaining(true);
+                  setExplanation('');
+                  try {
+                    const res = await fetch('/api/ai-explain', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ code: file.convertedContent, language: 'oracle sql' }),
+                    });
+                    const data = await res.json();
+                    setExplanation(data.explanation || 'No explanation returned.');
+                  } catch (err) {
+                    setExplanation('Failed to get explanation.');
+                  } finally {
+                    setIsExplaining(false);
+                  }
+                }}
+              >
+                Analyze Code
+              </Button>
+            )}
+          </div>
         </TabsContent>
       </Tabs>
 
