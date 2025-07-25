@@ -194,12 +194,12 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
     <>
       {/* Removed top bar with filename, badges, and download button. Now only tabs and code sections remain. */}
       <Tabs defaultValue="code" className="w-full">
-        <TabsList className="flex flex-row w-full">
-          <TabsTrigger value="code">Code</TabsTrigger>
-          {file.type !== 'trigger' && <TabsTrigger value="mapping">Data Types</TabsTrigger>}
-          <TabsTrigger value="issues">Issues {file.issues && file.issues.length > 0 && (<Badge variant="outline" className="ml-1">{file.issues.length}</Badge>)}</TabsTrigger>
-          <TabsTrigger value="performance">Performance</TabsTrigger>
-          <TabsTrigger value="analysis">AI Analysis</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-5 p-0 m-0 gap-0">
+          <TabsTrigger value="code" className="w-full">Code</TabsTrigger>
+          {file.type !== 'trigger' && <TabsTrigger value="mapping" className="w-full">Data Types</TabsTrigger>}
+          <TabsTrigger value="issues" className="w-full">Issues {file.issues && file.issues.length > 0 && (<Badge variant="outline" className="ml-1">{file.issues.length}</Badge>)}</TabsTrigger>
+          <TabsTrigger value="performance" className="w-full">Performance</TabsTrigger>
+          <TabsTrigger value="analysis" className="w-full">AI Analysis</TabsTrigger>
         </TabsList>
         
         <TabsContent value="code" className="space-y-4">
