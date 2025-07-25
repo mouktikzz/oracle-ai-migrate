@@ -64,6 +64,7 @@ export type Database = {
           performance_metrics: Json | null
           syntax_differences: Json | null
           updated_at: string
+          ai_analysis?: string | null
         }
         Insert: {
           conversion_status?: string
@@ -81,6 +82,7 @@ export type Database = {
           performance_metrics?: Json | null
           syntax_differences?: Json | null
           updated_at?: string
+          ai_analysis?: string | null
         }
         Update: {
           conversion_status?: string
@@ -98,6 +100,7 @@ export type Database = {
           performance_metrics?: Json | null
           syntax_differences?: Json | null
           updated_at?: string
+          ai_analysis?: string | null
         }
         Relationships: [
           {
@@ -194,6 +197,7 @@ export type Database = {
           status: string
           updated_at: string
           user_id: string
+          ai_analysis?: string | null
         }
         Insert: {
           converted_code: string
@@ -204,6 +208,7 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id: string
+          ai_analysis?: string | null
         }
         Update: {
           converted_code?: string
@@ -214,6 +219,7 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id?: string
+          ai_analysis?: string | null
         }
         Relationships: []
       },

@@ -79,6 +79,8 @@ interface FileItem {
   issues?: ConversionIssue[];
   performanceMetrics?: PerformanceMetrics;
   status: 'reviewed' | 'unreviewed'; // New field for status
+  ai_analysis?: string; // Add this field for persistent analysis
+  migration_id?: string; // Add this field for migration files
 }
 
 interface ConversionViewerProps {
@@ -91,6 +93,7 @@ interface ConversionViewerProps {
   onNextFile?: () => void;
   hasPrev?: boolean;
   hasNext?: boolean;
+  onAiAnalysis?: (explanation: string) => void; // Called after new analysis is generated
 }
 
 const ConversionViewer: React.FC<ConversionViewerProps> = ({
@@ -103,6 +106,7 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
   onNextFile,
   hasPrev,
   hasNext,
+  onAiAnalysis,
 }) => {
   const { toast } = useToast();
   const { addUnreviewedFile } = useUnreviewedFiles();
@@ -116,6 +120,15 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
   const [showExplainDialog, setShowExplainDialog] = useState(false);
   const [isExplaining, setIsExplaining] = useState(false);
   const [explanation, setExplanation] = useState('');
+
+  useEffect(() => {
+    // Prefer persistent analysis if available
+    if (file.ai_analysis) {
+      setExplanation(file.ai_analysis);
+    } else {
+      setExplanation('');
+    }
+  }, [file.ai_analysis]);
 
   useEffect(() => {
     setEditedContent(file.convertedContent || '');
@@ -156,7 +169,8 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
       file.performanceMetrics?.complexityAssessment || 'moderate',
       file.performanceMetrics?.optimizationLevel || 'basic',
       (convertedComplexity.totalLines || 1) / (originalComplexity.totalLines || 1),
-      newCode
+      newCode,
+      originalCode // Pass originalCode as the 8th argument
     );
 
     // 2. Update in Supabase
@@ -193,11 +207,12 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
     <>
       {/* Removed top bar with filename, badges, and download button. Now only tabs and code sections remain. */}
       <Tabs defaultValue="code" className="w-full">
-        <TabsList className={`grid w-full grid-cols-${file.type === 'trigger' ? '3' : '4'}`}>
-          <TabsTrigger value="code">Code</TabsTrigger>
-          {file.type !== 'trigger' && <TabsTrigger value="mapping">Data Types</TabsTrigger>}
-          <TabsTrigger value="issues">Issues {file.issues && file.issues.length > 0 && (<Badge variant="outline" className="ml-1">{file.issues.length}</Badge>)}</TabsTrigger>
-          <TabsTrigger value="performance">Performance</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-5 p-0 m-0 gap-0">
+          <TabsTrigger value="code" className="w-full">Code</TabsTrigger>
+          {file.type !== 'trigger' && <TabsTrigger value="mapping" className="w-full">Data Types</TabsTrigger>}
+          <TabsTrigger value="issues" className="w-full">Issues {file.issues && file.issues.length > 0 && (<Badge variant="outline" className="ml-1">{file.issues.length}</Badge>)}</TabsTrigger>
+          <TabsTrigger value="performance" className="w-full">Performance</TabsTrigger>
+          <TabsTrigger value="analysis" className="w-full">AI Analysis</TabsTrigger>
         </TabsList>
         
         <TabsContent value="code" className="space-y-4">
@@ -293,32 +308,6 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
                           >
                             <Edit className="h-4 w-4 mr-1" />
                             Edit
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={async () => {
-                              setShowExplainDialog(true);
-                              setIsExplaining(true);
-                              setExplanation('');
-                              try {
-                                const res = await fetch('/api/ai-explain', {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ code: file.convertedContent, language: 'oracle sql' }),
-                                });
-                                const data = await res.json();
-                                setExplanation(data.explanation || 'No explanation returned.');
-                              } catch (err) {
-                                setExplanation('Failed to get explanation.');
-                              } finally {
-                                setIsExplaining(false);
-                              }
-                            }}
-                            className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0 shadow-md hover:from-blue-600 hover:to-cyan-700 transition-all duration-200 flex items-center gap-2"
-                          >
-                            <Sparkles className="h-4 w-4 mr-1 text-yellow-200" />
-                            AI Code Analyzer
                           </Button>
                         </div>
                       )}
@@ -690,6 +679,51 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
               <p className="text-gray-500">No performance metrics available</p>
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="analysis" className="space-y-4">
+          <div className="prose whitespace-pre-wrap">
+            {isExplaining ? (
+              <div>Loading analysis...</div>
+            ) : explanation ? (
+              <div>{explanation}</div>
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={async () => {
+                  setIsExplaining(true);
+                  setExplanation('');
+                  try {
+                    // Determine fileType for API
+                    let fileType = file.migration_id ? 'migration_files' : 'unreviewed_files';
+                    const res = await fetch('/api/ai-explain', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        code: file.convertedContent,
+                        language: 'oracle sql',
+                        fileId: file.id,
+                        fileType
+                      }),
+                    });
+                    const data = await res.json();
+                    setExplanation(data.explanation || 'No explanation returned.');
+                    if (onAiAnalysis && data.explanation) {
+                      onAiAnalysis(data.explanation);
+                    }
+                    // Optionally update file.ai_analysis in parent state if possible
+                  } catch (err) {
+                    setExplanation('Failed to get explanation.');
+                  } finally {
+                    setIsExplaining(false);
+                  }
+                }}
+              >
+                Analyze Code
+              </Button>
+            )}
+          </div>
         </TabsContent>
       </Tabs>
 
