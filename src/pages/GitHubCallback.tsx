@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { GitHub, CheckCircle, XCircle } from 'lucide-react';
+import { ExternalLink, CheckCircle, XCircle } from 'lucide-react';
 
 const GitHubCallback: React.FC = () => {
   useEffect(() => {
@@ -69,9 +69,9 @@ const GitHubCallback: React.FC = () => {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4">
-            <GitHub className="h-12 w-12 text-gray-600" />
-          </div>
+                           <div className="mx-auto mb-4">
+                   <ExternalLink className="h-12 w-12 text-gray-600" />
+                 </div>
           <CardTitle>GitHub Authentication</CardTitle>
           <CardDescription>
             Processing your GitHub authentication...

@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { UploadCloud, File, Trash2, Plus, Folder, Info, Download, GitHub, ExternalLink } from 'lucide-react';
+import { UploadCloud, File, Trash2, Plus, Folder, Info, Download, ExternalLink } from 'lucide-react';
 import { CodeFile } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
@@ -599,7 +599,7 @@ END`;
                   <Select value={uploadSource} onValueChange={handleSourceChange}>
                     <SelectTrigger className="w-48">
                       {uploadSource === 'local' && <UploadCloud className="h-4 w-4 mr-2" />}
-                      {uploadSource === 'github' && <GitHub className="h-4 w-4 mr-2" />}
+                                             {uploadSource === 'github' && <ExternalLink className="h-4 w-4 mr-2" />}
                       {uploadSource === 'dropbox' && <Folder className="h-4 w-4 mr-2" />}
                       {uploadSource === 'googledrive' && <ExternalLink className="h-4 w-4 mr-2" />}
                       {uploadSource === 'local' && 'Local Computer'}
@@ -612,10 +612,10 @@ END`;
                         <UploadCloud className="h-4 w-4 mr-2" />
                         Local Computer
                       </SelectItem>
-                      <SelectItem value="github">
-                        <GitHub className="h-4 w-4 mr-2" />
-                        GitHub Repository
-                      </SelectItem>
+                                             <SelectItem value="github">
+                         <ExternalLink className="h-4 w-4 mr-2" />
+                         GitHub Repository
+                       </SelectItem>
                       <SelectItem value="dropbox">
                         <Folder className="h-4 w-4 mr-2" />
                         Dropbox
@@ -714,7 +714,7 @@ END`;
                         </>
                       ) : (
                         <>
-                          {uploadSource === 'github' && <GitHub className="h-4 w-4" />}
+                                                     {uploadSource === 'github' && <ExternalLink className="h-4 w-4" />}
                           {uploadSource === 'dropbox' && <Folder className="h-4 w-4" />}
                           {uploadSource === 'googledrive' && <ExternalLink className="h-4 w-4" />}
                           {uploadSource === 'github' ? 'Connect & Import' : 'Connect'}
