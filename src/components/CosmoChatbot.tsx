@@ -204,15 +204,15 @@ const CosmoChatbot: React.FC<CosmoChatbotProps> = ({ onRefreshConversions }) => 
 
       {/* Chat Window */}
       {isOpen && (
-        <Card className="absolute bottom-20 right-0 w-96 h-[500px] shadow-xl border border-gray-200">
-          <CardHeader className="pb-3 bg-gray-50 border-b border-gray-200">
+        <Card className="absolute bottom-20 right-0 w-96 h-[500px] shadow-xl border border-gray-200 bg-white">
+          <CardHeader className="pb-3 bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Bot className="h-5 w-5 text-blue-600" />
                 <CardTitle className="text-lg font-semibold text-gray-800">
                   Cosmo Agents
                 </CardTitle>
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700">
                   AI Assistant
                 </Badge>
               </div>
@@ -243,144 +243,140 @@ const CosmoChatbot: React.FC<CosmoChatbotProps> = ({ onRefreshConversions }) => 
             </p>
           </CardHeader>
 
-          <CardContent className="p-0 h-full flex flex-col">
+          <div className="flex flex-col h-full">
             {/* Messages Area */}
-            <ScrollArea className="flex-1 p-4">
+            <div className="flex-1 overflow-hidden">
               {!isChatStarted ? (
-                <div className="text-center text-gray-600 mt-8">
-                  <Bot className="h-12 w-12 mx-auto mb-4 text-blue-500" />
-                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Cosmo Agents AI Assistant</h3>
-                  <p className="text-sm text-gray-600 mb-6 leading-relaxed">
-                    I specialize in database technologies and development tools. I can help you with:
-                  </p>
+                <div className="p-6 text-center">
+                  <div className="mb-6">
+                    <Bot className="h-16 w-16 mx-auto text-blue-500 mb-4" />
+                    <h3 className="text-xl font-bold text-gray-800 mb-2">Cosmo Agents AI</h3>
+                    <p className="text-sm text-gray-600 mb-6">
+                      Your expert assistant for database technologies and development tools
+                    </p>
+                  </div>
                   
-                  <div className="space-y-2 mb-6 text-left max-w-xs mx-auto">
-                    <div className="flex items-center gap-2 text-sm text-gray-700">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      Oracle Database & PL/SQL
+                  <div className="grid grid-cols-1 gap-3 mb-6 max-w-xs mx-auto">
+                    <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                      <span className="text-sm font-medium text-gray-700">Oracle Database & PL/SQL</span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-700">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      SQL Queries & Optimization
+                    <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-100">
+                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                      <span className="text-sm font-medium text-gray-700">SQL Queries & Optimization</span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-700">
-                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                      Sybase Database Migration
+                    <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg border border-purple-100">
+                      <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                      <span className="text-sm font-medium text-gray-700">Sybase Database Migration</span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-700">
-                      <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                      Supabase Backend Services
+                    <div className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg border border-orange-100">
+                      <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                      <span className="text-sm font-medium text-gray-700">Supabase Backend Services</span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-700">
-                      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                      Git & GitHub Workflows
+                    <div className="flex items-center gap-3 p-3 bg-red-50 rounded-lg border border-red-100">
+                      <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                      <span className="text-sm font-medium text-gray-700">Git & GitHub Workflows</span>
                     </div>
                   </div>
 
                   <Button
                     onClick={startNewChat}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md shadow-sm"
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-lg shadow-md font-medium"
                   >
                     Start Conversation
                   </Button>
                 </div>
-              ) : messages.length === 0 ? (
-                <div className="text-center text-gray-500 mt-8">
-                  <Bot className="h-10 w-10 mx-auto mb-3 text-blue-500" />
-                  <p className="text-sm">Hello! I'm ready to help you with database and development questions.</p>
-                  <div className="mt-4 flex flex-wrap gap-2 justify-center">
-                    <Badge variant="outline" className="text-xs">
-                      Oracle & PL/SQL
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      SQL Queries
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      Sybase Database
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      Supabase
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      Git & GitHub
-                    </Badge>
-                  </div>
-                </div>
               ) : (
-                <div className="space-y-3">
-                  {messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div
-                        className={`max-w-[80%] rounded-lg px-3 py-2 ${
-                          message.role === 'user'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}
-                      >
-                        <div className="flex items-start gap-2">
-                          {message.role === 'assistant' && (
-                            <Bot className="h-4 w-4 mt-0.5 text-blue-600 flex-shrink-0" />
-                          )}
-                          <div className="flex-1">
-                            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                            <p className="text-xs opacity-70 mt-1">
-                              {message.timestamp.toLocaleTimeString()}
-                            </p>
-                          </div>
-                          {message.role === 'user' && (
-                            <User className="h-4 w-4 mt-0.5 text-white flex-shrink-0" />
-                          )}
-                        </div>
+                <ScrollArea className="h-full p-4">
+                  {messages.length === 0 ? (
+                    <div className="text-center text-gray-500 mt-8">
+                      <Bot className="h-12 w-12 mx-auto mb-3 text-blue-500" />
+                      <p className="text-sm mb-4">Hello! I'm ready to help you with database and development questions.</p>
+                      <div className="flex flex-wrap gap-2 justify-center">
+                        <Badge variant="outline" className="text-xs">Oracle & PL/SQL</Badge>
+                        <Badge variant="outline" className="text-xs">SQL Queries</Badge>
+                        <Badge variant="outline" className="text-xs">Sybase Database</Badge>
+                        <Badge variant="outline" className="text-xs">Supabase</Badge>
+                        <Badge variant="outline" className="text-xs">Git & GitHub</Badge>
                       </div>
                     </div>
-                  ))}
-                  {isLoading && (
-                    <div className="flex justify-start">
-                      <div className="bg-gray-100 rounded-lg px-3 py-2">
-                        <div className="flex items-center gap-2">
-                          <Bot className="h-4 w-4 text-blue-600" />
-                          <div className="flex space-x-1">
-                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  ) : (
+                    <div className="space-y-3">
+                      {messages.map((message) => (
+                        <div
+                          key={message.id}
+                          className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                        >
+                          <div
+                            className={`max-w-[80%] rounded-lg px-3 py-2 ${
+                              message.role === 'user'
+                                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
+                                : 'bg-gray-100 text-gray-800 border border-gray-200'
+                            }`}
+                          >
+                            <div className="flex items-start gap-2">
+                              {message.role === 'assistant' && (
+                                <Bot className="h-4 w-4 mt-0.5 text-blue-600 flex-shrink-0" />
+                              )}
+                              <div className="flex-1">
+                                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                                <p className="text-xs opacity-70 mt-1">
+                                  {message.timestamp.toLocaleTimeString()}
+                                </p>
+                              </div>
+                              {message.role === 'user' && (
+                                <User className="h-4 w-4 mt-0.5 text-white flex-shrink-0" />
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      ))}
+                      {isLoading && (
+                        <div className="flex justify-start">
+                          <div className="bg-gray-100 rounded-lg px-3 py-2 border border-gray-200">
+                            <div className="flex items-center gap-2">
+                              <Bot className="h-4 w-4 text-blue-600" />
+                              <div className="flex space-x-1">
+                                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      <div ref={messagesEndRef} />
                     </div>
                   )}
-                  <div ref={messagesEndRef} />
-                </div>
+                </ScrollArea>
               )}
-            </ScrollArea>
+            </div>
 
-            {/* Input Area - Only show when chat is started */}
+            {/* Input Area - Integrated with the main content */}
             {isChatStarted && (
-              <div className="border-t border-gray-200 p-3 bg-gray-50">
-                <div className="flex gap-2">
+              <div className="border-t border-gray-200 bg-gradient-to-r from-gray-50 to-blue-50 p-4">
+                <div className="flex gap-3">
                   <Input
                     ref={inputRef}
                     value={inputMessage}
                     onChange={(e) => setInputMessage(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder="Ask about Oracle, SQL, Sybase, Supabase, Git, GitHub..."
-                    className="flex-1"
+                    className="flex-1 border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white"
                     disabled={isLoading}
                   />
                   <Button
                     onClick={sendMessage}
                     disabled={!inputMessage.trim() || isLoading}
                     size="sm"
-                    className="bg-blue-600 hover:bg-blue-700"
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 shadow-md"
                   >
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
             )}
-          </CardContent>
+          </div>
         </Card>
       )}
     </div>
