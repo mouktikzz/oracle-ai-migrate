@@ -12,6 +12,7 @@ import History from "./pages/History";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import ReportPage from "./pages/ReportPage";
+import CosmoChatbot from "./components/CosmoChatbot";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,8 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          {/* Cosmo Agents Chatbot - Available on all screens */}
+          <CosmoChatbot />
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>
