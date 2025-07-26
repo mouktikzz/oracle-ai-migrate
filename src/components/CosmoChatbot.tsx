@@ -219,7 +219,7 @@ const CosmoChatbot: React.FC<CosmoChatbotProps> = ({ onRefreshConversions }) => 
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="absolute bottom-24 right-0 w-96 h-[600px] bg-white rounded-2xl shadow-2xl border-2 border-blue-200 overflow-hidden">
+        <div className="absolute bottom-28 right-0 w-96 h-[600px] bg-white rounded-2xl shadow-2xl border-2 border-blue-200 overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white">
             <div className="flex items-center gap-3">
@@ -232,20 +232,14 @@ const CosmoChatbot: React.FC<CosmoChatbotProps> = ({ onRefreshConversions }) => 
                 <p className="text-sm text-blue-100">AI Database Expert</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
-                <Star className="h-3 w-3 mr-1" />
-                Pro
-              </Badge>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={closeChat}
-                className="h-8 w-8 p-0 text-white hover:bg-white/20"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={closeChat}
+              className="h-8 w-8 p-0 text-white hover:bg-white/20"
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
 
           {/* Action Bar */}
