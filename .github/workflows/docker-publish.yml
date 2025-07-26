@@ -31,4 +31,7 @@ jobs:
           build-args: |
             VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}
             VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}
-            VITE_GEMINI_API_KEY=${{ secrets.VITE_GEMINI_API_KEY }} 
+            VITE_GEMINI_API_KEY=${{ secrets.VITE_GEMINI_API_KEY }}
+            VITE_API_KEY=${{ secrets.VITE_API_KEY }}
+            VITE_OPENROUTER_API_KEY=${{ secrets.VITE_OPENROUTER_API_KEY }} 
+            OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }}

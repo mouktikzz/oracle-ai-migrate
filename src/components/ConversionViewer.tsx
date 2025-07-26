@@ -309,6 +309,32 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
                             <Edit className="h-4 w-4 mr-1" />
                             Edit
                           </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={async () => {
+                              setShowExplainDialog(true);
+                              setIsExplaining(true);
+                              setExplanation('');
+                              try {
+                                const res = await fetch('/.netlify/functions/ai-explain', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ code: file.convertedContent, language: 'oracle sql' }),
+                                });
+                                const data = await res.json();
+                                setExplanation(data.explanation || 'No explanation returned.');
+                              } catch (err) {
+                                setExplanation('Failed to get explanation.');
+                              } finally {
+                                setIsExplaining(false);
+                              }
+                            }}
+                            className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0 shadow-md hover:from-blue-600 hover:to-cyan-700 transition-all duration-200 flex items-center gap-2"
+                          >
+                            <Sparkles className="h-4 w-4 mr-1 text-yellow-200" />
+                            AI Code Analyzer
+                          </Button>
                         </div>
                       )}
                     </>
@@ -697,7 +723,7 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
                   try {
                     // Determine fileType for API
                     let fileType = file.migration_id ? 'migration_files' : 'unreviewed_files';
-                    const res = await fetch('/api/ai-explain', {
+                    const res = await fetch('/.netlify/functions/ai-explain', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
@@ -728,11 +754,11 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
       </Tabs>
 
       <Dialog open={showRewriteDialog} onOpenChange={setShowRewriteDialog}>
-        <DialogContent>
+        <DialogContent aria-describedby="rewrite-instruction">
           <DialogHeader>
             <DialogTitle>Rewrite with AI</DialogTitle>
           </DialogHeader>
-          <div className="space-y-2">
+          <div id="rewrite-instruction" className="space-y-2">
             <label className="block text-sm font-medium">Instruction for AI:</label>
             <Input
               value={rewritePrompt}
@@ -750,7 +776,7 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
                 try {
                   // Only send the selected code to the AI
                   const selectedText = editedContent.slice(selection.start, selection.end);
-                  const res = await fetch('/api/ai-rewrite', {
+                  const res = await fetch('/.netlify/functions/ai-rewrite', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -795,11 +821,11 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
       </Dialog>
 
       <Dialog open={showExplainDialog} onOpenChange={setShowExplainDialog}>
-        <DialogContent>
+        <DialogContent aria-describedby="ai-explanation">
           <DialogHeader>
             <DialogTitle>AI Code Analyzer</DialogTitle>
           </DialogHeader>
-          <div className="space-y-2">
+          <div id="ai-explanation" className="space-y-2">
             {isExplaining ? (
               <div className="text-center py-4">Analyzing code with AI...</div>
             ) : (

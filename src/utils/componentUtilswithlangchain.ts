@@ -9,7 +9,7 @@ import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { PromptTemplate } from "@langchain/core/prompts";
 import { StructuredOutputParser } from "@langchain/core/output_parsers";
 import { z } from "zod";
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '../integrations/supabase/client';
 import { isCacheEnabled } from '@/utils/conversionUtils';
 
 const _API_KEY = import.meta.env.VITE_API_KEY;
@@ -385,8 +385,8 @@ const generateBalancedPerformanceMetrics = (
         // Add these fields for dashboard and viewer
         originalLines: originalComplexity.totalLines,
         convertedLines: convertedComplexity.totalLines,
-        originalLoops: originalComplexity.complexityScore ? (originalCode.match(/\b(LOOP|WHILE|FOR)\b/g) || []).length : 0,
-        convertedLoops: convertedComplexity.complexityScore ? (convertedCode.match(/\b(LOOP|WHILE|FOR)\b/g) || []).length : 0
+        originalLoops: originalComplexity.complexityScore && originalCode ? (originalCode.match(/\b(LOOP|WHILE|FOR)\b/g) || []).length : 0,
+        convertedLoops: convertedComplexity.complexityScore && convertedCode ? (convertedCode.match(/\b(LOOP|WHILE|FOR)\b/g) || []).length : 0
     };
 };
 

@@ -258,7 +258,8 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ report, onBack }) => {
       complexityAssessment,
       optimizationLevel,
       expansionRatio,
-      convertedCode
+      convertedCode,
+      result.originalFile.content
     );
   };
 

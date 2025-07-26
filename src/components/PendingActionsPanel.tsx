@@ -546,11 +546,11 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
           </Tabs>
         {/* Unreviewed Files Section (no inner scroll) */}
           <Dialog open={showClearUnreviewedDialog} onOpenChange={setShowClearUnreviewedDialog}>
-            <DialogContent>
+            <DialogContent aria-describedby="clear-unreviewed-description">
               <DialogHeader>
                 <DialogTitle>Clear All Unreviewed Files?</DialogTitle>
               </DialogHeader>
-              <div className="py-2">Are you sure you want to clear all unreviewed files? This action cannot be undone.</div>
+              <div id="clear-unreviewed-description" className="py-2">Are you sure you want to clear all unreviewed files? This action cannot be undone.</div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setShowClearUnreviewedDialog(false)}>Cancel</Button>
                 <Button variant="destructive" onClick={handleClearAllUnreviewed}>Clear All</Button>
@@ -559,11 +559,11 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
           </Dialog>
         {/* Reviewed Files Section (no inner scroll) */}
           <Dialog open={showClearReviewedDialog} onOpenChange={setShowClearReviewedDialog}>
-            <DialogContent>
+            <DialogContent aria-describedby="clear-reviewed-description">
               <DialogHeader>
                 <DialogTitle>Clear All Reviewed Files?</DialogTitle>
               </DialogHeader>
-              <div className="py-2">Are you sure you want to clear all reviewed files? This action cannot be undone.</div>
+              <div id="clear-reviewed-description" className="py-2">Are you sure you want to clear all reviewed files? This action cannot be undone.</div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setShowClearReviewedDialog(false)}>Cancel</Button>
                 <Button variant="destructive" onClick={handleClearAllReviewed}>Clear All</Button>

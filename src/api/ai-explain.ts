@@ -2,10 +2,14 @@ import type { ViteDevServer } from 'vite';
 import type { IncomingMessage, ServerResponse } from 'http';
 import { supabase } from '@/integrations/supabase/client';
 
+// This file is no longer used since the frontend calls Netlify functions directly
+// Keeping for reference only
 const OPENROUTER_API_KEY = process.env.VITE_OPENROUTER_API_KEY;
-if (!OPENROUTER_API_KEY) throw new Error('Missing VITE_OPENROUTER_API_KEY in environment');
 
 async function callOpenRouter(prompt: string, model: string) {
+  if (!OPENROUTER_API_KEY) {
+    throw new Error('VITE_OPENROUTER_API_KEY not configured for local development. Please add it to your .env file or use the production Netlify functions.');
+  }
   const apiRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {

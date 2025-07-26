@@ -1,10 +1,10 @@
 import type { ViteDevServer } from 'vite';
 import type { IncomingMessage, ServerResponse } from 'http';
 
-// This file is for Vite dev server middleware usage. For production, use a serverless function or Express route.
+// This file is no longer used since the frontend calls Netlify functions directly
+// Keeping for reference only
 
 const OPENROUTER_API_KEY = process.env.VITE_OPENROUTER_API_KEY;
-if (!OPENROUTER_API_KEY) throw new Error('Missing VITE_OPENROUTER_API_KEY in environment');
 
 export async function aiRewriteHandler(req: IncomingMessage, res: ServerResponse) {
   if (req.method !== 'POST') {
@@ -25,6 +25,12 @@ export async function aiRewriteHandler(req: IncomingMessage, res: ServerResponse
         res.statusCode = 400;
         res.setHeader('Content-Type', 'application/json');
         res.end(JSON.stringify({ error: 'Missing code or prompt' }));
+        return;
+      }
+      if (!OPENROUTER_API_KEY) {
+        res.statusCode = 500;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({ error: 'VITE_OPENROUTER_API_KEY not configured for local development. Please add it to your .env file or use the production Netlify functions.' }));
         return;
       }
       const apiRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {

@@ -60,7 +60,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
   const handleRewriteWithAI = async () => {
     setIsRewriting(true);
     try {
-      const response = await fetch('/api/ai-rewrite', {
+      const response = await fetch('/.netlify/functions/ai-rewrite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code, prompt: 'Rewrite and optimize this code', language }),

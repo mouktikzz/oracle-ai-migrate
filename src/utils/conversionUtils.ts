@@ -2,7 +2,7 @@ import { ConversionResult, CodeFile, ConversionIssue, DataTypeMapping } from '@/
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { v4 as uuidv4 } from 'uuid';
 import { getCachedConversion, setCachedConversion } from '@/utils/conversionUtils';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '../integrations/supabase/client';
 
 let cacheEnabled = true;
 
