@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { UploadCloud, File, Trash2, Plus, Folder, Info, Download, ExternalLink } from 'lucide-react';
+import { UploadCloud, File, Trash2, Plus, Folder, Info, Download, ExternalLink, Github } from 'lucide-react';
 import { CodeFile } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { v4 as uuidv4 } from 'uuid';
 
 interface CodeUploaderProps {
@@ -106,13 +107,15 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
 
   // GitHub Integration
   const handleGitHubAuth = () => {
-    setIsLoadingCloud(true);
-    
     // Check if we have a stored token
     const storedToken = localStorage.getItem('github_token');
     if (storedToken) {
+      // Immediately show repositories without loading state
       openGitHubFilePicker(storedToken);
     } else {
+      // Show loading state only when opening OAuth
+      setIsLoadingCloud(true);
+      
       // Open GitHub OAuth popup
       const authUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(GITHUB_REDIRECT_URI)}&scope=repo&state=github`;
       
@@ -131,6 +134,11 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
           openGitHubFilePicker(event.data.token);
           popup?.close();
           window.removeEventListener('message', handleMessage);
+          setIsLoadingCloud(false);
+        } else if (event.data.type === 'github-auth-error' || event.data.type === 'github-auth-cancelled') {
+          setIsLoadingCloud(false);
+          popup?.close();
+          window.removeEventListener('message', handleMessage);
         }
       };
 
@@ -140,6 +148,12 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
 
   const openGitHubFilePicker = async (token: string) => {
     try {
+      // Show immediate feedback
+      toast({
+        title: 'GitHub Connected',
+        description: 'Fetching your repositories...',
+      });
+
       // Fetch user's repositories
       const response = await fetch('https://api.github.com/user/repos?sort=updated&per_page=50', {
         headers: {
@@ -154,10 +168,13 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
 
       const repos = await response.json();
       
-      // For now, we'll use the first repository as an example
-      // In a full implementation, you'd show a repository picker
       if (repos.length > 0) {
+        // Show repository selection dialog or use the first repository
         const repo = repos[0];
+        toast({
+          title: 'Repository Found',
+          description: `Using repository: ${repo.name}`,
+        });
         await fetchGitHubFiles(token, repo.owner.login, repo.name, 'main');
       } else {
         toast({
@@ -170,11 +187,11 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
       console.error('GitHub error:', error);
       toast({
         title: 'GitHub Error',
-        description: 'Failed to access GitHub repositories.',
+        description: 'Failed to access GitHub repositories. Please try logging in again.',
         variant: 'destructive'
       });
-    } finally {
-      setIsLoadingCloud(false);
+      // Clear invalid token
+      localStorage.removeItem('github_token');
     }
   };
 
@@ -665,49 +682,72 @@ END`;
                 </div>
 
                 {/* Cloud Service Buttons */}
-                <div className="flex justify-center items-center gap-4 mb-4">
-                  {/* GitHub Button */}
-                  <Button
-                    size="icon"
-                    variant="outline"
-                    className="w-12 h-12 rounded-full bg-white border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 transition-all duration-300"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleGitHubAuth();
-                    }}
-                    disabled={isLoadingCloud}
-                  >
-                    <ExternalLink className="h-5 w-5 text-gray-600" />
-                  </Button>
+                <TooltipProvider>
+                  <div className="flex justify-center items-center gap-4 mb-4">
+                    {/* GitHub Button */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="w-12 h-12 rounded-full bg-white border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 transition-all duration-300"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleGitHubAuth();
+                          }}
+                          disabled={isLoadingCloud}
+                        >
+                          <Github className="h-5 w-5 text-gray-600" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>GitHub</p>
+                      </TooltipContent>
+                    </Tooltip>
 
-                  {/* Dropbox Button */}
-                  <Button
-                    size="icon"
-                    variant="outline"
-                    className="w-12 h-12 rounded-full bg-white border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 transition-all duration-300"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDropboxAuth();
-                    }}
-                    disabled={isLoadingCloud}
-                  >
-                    <Folder className="h-5 w-5 text-gray-600" />
-                  </Button>
+                    {/* Dropbox Button */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="w-12 h-12 rounded-full bg-white border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 transition-all duration-300"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDropboxAuth();
+                          }}
+                          disabled={isLoadingCloud}
+                        >
+                          <Folder className="h-5 w-5 text-gray-600" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Dropbox</p>
+                      </TooltipContent>
+                    </Tooltip>
 
-                  {/* Google Drive Button */}
-                  <Button
-                    size="icon"
-                    variant="outline"
-                    className="w-12 h-12 rounded-full bg-white border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 transition-all duration-300"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleGoogleDriveAuth();
-                    }}
-                    disabled={isLoadingCloud}
-                  >
-                    <ExternalLink className="h-5 w-5 text-gray-600" />
-                  </Button>
-                </div>
+                    {/* Google Drive Button */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="w-12 h-12 rounded-full bg-white border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 transition-all duration-300"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleGoogleDriveAuth();
+                          }}
+                          disabled={isLoadingCloud}
+                        >
+                          <ExternalLink className="h-5 w-5 text-gray-600" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Google Drive</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                </TooltipProvider>
 
                 {/* Loading State */}
                 {isLoadingCloud && (
