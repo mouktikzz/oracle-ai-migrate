@@ -222,7 +222,7 @@ const CosmoChatbot: React.FC<CosmoChatbotProps> = ({ onRefreshConversions }) => 
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="absolute bottom-24 right-0 w-96 h-[600px] bg-white rounded-2xl shadow-2xl border-2 border-blue-200 overflow-hidden">
+        <div className="absolute bottom-16 right-0 w-96 h-[600px] bg-white rounded-2xl shadow-2xl border-2 border-blue-200 overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white">
             <div className="flex items-center gap-3">
