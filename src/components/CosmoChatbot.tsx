@@ -71,10 +71,10 @@ const CosmoChatbot: React.FC<CosmoChatbotProps> = ({ onRefreshConversions }) => 
 
   // Focus input when chat is opened
   useEffect(() => {
-    if (isOpen && inputRef.current && isChatStarted) {
+    if (isOpen && inputRef.current) {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [isOpen, isChatStarted]);
+  }, [isOpen]);
 
   const sendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
@@ -232,20 +232,14 @@ const CosmoChatbot: React.FC<CosmoChatbotProps> = ({ onRefreshConversions }) => 
                 <p className="text-xs text-blue-100">AI Database Expert</p>
               </div>
             </div>
-            <div className="flex items-center gap-1">
-              <Badge variant="secondary" className="text-xs bg-white/20 text-white border-white/30">
-                <Star className="h-2 w-2 mr-1" />
-                Pro
-              </Badge>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={closeChat}
-                className="h-6 w-6 p-0 text-white hover:bg-white/20"
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={closeChat}
+              className="h-6 w-6 p-0 text-white hover:bg-white/20"
+            >
+              <X className="h-3 w-3" />
+            </Button>
           </div>
 
           {/* Content Area */}
@@ -399,31 +393,31 @@ const CosmoChatbot: React.FC<CosmoChatbotProps> = ({ onRefreshConversions }) => 
                     </div>
                   )}
                 </div>
-
-                {/* Input Area */}
-                <div className="p-2 border-t border-gray-200 bg-gradient-to-r from-gray-50 to-blue-50/30">
-                  <div className="flex gap-1.5">
-                    <Input
-                      ref={inputRef}
-                      value={inputMessage}
-                      onChange={(e) => setInputMessage(e.target.value)}
-                      onKeyPress={handleKeyPress}
-                      placeholder="Ask about Oracle, SQL, Sybase, Supabase, Git, GitHub..."
-                      className="flex-1 h-7 text-xs border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                      disabled={isLoading}
-                    />
-                    <Button
-                      onClick={sendMessage}
-                      disabled={!inputMessage.trim() || isLoading}
-                      size="sm"
-                      className="bg-gradient-to-r from-blue-600 to-amber-600 hover:from-blue-700 hover:to-amber-700 text-white h-7 px-2 shadow-md"
-                    >
-                      <Send className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
               </>
             )}
+
+            {/* Input Area - ALWAYS VISIBLE */}
+            <div className="p-2 border-t border-gray-200 bg-gradient-to-r from-gray-50 to-blue-50/30">
+              <div className="flex gap-1.5">
+                <Input
+                  ref={inputRef}
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Type your message here..."
+                  className="flex-1 h-7 text-xs border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  disabled={isLoading}
+                />
+                <Button
+                  onClick={sendMessage}
+                  disabled={!inputMessage.trim() || isLoading}
+                  size="sm"
+                  className="bg-gradient-to-r from-blue-600 to-amber-600 hover:from-blue-700 hover:to-amber-700 text-white h-7 px-2 shadow-md"
+                >
+                  <Send className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       )}
