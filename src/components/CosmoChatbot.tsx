@@ -11,8 +11,7 @@ import {
   RefreshCw, 
   Bot, 
   User,
-  Sparkles,
-  Zap
+  Sparkles
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -181,38 +180,39 @@ const CosmoChatbot: React.FC<CosmoChatbotProps> = ({ onRefreshConversions }) => 
     });
   };
 
+  const closeChat = () => {
+    setIsOpen(false);
+  };
+
   return (
     <div className="fixed bottom-4 right-4 z-50">
       {/* Chat Toggle Button */}
       <Button
         onClick={() => setIsOpen(!isOpen)}
         size="lg"
-        className="rounded-full w-16 h-16 shadow-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-700 hover:via-purple-700 hover:to-pink-700 text-white border-2 border-white/20 transition-all duration-300 hover:scale-110 hover:shadow-purple-500/25"
+        className="rounded-full w-16 h-16 shadow-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-2 border-white/20 transition-all duration-300 hover:scale-110"
       >
         {isOpen ? (
           <X className="h-7 w-7" />
         ) : (
           <div className="relative">
             <MessageCircle className="h-7 w-7" />
-            <Sparkles className="h-3 w-3 absolute -top-1 -right-1 text-yellow-300 animate-pulse" />
+            <Sparkles className="h-3 w-3 absolute -top-1 -right-1 text-yellow-300" />
           </div>
         )}
       </Button>
 
       {/* Chat Window */}
       {isOpen && (
-        <Card className="absolute bottom-20 right-0 w-96 h-[500px] shadow-2xl border-2 border-purple-200 bg-gradient-to-b from-white to-purple-50/30">
-          <CardHeader className="pb-3 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white border-b border-purple-300">
+        <Card className="absolute bottom-20 right-0 w-96 h-[500px] shadow-xl border border-gray-200">
+          <CardHeader className="pb-3 bg-gray-50 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="relative">
-                  <Bot className="h-6 w-6 text-white" />
-                  <Zap className="h-2 w-2 absolute -top-1 -right-1 text-yellow-300 animate-pulse" />
-                </div>
-                <CardTitle className="text-lg font-bold text-white">
+                <Bot className="h-5 w-5 text-blue-600" />
+                <CardTitle className="text-lg font-semibold text-gray-800">
                   Cosmo Agents
                 </CardTitle>
-                <Badge variant="secondary" className="text-xs bg-white/20 text-white border-white/30">
+                <Badge variant="secondary" className="text-xs">
                   AI Assistant
                 </Badge>
               </div>
@@ -222,7 +222,7 @@ const CosmoChatbot: React.FC<CosmoChatbotProps> = ({ onRefreshConversions }) => 
                   variant="ghost"
                   onClick={handleRefreshConversions}
                   disabled={isRefreshing}
-                  className="h-8 w-8 p-0 text-white hover:bg-white/20"
+                  className="h-8 w-8 p-0 text-gray-600 hover:text-blue-600"
                   title="Refresh Conversions"
                 >
                   <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -230,16 +230,16 @@ const CosmoChatbot: React.FC<CosmoChatbotProps> = ({ onRefreshConversions }) => 
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={clearHistory}
-                  className="h-8 w-8 p-0 text-white hover:bg-white/20"
-                  title="Clear History"
+                  onClick={closeChat}
+                  className="h-8 w-8 p-0 text-gray-600 hover:text-red-600"
+                  title="Close Chat"
                 >
                   <X className="h-4 w-4" />
                 </Button>
               </div>
             </div>
-            <p className="text-xs text-purple-100 mt-1">
-              Ask me about Oracle, SQL, Sybase, Supabase, Git, GitHub, or this website
+            <p className="text-xs text-gray-600 mt-1">
+              Expert assistance for Oracle, SQL, Sybase, Supabase, Git, GitHub, and database technologies
             </p>
           </CardHeader>
 
@@ -248,86 +248,81 @@ const CosmoChatbot: React.FC<CosmoChatbotProps> = ({ onRefreshConversions }) => 
             <ScrollArea className="flex-1 p-4">
               {!isChatStarted ? (
                 <div className="text-center text-gray-600 mt-8">
-                  <div className="relative mb-4">
-                    <Bot className="h-16 w-16 mx-auto text-purple-400" />
-                    <Sparkles className="h-4 w-4 absolute top-0 right-1/4 text-yellow-400 animate-pulse" />
-                    <Zap className="h-3 w-3 absolute bottom-2 left-1/4 text-blue-400 animate-pulse" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2">Welcome to Cosmo Agents!</h3>
-                  <p className="text-sm text-gray-600 mb-6">
-                    I'm your AI assistant specialized in database technologies and development tools.
+                  <Bot className="h-12 w-12 mx-auto mb-4 text-blue-500" />
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Cosmo Agents AI Assistant</h3>
+                  <p className="text-sm text-gray-600 mb-6 leading-relaxed">
+                    I specialize in database technologies and development tools. I can help you with:
                   </p>
                   
-                  <div className="space-y-3 mb-6">
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                      Oracle & PL/SQL
+                  <div className="space-y-2 mb-6 text-left max-w-xs mx-auto">
+                    <div className="flex items-center gap-2 text-sm text-gray-700">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      Oracle Database & PL/SQL
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                      SQL Queries
+                    <div className="flex items-center gap-2 text-sm text-gray-700">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      SQL Queries & Optimization
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
-                      Sybase Database
+                    <div className="flex items-center gap-2 text-sm text-gray-700">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                      Sybase Database Migration
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <div className="w-2 h-2 bg-pink-400 rounded-full"></div>
-                      Supabase
+                    <div className="flex items-center gap-2 text-sm text-gray-700">
+                      <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                      Supabase Backend Services
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <div className="w-2 h-2 bg-indigo-400 rounded-full"></div>
-                      Git & GitHub
+                    <div className="flex items-center gap-2 text-sm text-gray-700">
+                      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                      Git & GitHub Workflows
                     </div>
                   </div>
 
                   <Button
                     onClick={startNewChat}
-                    className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-2 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md shadow-sm"
                   >
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    Start New Chat
+                    Start Conversation
                   </Button>
                 </div>
               ) : messages.length === 0 ? (
                 <div className="text-center text-gray-500 mt-8">
-                  <Bot className="h-12 w-12 mx-auto mb-3 text-purple-400" />
-                  <p className="text-sm">Hi! I'm Cosmo Agents. How can I help you today?</p>
+                  <Bot className="h-10 w-10 mx-auto mb-3 text-blue-500" />
+                  <p className="text-sm">Hello! I'm ready to help you with database and development questions.</p>
                   <div className="mt-4 flex flex-wrap gap-2 justify-center">
-                    <Badge variant="outline" className="text-xs border-purple-200 text-purple-600">
+                    <Badge variant="outline" className="text-xs">
                       Oracle & PL/SQL
                     </Badge>
-                    <Badge variant="outline" className="text-xs border-blue-200 text-blue-600">
+                    <Badge variant="outline" className="text-xs">
                       SQL Queries
                     </Badge>
-                    <Badge variant="outline" className="text-xs border-green-200 text-green-600">
+                    <Badge variant="outline" className="text-xs">
                       Sybase Database
                     </Badge>
-                    <Badge variant="outline" className="text-xs border-pink-200 text-pink-600">
+                    <Badge variant="outline" className="text-xs">
                       Supabase
                     </Badge>
-                    <Badge variant="outline" className="text-xs border-indigo-200 text-indigo-600">
+                    <Badge variant="outline" className="text-xs">
                       Git & GitHub
                     </Badge>
                   </div>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {messages.map((message) => (
                     <div
                       key={message.id}
                       className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
-                        className={`max-w-[80%] rounded-2xl px-4 py-3 shadow-sm ${
+                        className={`max-w-[80%] rounded-lg px-3 py-2 ${
                           message.role === 'user'
-                            ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white'
-                            : 'bg-white border border-gray-200 text-gray-800'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-100 text-gray-800'
                         }`}
                       >
                         <div className="flex items-start gap-2">
                           {message.role === 'assistant' && (
-                            <Bot className="h-4 w-4 mt-0.5 text-purple-600 flex-shrink-0" />
+                            <Bot className="h-4 w-4 mt-0.5 text-blue-600 flex-shrink-0" />
                           )}
                           <div className="flex-1">
                             <p className="text-sm whitespace-pre-wrap">{message.content}</p>
@@ -344,13 +339,13 @@ const CosmoChatbot: React.FC<CosmoChatbotProps> = ({ onRefreshConversions }) => 
                   ))}
                   {isLoading && (
                     <div className="flex justify-start">
-                      <div className="bg-white border border-gray-200 rounded-2xl px-4 py-3">
+                      <div className="bg-gray-100 rounded-lg px-3 py-2">
                         <div className="flex items-center gap-2">
-                          <Bot className="h-4 w-4 text-purple-600" />
+                          <Bot className="h-4 w-4 text-blue-600" />
                           <div className="flex space-x-1">
-                            <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"></div>
-                            <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                            <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                           </div>
                         </div>
                       </div>
@@ -361,24 +356,24 @@ const CosmoChatbot: React.FC<CosmoChatbotProps> = ({ onRefreshConversions }) => 
               )}
             </ScrollArea>
 
-            {/* Input Area */}
+            {/* Input Area - Only show when chat is started */}
             {isChatStarted && (
-              <div className="border-t border-gray-200 p-3 bg-gradient-to-r from-gray-50 to-purple-50/30">
+              <div className="border-t border-gray-200 p-3 bg-gray-50">
                 <div className="flex gap-2">
                   <Input
                     ref={inputRef}
                     value={inputMessage}
                     onChange={(e) => setInputMessage(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    placeholder="Ask me anything about Oracle, SQL, Sybase, Supabase, Git, GitHub..."
-                    className="flex-1 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                    placeholder="Ask about Oracle, SQL, Sybase, Supabase, Git, GitHub..."
+                    className="flex-1"
                     disabled={isLoading}
                   />
                   <Button
                     onClick={sendMessage}
                     disabled={!inputMessage.trim() || isLoading}
                     size="sm"
-                    className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4"
+                    className="bg-blue-600 hover:bg-blue-700"
                   >
                     <Send className="h-4 w-4" />
                   </Button>
