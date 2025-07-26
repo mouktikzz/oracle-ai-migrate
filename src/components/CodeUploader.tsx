@@ -33,16 +33,15 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
   const [manualFileName, setManualFileName] = useState<string>('');
   const [templateType, setTemplateType] = useState<'table' | 'procedure' | 'trigger'>('table');
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [uploadSource, setUploadSource] = useState<'local' | 'github' | 'dropbox' | 'googledrive'>('local');
-  const [githubRepo, setGithubRepo] = useState<string>('');
-  const [githubBranch, setGithubBranch] = useState<string>('main');
-  const [isLoadingGitHub, setIsLoadingGitHub] = useState<boolean>(false);
+  const [isLoadingCloud, setIsLoadingCloud] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
   
-  // GitHub OAuth configuration
-  const GITHUB_CLIENT_ID = 'your_github_client_id'; // You'll need to set this
+  // Cloud service configurations
+  const GITHUB_CLIENT_ID = import.meta.env.VITE_GITHUB_CLIENT_ID || 'your_github_client_id';
   const GITHUB_REDIRECT_URI = `${window.location.origin}/github-callback`;
+  const DROPBOX_CLIENT_ID = import.meta.env.VITE_DROPBOX_CLIENT_ID || 'your_dropbox_client_id';
+  const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'your_google_client_id';
   
   const processFiles = useCallback((uploadedFiles: FileList | null) => {
     if (!uploadedFiles) return;
@@ -105,24 +104,17 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
     });
   }, [toast]);
 
-  // GitHub Integration Functions
+  // GitHub Integration
   const handleGitHubAuth = () => {
-    if (!githubRepo.trim()) {
-      toast({
-        title: 'Repository Required',
-        description: 'Please enter a GitHub repository URL.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
+    setIsLoadingCloud(true);
+    
     // Check if we have a stored token
     const storedToken = localStorage.getItem('github_token');
     if (storedToken) {
-      fetchGitHubFiles(storedToken);
+      openGitHubFilePicker(storedToken);
     } else {
       // Open GitHub OAuth popup
-      const authUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(GITHUB_REDIRECT_URI)}&scope=repo&state=${encodeURIComponent(githubRepo)}`;
+      const authUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(GITHUB_REDIRECT_URI)}&scope=repo&state=github`;
       
       const popup = window.open(
         authUrl,
@@ -136,7 +128,7 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
         
         if (event.data.type === 'github-auth-success') {
           localStorage.setItem('github_token', event.data.token);
-          fetchGitHubFiles(event.data.token);
+          openGitHubFilePicker(event.data.token);
           popup?.close();
           window.removeEventListener('message', handleMessage);
         }
@@ -146,20 +138,50 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
     }
   };
 
-  const fetchGitHubFiles = async (token: string) => {
-    setIsLoadingGitHub(true);
-    
+  const openGitHubFilePicker = async (token: string) => {
     try {
-      // Parse repository URL
-      const repoMatch = githubRepo.match(/github\.com\/([^\/]+)\/([^\/]+)/);
-      if (!repoMatch) {
-        throw new Error('Invalid GitHub repository URL');
+      // Fetch user's repositories
+      const response = await fetch('https://api.github.com/user/repos?sort=updated&per_page=50', {
+        headers: {
+          'Authorization': `token ${token}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch repositories');
       }
+
+      const repos = await response.json();
       
-      const [, owner, repo] = repoMatch;
-      
+      // For now, we'll use the first repository as an example
+      // In a full implementation, you'd show a repository picker
+      if (repos.length > 0) {
+        const repo = repos[0];
+        await fetchGitHubFiles(token, repo.owner.login, repo.name, 'main');
+      } else {
+        toast({
+          title: 'No Repositories',
+          description: 'No repositories found in your GitHub account.',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      console.error('GitHub error:', error);
+      toast({
+        title: 'GitHub Error',
+        description: 'Failed to access GitHub repositories.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoadingCloud(false);
+    }
+  };
+
+  const fetchGitHubFiles = async (token: string, owner: string, repo: string, branch: string = 'main') => {
+    try {
       // Fetch repository contents
-      const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/trees/${githubBranch}?recursive=1`, {
+      const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`, {
         headers: {
           'Authorization': `token ${token}`,
           'Accept': 'application/vnd.github.v3+json'
@@ -235,40 +257,63 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
         description: error instanceof Error ? error.message : 'Failed to import files from GitHub.',
         variant: 'destructive'
       });
-    } finally {
-      setIsLoadingGitHub(false);
     }
   };
 
-  const handleSourceChange = (source: 'local' | 'github' | 'dropbox' | 'googledrive') => {
-    setUploadSource(source);
-  };
-
-  const handleUploadAction = () => {
-    switch (uploadSource) {
-      case 'local':
-        if (fileInputRef.current) {
-          fileInputRef.current.click();
-        }
-        break;
-      case 'github':
-        handleGitHubAuth();
-        break;
-      case 'dropbox':
-        toast({
-          title: 'Coming Soon',
-          description: 'Dropbox integration will be available soon!'
-        });
-        break;
-      case 'googledrive':
-        toast({
-          title: 'Coming Soon',
-          description: 'Google Drive integration will be available soon!'
-        });
-        break;
+  // Dropbox Integration
+  const handleDropboxAuth = () => {
+    setIsLoadingCloud(true);
+    
+    const storedToken = localStorage.getItem('dropbox_token');
+    if (storedToken) {
+      openDropboxFilePicker(storedToken);
+    } else {
+      // For demo purposes, we'll show a coming soon message
+      // In production, you'd implement Dropbox OAuth
+      toast({
+        title: 'Dropbox Integration',
+        description: 'Dropbox integration will be available soon!',
+      });
+      setIsLoadingCloud(false);
     }
   };
-  
+
+  const openDropboxFilePicker = async (token: string) => {
+    // Dropbox API implementation would go here
+    toast({
+      title: 'Dropbox Integration',
+      description: 'Dropbox file picker will be implemented soon!',
+    });
+    setIsLoadingCloud(false);
+  };
+
+  // Google Drive Integration
+  const handleGoogleDriveAuth = () => {
+    setIsLoadingCloud(true);
+    
+    const storedToken = localStorage.getItem('google_token');
+    if (storedToken) {
+      openGoogleDriveFilePicker(storedToken);
+    } else {
+      // For demo purposes, we'll show a coming soon message
+      // In production, you'd implement Google OAuth
+      toast({
+        title: 'Google Drive Integration',
+        description: 'Google Drive integration will be available soon!',
+      });
+      setIsLoadingCloud(false);
+    }
+  };
+
+  const openGoogleDriveFilePicker = async (token: string) => {
+    // Google Drive API implementation would go here
+    toast({
+      title: 'Google Drive Integration',
+      description: 'Google Drive file picker will be implemented soon!',
+    });
+    setIsLoadingCloud(false);
+  };
+   
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     processFiles(event.target.files);
     event.target.value = '';
@@ -317,25 +362,25 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
     }
     event.target.value = '';
   };
-  
+   
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
   };
-  
+   
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     if (!isDragging) setIsDragging(true);
   };
-  
+   
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
   };
-  
+   
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
@@ -367,9 +412,9 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
       processFiles(newDt.files);
     }
   };
-  
+   
   const handleDropAreaClick = () => {
-    if (uploadSource === 'local' && fileInputRef.current) {
+    if (fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
@@ -381,7 +426,7 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
       folderInputRef.current.click();
     }
   };
-  
+   
   const determineFileType = (fileName: string, content: string): 'table' | 'procedure' | 'trigger' | 'other' => {
     fileName = fileName.toLowerCase();
     content = content.toLowerCase();
@@ -416,7 +461,7 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
     
     return 'other';
   };
-  
+   
   const handleRemoveFile = (id: string) => {
     setFiles(prevFiles => prevFiles.filter(file => file.id !== id));
     
@@ -425,7 +470,7 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
       description: 'The file has been removed from the upload list.'
     });
   };
-  
+   
   const handleManualSubmit = () => {
     if (!manualContent.trim()) {
       toast({
@@ -463,7 +508,7 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
       description: `${manualFileName} has been added to the list.`
     });
   };
-  
+   
   const handleChangeFileType = (id: string, newType: 'table' | 'procedure' | 'trigger' | 'other') => {
     setFiles(prevFiles => 
       prevFiles.map(file => 
@@ -476,11 +521,11 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
       description: `The file type has been updated to ${newType}.`
     });
   };
-  
+   
   const getFilteredFiles = (type: 'table' | 'procedure' | 'trigger' | 'other') => {
     return files.filter(file => file.type === type);
   };
-  
+   
   const handleContinue = () => {
     if (files.length === 0) {
       toast({
@@ -493,7 +538,7 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
     
     onComplete(files);
   };
-  
+   
   const getCodeTemplate = (type: 'table' | 'procedure' | 'trigger') => {
     if (type === 'table') {
       return `CREATE TABLE customers (
@@ -536,7 +581,7 @@ BEGIN
 END`;
     }
   };
-  
+   
   const addTemplateCode = (type: 'table' | 'procedure' | 'trigger') => {
     const template = getCodeTemplate(type);
     const fileName = type === 'table' ? 'example_table.sql' : 
@@ -571,7 +616,7 @@ END`;
     { category: 'NULL Check', tsql: 'ISNULL(col, default)', plsql: 'NVL(col, default)', example: 'ISNULL(name, "Unknown") vs NVL(name, "Unknown")' },
     { category: 'Top Records', tsql: 'SELECT TOP n', plsql: 'WHERE ROWNUM <= n', example: 'SELECT TOP 10 vs WHERE ROWNUM <= 10' }
   ];
-  
+   
   return (
     <div className="w-full max-w-6xl mx-auto">
       <Card>
@@ -592,142 +637,114 @@ END`;
             </TabsList>
             
             <TabsContent value="upload" className="space-y-6">
-              {/* Source Selection */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-4">
-                  <Label className="text-sm font-medium">Upload Source:</Label>
-                  <Select value={uploadSource} onValueChange={handleSourceChange}>
-                    <SelectTrigger className="w-48">
-                      {uploadSource === 'local' && <UploadCloud className="h-4 w-4 mr-2" />}
-                                             {uploadSource === 'github' && <ExternalLink className="h-4 w-4 mr-2" />}
-                      {uploadSource === 'dropbox' && <Folder className="h-4 w-4 mr-2" />}
-                      {uploadSource === 'googledrive' && <ExternalLink className="h-4 w-4 mr-2" />}
-                      {uploadSource === 'local' && 'Local Computer'}
-                      {uploadSource === 'github' && 'GitHub Repository'}
-                      {uploadSource === 'dropbox' && 'Dropbox'}
-                      {uploadSource === 'googledrive' && 'Google Drive'}
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="local">
-                        <UploadCloud className="h-4 w-4 mr-2" />
-                        Local Computer
-                      </SelectItem>
-                                             <SelectItem value="github">
-                         <ExternalLink className="h-4 w-4 mr-2" />
-                         GitHub Repository
-                       </SelectItem>
-                      <SelectItem value="dropbox">
-                        <Folder className="h-4 w-4 mr-2" />
-                        Dropbox
-                      </SelectItem>
-                      <SelectItem value="googledrive">
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Google Drive
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* GitHub Configuration */}
-                {uploadSource === 'github' && (
-                  <div className="grid grid-cols-2 gap-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <div>
-                      <Label htmlFor="github-repo" className="text-sm font-medium">Repository URL</Label>
-                      <Input
-                        id="github-repo"
-                        value={githubRepo}
-                        onChange={(e) => setGithubRepo(e.target.value)}
-                        placeholder="https://github.com/username/repository"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="github-branch" className="text-sm font-medium">Branch</Label>
-                      <Input
-                        id="github-branch"
-                        value={githubBranch}
-                        onChange={(e) => setGithubBranch(e.target.value)}
-                        placeholder="main"
-                        className="mt-1"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Upload Area */}
+              {/* Modern Upload Interface */}
               <div 
-                className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
-                  ${isDragging ? 'border-primary bg-primary/10' : 'bg-muted/30'}`}
+                className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-300
+                  ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50/50'}`}
                 onDragEnter={handleDragEnter}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onClick={handleDropAreaClick}
               >
-                <div className="mb-4 flex justify-center">
-                  <UploadCloud className={`h-12 w-12 ${isDragging ? 'text-primary' : 'text-muted-foreground'}`} />
+                {/* Main Upload Button */}
+                <div className="mb-6">
+                  <Button 
+                    size="lg"
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-4 text-lg rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (fileInputRef.current) {
+                        fileInputRef.current.click();
+                      }
+                    }}
+                  >
+                    <UploadCloud className="h-6 w-6 mr-3" />
+                    SELECT FILES
+                  </Button>
                 </div>
-                <h3 className="mb-2 text-lg font-medium">
-                  {uploadSource === 'github' ? 'Import from GitHub' : 'Upload Files'}
-                </h3>
-                <p className="mb-4 text-sm text-muted-foreground">
-                  {uploadSource === 'github' 
-                    ? 'Connect to GitHub and import SQL files from your repository'
-                    : 'Drag and drop files or click to browse'
-                  }
-                </p>
-                <div className="flex gap-3 justify-center">
-                  {uploadSource === 'local' ? (
-                    <>
-                      <Label htmlFor="file-upload" className="cursor-pointer">
-                        <Button variant="secondary">Select Files</Button>
-                        <Input
-                          id="file-upload"
-                          type="file"
-                          multiple
-                          className="hidden"
-                          onChange={handleFileUpload}
-                          accept=".sql,.txt,.tab,.prc,.trg,.proc,.sp"
-                          ref={fileInputRef}
-                        />
-                      </Label>
-                      <Button 
-                        variant="outline"
-                        type="button"
-                        onClick={handleFolderSelect}
-                      >
-                        <Folder className="h-4 w-4 mr-2" />
-                        Browse Folder
-                      </Button>
-                    </>
-                  ) : (
-                    <Button 
-                      onClick={handleUploadAction}
-                      disabled={isLoadingGitHub}
-                      className="flex items-center gap-2"
-                    >
-                      {isLoadingGitHub ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                          Loading...
-                        </>
-                      ) : (
-                        <>
-                                                     {uploadSource === 'github' && <ExternalLink className="h-4 w-4" />}
-                          {uploadSource === 'dropbox' && <Folder className="h-4 w-4" />}
-                          {uploadSource === 'googledrive' && <ExternalLink className="h-4 w-4" />}
-                          {uploadSource === 'github' ? 'Connect & Import' : 'Connect'}
-                        </>
-                      )}
-                    </Button>
-                  )}
+
+                {/* Cloud Service Buttons */}
+                <div className="flex justify-center items-center gap-4 mb-4">
+                  {/* GitHub Button */}
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="w-12 h-12 rounded-full bg-white border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 transition-all duration-300"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleGitHubAuth();
+                    }}
+                    disabled={isLoadingCloud}
+                  >
+                    <ExternalLink className="h-5 w-5 text-gray-600" />
+                  </Button>
+
+                  {/* Dropbox Button */}
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="w-12 h-12 rounded-full bg-white border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 transition-all duration-300"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDropboxAuth();
+                    }}
+                    disabled={isLoadingCloud}
+                  >
+                    <Folder className="h-5 w-5 text-gray-600" />
+                  </Button>
+
+                  {/* Google Drive Button */}
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="w-12 h-12 rounded-full bg-white border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 transition-all duration-300"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleGoogleDriveAuth();
+                    }}
+                    disabled={isLoadingCloud}
+                  >
+                    <ExternalLink className="h-5 w-5 text-gray-600" />
+                  </Button>
                 </div>
-                {uploadSource === 'local' && (
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    Supported formats: .sql, .txt, .prc, .trg, .tab, .proc, .sp
-                  </p>
+
+                {/* Loading State */}
+                {isLoadingCloud && (
+                  <div className="flex items-center justify-center gap-2 text-blue-600">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                    <span className="text-sm">Connecting to cloud service...</span>
+                  </div>
                 )}
+
+                {/* Drag & Drop Text */}
+                <p className="text-gray-500 text-sm mt-4">
+                  or drop SQL files here
+                </p>
+
+                {/* Supported Formats */}
+                <p className="text-xs text-gray-400 mt-2">
+                  Supported formats: .sql, .txt, .prc, .trg, .tab, .proc, .sp
+                </p>
+
+                {/* Hidden File Inputs */}
+                <Input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={handleFileUpload}
+                  accept=".sql,.txt,.tab,.prc,.trg,.proc,.sp"
+                />
+                <Input
+                  ref={folderInputRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={handleFolderUpload}
+                  accept=".sql,.txt,.tab,.prc,.trg,.proc,.sp"
+                  webkitdirectory=""
+                />
               </div>
             </TabsContent>
 
