@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { UploadCloud, File, Trash2, Plus, Folder, Info, Download } from 'lucide-react';
+import { UploadCloud, File, Trash2, Plus, Folder, Info, Download, GitHub, ExternalLink } from 'lucide-react';
 import { CodeFile } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,13 @@ interface CodeUploaderProps {
   onComplete: (files: CodeFile[]) => void;
 }
 
+interface GitHubFile {
+  name: string;
+  path: string;
+  content: string;
+  type: string;
+}
+
 const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
   const { toast } = useToast();
   const [files, setFiles] = useState<CodeFile[]>([]);
@@ -26,8 +33,16 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
   const [manualFileName, setManualFileName] = useState<string>('');
   const [templateType, setTemplateType] = useState<'table' | 'procedure' | 'trigger'>('table');
   const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [uploadSource, setUploadSource] = useState<'local' | 'github' | 'dropbox' | 'googledrive'>('local');
+  const [githubRepo, setGithubRepo] = useState<string>('');
+  const [githubBranch, setGithubBranch] = useState<string>('main');
+  const [isLoadingGitHub, setIsLoadingGitHub] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
+  
+  // GitHub OAuth configuration
+  const GITHUB_CLIENT_ID = 'your_github_client_id'; // You'll need to set this
+  const GITHUB_REDIRECT_URI = `${window.location.origin}/github-callback`;
   
   const processFiles = useCallback((uploadedFiles: FileList | null) => {
     if (!uploadedFiles) return;
@@ -89,6 +104,170 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
       reader.readAsText(file);
     });
   }, [toast]);
+
+  // GitHub Integration Functions
+  const handleGitHubAuth = () => {
+    if (!githubRepo.trim()) {
+      toast({
+        title: 'Repository Required',
+        description: 'Please enter a GitHub repository URL.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Check if we have a stored token
+    const storedToken = localStorage.getItem('github_token');
+    if (storedToken) {
+      fetchGitHubFiles(storedToken);
+    } else {
+      // Open GitHub OAuth popup
+      const authUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(GITHUB_REDIRECT_URI)}&scope=repo&state=${encodeURIComponent(githubRepo)}`;
+      
+      const popup = window.open(
+        authUrl,
+        'github-auth',
+        'width=500,height=600,scrollbars=yes,resizable=yes'
+      );
+
+      // Listen for OAuth callback
+      const handleMessage = (event: MessageEvent) => {
+        if (event.origin !== window.location.origin) return;
+        
+        if (event.data.type === 'github-auth-success') {
+          localStorage.setItem('github_token', event.data.token);
+          fetchGitHubFiles(event.data.token);
+          popup?.close();
+          window.removeEventListener('message', handleMessage);
+        }
+      };
+
+      window.addEventListener('message', handleMessage);
+    }
+  };
+
+  const fetchGitHubFiles = async (token: string) => {
+    setIsLoadingGitHub(true);
+    
+    try {
+      // Parse repository URL
+      const repoMatch = githubRepo.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+      if (!repoMatch) {
+        throw new Error('Invalid GitHub repository URL');
+      }
+      
+      const [, owner, repo] = repoMatch;
+      
+      // Fetch repository contents
+      const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/trees/${githubBranch}?recursive=1`, {
+        headers: {
+          'Authorization': `token ${token}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch repository contents');
+      }
+
+      const data = await response.json();
+      
+      // Filter for SQL files
+      const sqlFiles = data.tree.filter((item: any) => 
+        item.type === 'blob' && 
+        /\.(sql|txt|prc|trg|tab|proc|sp)$/i.test(item.path)
+      );
+
+      if (sqlFiles.length === 0) {
+        toast({
+          title: 'No SQL Files Found',
+          description: 'No supported SQL files found in this repository.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      // Fetch file contents
+      const filePromises = sqlFiles.map(async (file: any) => {
+        const fileResponse = await fetch(file.url, {
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
+        
+        if (fileResponse.ok) {
+          const fileData = await fileResponse.json();
+          const content = atob(fileData.content);
+          
+          return {
+            id: uuidv4(),
+            name: file.path.split('/').pop(),
+            content: content,
+            type: determineFileType(file.path, content),
+            status: 'pending' as const
+          };
+        }
+        return null;
+      });
+
+      const fetchedFiles = (await Promise.all(filePromises)).filter(Boolean) as CodeFile[];
+      
+      setFiles(prevFiles => {
+        const newFiles = [...prevFiles];
+        fetchedFiles.forEach(file => {
+          if (!newFiles.some(f => f.name === file.name)) {
+            newFiles.push(file);
+          }
+        });
+        return newFiles;
+      });
+
+      toast({
+        title: 'GitHub Files Imported',
+        description: `Successfully imported ${fetchedFiles.length} files from GitHub.`
+      });
+
+    } catch (error) {
+      console.error('GitHub fetch error:', error);
+      toast({
+        title: 'GitHub Import Failed',
+        description: error instanceof Error ? error.message : 'Failed to import files from GitHub.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoadingGitHub(false);
+    }
+  };
+
+  const handleSourceChange = (source: 'local' | 'github' | 'dropbox' | 'googledrive') => {
+    setUploadSource(source);
+  };
+
+  const handleUploadAction = () => {
+    switch (uploadSource) {
+      case 'local':
+        if (fileInputRef.current) {
+          fileInputRef.current.click();
+        }
+        break;
+      case 'github':
+        handleGitHubAuth();
+        break;
+      case 'dropbox':
+        toast({
+          title: 'Coming Soon',
+          description: 'Dropbox integration will be available soon!'
+        });
+        break;
+      case 'googledrive':
+        toast({
+          title: 'Coming Soon',
+          description: 'Google Drive integration will be available soon!'
+        });
+        break;
+    }
+  };
   
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     processFiles(event.target.files);
@@ -190,7 +369,7 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
   };
   
   const handleDropAreaClick = () => {
-    if (fileInputRef.current) {
+    if (uploadSource === 'local' && fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
@@ -413,6 +592,70 @@ END`;
             </TabsList>
             
             <TabsContent value="upload" className="space-y-6">
+              {/* Source Selection */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <Label className="text-sm font-medium">Upload Source:</Label>
+                  <Select value={uploadSource} onValueChange={handleSourceChange}>
+                    <SelectTrigger className="w-48">
+                      {uploadSource === 'local' && <UploadCloud className="h-4 w-4 mr-2" />}
+                      {uploadSource === 'github' && <GitHub className="h-4 w-4 mr-2" />}
+                      {uploadSource === 'dropbox' && <Folder className="h-4 w-4 mr-2" />}
+                      {uploadSource === 'googledrive' && <ExternalLink className="h-4 w-4 mr-2" />}
+                      {uploadSource === 'local' && 'Local Computer'}
+                      {uploadSource === 'github' && 'GitHub Repository'}
+                      {uploadSource === 'dropbox' && 'Dropbox'}
+                      {uploadSource === 'googledrive' && 'Google Drive'}
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="local">
+                        <UploadCloud className="h-4 w-4 mr-2" />
+                        Local Computer
+                      </SelectItem>
+                      <SelectItem value="github">
+                        <GitHub className="h-4 w-4 mr-2" />
+                        GitHub Repository
+                      </SelectItem>
+                      <SelectItem value="dropbox">
+                        <Folder className="h-4 w-4 mr-2" />
+                        Dropbox
+                      </SelectItem>
+                      <SelectItem value="googledrive">
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Google Drive
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* GitHub Configuration */}
+                {uploadSource === 'github' && (
+                  <div className="grid grid-cols-2 gap-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <div>
+                      <Label htmlFor="github-repo" className="text-sm font-medium">Repository URL</Label>
+                      <Input
+                        id="github-repo"
+                        value={githubRepo}
+                        onChange={(e) => setGithubRepo(e.target.value)}
+                        placeholder="https://github.com/username/repository"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="github-branch" className="text-sm font-medium">Branch</Label>
+                      <Input
+                        id="github-branch"
+                        value={githubBranch}
+                        onChange={(e) => setGithubBranch(e.target.value)}
+                        placeholder="main"
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Upload Area */}
               <div 
                 className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
                   ${isDragging ? 'border-primary bg-primary/10' : 'bg-muted/30'}`}
@@ -425,47 +668,66 @@ END`;
                 <div className="mb-4 flex justify-center">
                   <UploadCloud className={`h-12 w-12 ${isDragging ? 'text-primary' : 'text-muted-foreground'}`} />
                 </div>
-                <h3 className="mb-2 text-lg font-medium">Upload Files</h3>
+                <h3 className="mb-2 text-lg font-medium">
+                  {uploadSource === 'github' ? 'Import from GitHub' : 'Upload Files'}
+                </h3>
                 <p className="mb-4 text-sm text-muted-foreground">
-                  Drag and drop files or click to browse
+                  {uploadSource === 'github' 
+                    ? 'Connect to GitHub and import SQL files from your repository'
+                    : 'Drag and drop files or click to browse'
+                  }
                 </p>
                 <div className="flex gap-3 justify-center">
-                  <Label htmlFor="file-upload" className="cursor-pointer">
-                    <Button variant="secondary">Select Files</Button>
-                    <Input
-                      id="file-upload"
-                      type="file"
-                      multiple
-                      className="hidden"
-                      onChange={handleFileUpload}
-                      accept=".sql,.txt,.tab,.prc,.trg,.proc,.sp"
-                      ref={fileInputRef}
-                    />
-                  </Label>
-                  <Button 
-                    variant="outline"
-                    type="button"
-                    onClick={handleFolderSelect}
-                  >
-                    <Folder className="h-4 w-4 mr-2" />
-                    Browse Folder
-                  </Button>
-                  <input
-                    id="folder-upload"
-                    type="file"
-                    multiple
-                    style={{ display: 'none' }}
-                    // @ts-ignore
-                    webkitdirectory="true"
-                    // @ts-ignore
-                    directory="true"
-                    onChange={handleFolderUpload}
-                    ref={folderInputRef}
-                  />
+                  {uploadSource === 'local' ? (
+                    <>
+                      <Label htmlFor="file-upload" className="cursor-pointer">
+                        <Button variant="secondary">Select Files</Button>
+                        <Input
+                          id="file-upload"
+                          type="file"
+                          multiple
+                          className="hidden"
+                          onChange={handleFileUpload}
+                          accept=".sql,.txt,.tab,.prc,.trg,.proc,.sp"
+                          ref={fileInputRef}
+                        />
+                      </Label>
+                      <Button 
+                        variant="outline"
+                        type="button"
+                        onClick={handleFolderSelect}
+                      >
+                        <Folder className="h-4 w-4 mr-2" />
+                        Browse Folder
+                      </Button>
+                    </>
+                  ) : (
+                    <Button 
+                      onClick={handleUploadAction}
+                      disabled={isLoadingGitHub}
+                      className="flex items-center gap-2"
+                    >
+                      {isLoadingGitHub ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          Loading...
+                        </>
+                      ) : (
+                        <>
+                          {uploadSource === 'github' && <GitHub className="h-4 w-4" />}
+                          {uploadSource === 'dropbox' && <Folder className="h-4 w-4" />}
+                          {uploadSource === 'googledrive' && <ExternalLink className="h-4 w-4" />}
+                          {uploadSource === 'github' ? 'Connect & Import' : 'Connect'}
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Supported formats: .sql, .txt, .prc, .trg, .tab, .proc, .sp
-                </p>
+                {uploadSource === 'local' && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Supported formats: .sql, .txt, .prc, .trg, .tab, .proc, .sp
+                  </p>
+                )}
               </div>
             </TabsContent>
 

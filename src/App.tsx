@@ -12,6 +12,7 @@ import History from "./pages/History";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import ReportPage from "./pages/ReportPage";
+import GitHubCallback from "./pages/GitHubCallback";
 import CosmoChatbot from "./components/CosmoChatbot";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/history" element={<History />} />
             <Route path="/legacy" element={<Index />} />
             <Route path="/report/:reportId" element={<ReportPage />} />
+            <Route path="/github-callback" element={<GitHubCallback />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
