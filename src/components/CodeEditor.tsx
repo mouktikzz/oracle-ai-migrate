@@ -60,11 +60,22 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
   const handleRewriteWithAI = async () => {
     setIsRewriting(true);
     try {
-      const response = await fetch('/.netlify/functions/ai-rewrite', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, prompt: 'Rewrite and optimize this code', language }),
-      });
+      // Try Netlify function first, fallback to local API
+      let response;
+      try {
+        response = await fetch('/.netlify/functions/ai-rewrite', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code, prompt: 'Rewrite and optimize this code', language }),
+        });
+      } catch (error) {
+        // Fallback to local API for development
+        response = await fetch('/api/ai-rewrite', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code, prompt: 'Rewrite and optimize this code', language }),
+        });
+      }
       if (!response.ok) throw new Error('AI rewrite failed');
       const data = await response.json();
       setCode(data.rewrittenCode || code);

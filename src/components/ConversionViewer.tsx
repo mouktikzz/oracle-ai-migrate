@@ -13,7 +13,7 @@ import { useUnreviewedFiles } from '@/hooks/useUnreviewedFiles';
 import CodeDiffViewer from './CodeDiffViewer';
 import { diffChars } from 'diff';
 import { analyzeCodeComplexity, generateBalancedPerformanceMetrics } from '@/utils/componentUtilswithlangchain';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -317,11 +317,22 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
                               setIsExplaining(true);
                               setExplanation('');
                               try {
-                                const res = await fetch('/.netlify/functions/ai-explain', {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ code: file.convertedContent, language: 'oracle sql' }),
-                                });
+                                // Try Netlify function first, fallback to local API
+                                let res;
+                                try {
+                                  res = await fetch('/.netlify/functions/ai-explain', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ code: file.convertedContent, language: 'oracle sql' }),
+                                  });
+                                } catch (error) {
+                                  // Fallback to local API for development
+                                  res = await fetch('/api/ai-explain', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ code: file.convertedContent, language: 'oracle sql' }),
+                                  });
+                                }
                                 const data = await res.json();
                                 setExplanation(data.explanation || 'No explanation returned.');
                               } catch (err) {
@@ -723,16 +734,32 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
                   try {
                     // Determine fileType for API
                     let fileType = file.migration_id ? 'migration_files' : 'unreviewed_files';
-                    const res = await fetch('/.netlify/functions/ai-explain', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        code: file.convertedContent,
-                        language: 'oracle sql',
-                        fileId: file.id,
-                        fileType
-                      }),
-                    });
+                    // Try Netlify function first, fallback to local API
+                    let res;
+                    try {
+                      res = await fetch('/.netlify/functions/ai-explain', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          code: file.convertedContent,
+                          language: 'oracle sql',
+                          fileId: file.id,
+                          fileType
+                        }),
+                      });
+                    } catch (error) {
+                      // Fallback to local API for development
+                      res = await fetch('/api/ai-explain', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          code: file.convertedContent,
+                          language: 'oracle sql',
+                          fileId: file.id,
+                          fileType
+                        }),
+                      });
+                    }
                     const data = await res.json();
                     setExplanation(data.explanation || 'No explanation returned.');
                     if (onAiAnalysis && data.explanation) {
@@ -754,11 +781,14 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
       </Tabs>
 
       <Dialog open={showRewriteDialog} onOpenChange={setShowRewriteDialog}>
-        <DialogContent aria-describedby="rewrite-instruction">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Rewrite with AI</DialogTitle>
+            <DialogDescription>
+              Provide instructions for AI to rewrite the selected code.
+            </DialogDescription>
           </DialogHeader>
-          <div id="rewrite-instruction" className="space-y-2">
+          <div className="space-y-2">
             <label className="block text-sm font-medium">Instruction for AI:</label>
             <Input
               value={rewritePrompt}
@@ -776,15 +806,30 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
                 try {
                   // Only send the selected code to the AI
                   const selectedText = editedContent.slice(selection.start, selection.end);
-                  const res = await fetch('/.netlify/functions/ai-rewrite', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      code: selectedText,
-                      prompt: `${rewritePrompt}\n\nOnly return the rewritten code. Do not include explanations, markdown, or comments unless they are part of the code itself.`,
-                      language: 'oracle sql',
-                    }),
-                  });
+                  // Try Netlify function first, fallback to local API
+                  let res;
+                  try {
+                    res = await fetch('/.netlify/functions/ai-rewrite', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        code: selectedText,
+                        prompt: `${rewritePrompt}\n\nOnly return the rewritten code. Do not include explanations, markdown, or comments unless they are part of the code itself.`,
+                        language: 'oracle sql',
+                      }),
+                    });
+                  } catch (error) {
+                    // Fallback to local API for development
+                    res = await fetch('/api/ai-rewrite', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        code: selectedText,
+                        prompt: `${rewritePrompt}\n\nOnly return the rewritten code. Do not include explanations, markdown, or comments unless they are part of the code itself.`,
+                        language: 'oracle sql',
+                      }),
+                    });
+                  }
                   const data = await res.json();
                   if (data.rewrittenCode) {
                     // Post-process: remove markdown/code fences and explanations
@@ -821,11 +866,14 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
       </Dialog>
 
       <Dialog open={showExplainDialog} onOpenChange={setShowExplainDialog}>
-        <DialogContent aria-describedby="ai-explanation">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>AI Code Analyzer</DialogTitle>
+            <DialogDescription>
+              AI-generated explanation of the code functionality and structure.
+            </DialogDescription>
           </DialogHeader>
-          <div id="ai-explanation" className="space-y-2">
+          <div className="space-y-2">
             {isExplaining ? (
               <div className="text-center py-4">Analyzing code with AI...</div>
             ) : (
