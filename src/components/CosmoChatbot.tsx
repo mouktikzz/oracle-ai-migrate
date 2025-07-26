@@ -206,6 +206,9 @@ const CosmoChatbot: React.FC<CosmoChatbotProps> = ({ onRefreshConversions }) => 
         className={`rounded-full w-20 h-20 shadow-2xl bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 hover:from-blue-700 hover:via-blue-800 hover:to-blue-900 text-white border-4 border-white/30 transition-all duration-500 transform ${
           isButtonAnimating ? 'scale-110 rotate-12' : 'scale-100 rotate-0'
         } ${isOpen ? 'animate-pulse' : 'hover:scale-105'}`}
+        style={{
+          animationDuration: isOpen ? '2s' : '0.5s'
+        }}
       >
         {isOpen ? (
           <X className="h-8 w-8 transition-transform duration-300" />
@@ -219,7 +222,7 @@ const CosmoChatbot: React.FC<CosmoChatbotProps> = ({ onRefreshConversions }) => 
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="absolute bottom-28 right-0 w-96 h-[600px] bg-white rounded-2xl shadow-2xl border-2 border-blue-200 overflow-hidden">
+        <div className="absolute bottom-24 right-0 w-96 h-[600px] bg-white rounded-2xl shadow-2xl border-2 border-blue-200 overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white">
             <div className="flex items-center gap-3">
