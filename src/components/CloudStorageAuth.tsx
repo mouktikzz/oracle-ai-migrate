@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Github, 
-  Dropbox,
+  Box,
   HardDrive,
   CheckCircle, 
   XCircle, 
@@ -233,13 +233,13 @@ const CloudStorageAuth: React.FC<CloudStorageAuthProps> = ({ isOpen, onClose, on
   };
 
   const getProviderIcon = (provider: string) => {
-    switch (provider) {
-      case 'github': return <Github className="h-4 w-4" />;
-      case 'dropbox': return <Dropbox className="h-4 w-4" />;
-      case 'google-drive': return <HardDrive className="h-4 w-4" />;
-      default: return <ExternalLink className="h-4 w-4" />;
-    }
-  };
+  switch (provider) {
+    case 'github': return <Github className="h-4 w-4" />;
+    case 'dropbox': return <Box className="h-4 w-4" />;
+    case 'google-drive': return <HardDrive className="h-4 w-4" />;
+    default: return <ExternalLink className="h-4 w-4" />;
+  }
+};
 
   const getProviderName = (provider: string) => {
     switch (provider) {
@@ -267,10 +267,10 @@ const CloudStorageAuth: React.FC<CloudStorageAuthProps> = ({ isOpen, onClose, on
                 <Github className="h-4 w-4" />
                 GitHub
               </TabsTrigger>
-              <TabsTrigger value="dropbox" className="flex items-center gap-2">
-                <Dropbox className="h-4 w-4" />
-                Dropbox
-              </TabsTrigger>
+                          <TabsTrigger value="dropbox" className="flex items-center gap-2">
+              <Box className="h-4 w-4" />
+              Dropbox
+            </TabsTrigger>
               <TabsTrigger value="google-drive" className="flex items-center gap-2">
                 <HardDrive className="h-4 w-4" />
                 Google Drive
@@ -331,7 +331,7 @@ const CloudStorageAuth: React.FC<CloudStorageAuthProps> = ({ isOpen, onClose, on
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <Dropbox className="h-5 w-5" />
+                    <Box className="h-5 w-5" />
                     Connect with Dropbox
                   </CardTitle>
                   <CardDescription>
@@ -368,7 +368,7 @@ const CloudStorageAuth: React.FC<CloudStorageAuthProps> = ({ isOpen, onClose, on
                       </>
                     ) : (
                       <>
-                        <Dropbox className="mr-2 h-4 w-4" />
+                        <Box className="mr-2 h-4 w-4" />
                         Connect Dropbox
                       </>
                     )}

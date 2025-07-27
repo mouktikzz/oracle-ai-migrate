@@ -7,7 +7,7 @@ import {
   XCircle, 
   Loader2, 
   Github,
-  Dropbox,
+  Box,
   HardDrive
 } from 'lucide-react';
 
@@ -156,17 +156,17 @@ const CloudCallback: React.FC = () => {
   };
 
   const getProviderIcon = () => {
-    switch (provider) {
-      case 'github':
-        return <Github className="h-5 w-5" />;
-      case 'dropbox':
-        return <Dropbox className="h-5 w-5" />;
-      case 'google-drive':
-        return <HardDrive className="h-5 w-5" />;
-      default:
-        return <ExternalLink className="h-5 w-5" />;
-    }
-  };
+  switch (provider) {
+    case 'github':
+      return <Github className="h-5 w-5" />;
+    case 'dropbox':
+      return <Box className="h-5 w-5" />;
+    case 'google-drive':
+      return <HardDrive className="h-5 w-5" />;
+    default:
+      return <ExternalLink className="h-5 w-5" />;
+  }
+};
 
   const getProviderName = () => {
     switch (provider) {
