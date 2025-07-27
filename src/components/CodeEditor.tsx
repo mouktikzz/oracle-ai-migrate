@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import CodeMirror, { ReactCodeMirrorRef } from '@uiw/react-codemirror';
@@ -9,7 +9,8 @@ import { javascript } from '@codemirror/lang-javascript';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { searchKeymap, search, SearchQuery } from '@codemirror/search';
+import { searchKeymap, search, SearchQuery, setSearchQuery } from '@codemirror/search';
+import { Search, Hash, X } from 'lucide-react';
 
 interface CodeEditorProps {
   initialCode: string;
@@ -39,6 +40,54 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [goToLine, setGoToLine] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
+  const [showGoTo, setShowGoTo] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const goToInputRef = useRef<HTMLInputElement>(null);
+
+  // Keyboard shortcuts for search/go-to
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        setShowSearch(true);
+        setShowGoTo(false);
+        setTimeout(() => searchInputRef.current?.focus(), 10);
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'g') {
+        e.preventDefault();
+        setShowGoTo(true);
+        setShowSearch(false);
+        setTimeout(() => goToInputRef.current?.focus(), 10);
+      }
+      if (e.key === 'Escape') {
+        setShowSearch(false);
+        setShowGoTo(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Click outside to close overlays
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (
+        showSearch && searchInputRef.current && !searchInputRef.current.contains(e.target as Node)
+      ) {
+        setShowSearch(false);
+      }
+      if (
+        showGoTo && goToInputRef.current && !goToInputRef.current.contains(e.target as Node)
+      ) {
+        setShowGoTo(false);
+      }
+    }
+    if (showSearch || showGoTo) {
+      document.addEventListener('mousedown', handleClick);
+    }
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showSearch, showGoTo]);
 
   // Language extensions
   const getExtensions = () => {
@@ -129,7 +178,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
       const view = editorRef.current.view;
       if (view) {
         view.dispatch({
-          effects: SearchQuery.set(searchTerm, false)
+          effects: setSearchQuery.of(new SearchQuery({ search: searchTerm }))
         });
       }
     }
@@ -147,31 +196,73 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full relative">
+      {/* Floating search/go-to icons */}
+      <div className="absolute top-2 right-2 z-20 flex gap-2">
+        <button
+          type="button"
+          className="p-1 rounded hover:bg-muted/70"
+          title="Search (Ctrl+F)"
+          onClick={() => {
+            setShowSearch(true);
+            setShowGoTo(false);
+            setTimeout(() => searchInputRef.current?.focus(), 10);
+          }}
+        >
+          <Search className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          className="p-1 rounded hover:bg-muted/70"
+          title="Go to Line (Ctrl+G)"
+          onClick={() => {
+            setShowGoTo(true);
+            setShowSearch(false);
+            setTimeout(() => goToInputRef.current?.focus(), 10);
+          }}
+        >
+          <Hash className="h-4 w-4" />
+        </button>
+      </div>
+      {/* Floating Search Overlay */}
+      {showSearch && (
+        <div className="absolute top-2 right-12 z-30 bg-white/95 dark:bg-slate-900/95 border rounded shadow flex items-center px-2 py-1 gap-2" style={{ minWidth: 180 }}>
+          <input
+            ref={searchInputRef}
+            type="text"
+            placeholder="Search..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') { handleSearch(); setShowSearch(false); } if (e.key === 'Escape') setShowSearch(false); }}
+            className="border rounded px-2 py-1 text-sm w-28 bg-transparent outline-none"
+            autoFocus
+          />
+          <button onClick={() => { handleSearch(); setShowSearch(false); }} className="text-xs px-2 py-1 rounded bg-muted hover:bg-muted/80">Find</button>
+          <button onClick={() => setShowSearch(false)} className="ml-1"><X className="h-4 w-4" /></button>
+        </div>
+      )}
+      {/* Floating Go To Line Overlay */}
+      {showGoTo && (
+        <div className="absolute top-2 right-12 z-30 bg-white/95 dark:bg-slate-900/95 border rounded shadow flex items-center px-2 py-1 gap-2" style={{ minWidth: 180 }}>
+          <input
+            ref={goToInputRef}
+            type="number"
+            min={1}
+            placeholder="Go to line"
+            value={goToLine}
+            onChange={e => setGoToLine(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') { handleGoToLine(); setShowGoTo(false); } if (e.key === 'Escape') setShowGoTo(false); }}
+            className="border rounded px-2 py-1 text-sm w-20 bg-transparent outline-none"
+            autoFocus
+          />
+          <button onClick={() => { handleGoToLine(); setShowGoTo(false); }} className="text-xs px-2 py-1 rounded bg-muted hover:bg-muted/80">Go</button>
+          <button onClick={() => setShowGoTo(false)} className="ml-1"><X className="h-4 w-4" /></button>
+        </div>
+      )}
       <div className="rounded-md border bg-card">
         <div className="flex flex-wrap items-center justify-between p-2 bg-muted gap-2">
           <div className="flex gap-2 items-center">
-            <input
-              type="text"
-              placeholder="Search..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') handleSearch(); }}
-              className="border rounded px-2 py-1 text-sm w-32"
-              disabled={readOnly && !isEditing}
-            />
-            <Button size="sm" variant="outline" onClick={handleSearch} disabled={!searchTerm}>Find</Button>
-            <input
-              type="number"
-              min={1}
-              placeholder="Go to line"
-              value={goToLine}
-              onChange={e => setGoToLine(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') handleGoToLine(); }}
-              className="border rounded px-2 py-1 text-sm w-20 ml-2"
-              disabled={readOnly && !isEditing}
-            />
-            <Button size="sm" variant="outline" onClick={handleGoToLine} disabled={!goToLine}>Go</Button>
+            {/* Search and Go To Line inputs are now floating */}
           </div>
           {!readOnly && (
             <div>
