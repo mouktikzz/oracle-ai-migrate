@@ -20,6 +20,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import CloudFileBrowser from './CloudFileBrowser';
 
 interface CloudUser {
   id: string;
@@ -52,6 +53,8 @@ const CloudStorageAuth: React.FC<CloudStorageAuthProps> = ({ isOpen, onClose, on
   const [files, setFiles] = useState<CloudFile[]>([]);
   const [popup, setPopup] = useState<Window | null>(null);
   const [activeProvider, setActiveProvider] = useState<'github' | 'dropbox' | 'google-drive'>('github');
+  const [showFileBrowser, setShowFileBrowser] = useState(false);
+  const [accessToken, setAccessToken] = useState<string>('');
   const { toast } = useToast();
 
   // OAuth configuration
@@ -80,13 +83,14 @@ const CloudStorageAuth: React.FC<CloudStorageAuthProps> = ({ isOpen, onClose, on
   }, []);
 
   const getAuthUrl = (provider: string) => {
+    const state = `${provider}_${Date.now()}`;
     switch (provider) {
       case 'github':
-        return `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=user,repo&state=${Date.now()}`;
+        return `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=user,repo&state=${state}`;
       case 'dropbox':
-        return `https://www.dropbox.com/oauth2/authorize?client_id=${DROPBOX_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&state=${Date.now()}`;
+        return `https://www.dropbox.com/oauth2/authorize?client_id=${DROPBOX_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&state=${state}&token_access_type=offline`;
       case 'google-drive':
-        return `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=https://www.googleapis.com/auth/drive.readonly&state=${Date.now()}`;
+        return `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=https://www.googleapis.com/auth/drive.readonly&state=${state}&access_type=offline&prompt=consent`;
       default:
         return '';
     }
@@ -120,9 +124,10 @@ const CloudStorageAuth: React.FC<CloudStorageAuthProps> = ({ isOpen, onClose, on
       }
       
       setUser(finalUserData);
+      setAccessToken(token);
       setIsAuthenticated(true);
       
-      // Fetch files from the provider
+      // Fetch initial files from the provider
       await fetchFiles(provider, token);
       
       toast({
@@ -193,7 +198,7 @@ const CloudStorageAuth: React.FC<CloudStorageAuthProps> = ({ isOpen, onClose, on
     const popupWindow = window.open(
       authUrl,
       'cloud-auth',
-      'width=500,height=600,scrollbars=yes,resizable=yes'
+      'width=600,height=700,scrollbars=yes,resizable=yes,status=yes,location=yes,toolbar=no,menubar=no'
     );
 
     if (!popupWindow) {
@@ -208,6 +213,9 @@ const CloudStorageAuth: React.FC<CloudStorageAuthProps> = ({ isOpen, onClose, on
 
     setPopup(popupWindow);
 
+    // Focus the popup window
+    popupWindow.focus();
+
     const checkClosed = setInterval(() => {
       if (popupWindow.closed) {
         clearInterval(checkClosed);
@@ -216,13 +224,34 @@ const CloudStorageAuth: React.FC<CloudStorageAuthProps> = ({ isOpen, onClose, on
         }
       }
     }, 1000);
+
+    // Add a timeout to handle cases where the popup doesn't close properly
+    setTimeout(() => {
+      if (!isAuthenticated && popupWindow && !popupWindow.closed) {
+        toast({
+          title: "Authentication Timeout",
+          description: "Please complete the authentication process or try again",
+          variant: "destructive",
+        });
+        popupWindow.close();
+        setIsLoading(false);
+      }
+    }, 300000); // 5 minutes timeout
   };
 
   const handleContinue = () => {
     if (user) {
-      onSuccess(user, files);
-      onClose();
+      setShowFileBrowser(true);
     }
+  };
+
+  const handleFileSelect = (file: CloudFile) => {
+    onSuccess(user!, [file]);
+    onClose();
+  };
+
+  const handleFileBrowserClose = () => {
+    setShowFileBrowser(false);
   };
 
   const handleClose = () => {
@@ -252,7 +281,7 @@ const CloudStorageAuth: React.FC<CloudStorageAuthProps> = ({ isOpen, onClose, on
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Folder className="h-5 w-5" />
@@ -260,7 +289,14 @@ const CloudStorageAuth: React.FC<CloudStorageAuthProps> = ({ isOpen, onClose, on
           </DialogTitle>
         </DialogHeader>
 
-        {!isAuthenticated ? (
+        {showFileBrowser ? (
+          <CloudFileBrowser
+            provider={activeProvider}
+            accessToken={accessToken}
+            onFileSelect={handleFileSelect}
+            onClose={handleFileBrowserClose}
+          />
+        ) : !isAuthenticated ? (
           <Tabs value={activeProvider} onValueChange={(value) => setActiveProvider(value as any)}>
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="github" className="flex items-center gap-2">
@@ -485,7 +521,7 @@ const CloudStorageAuth: React.FC<CloudStorageAuthProps> = ({ isOpen, onClose, on
 
                 <div className="flex gap-2">
                   <Button onClick={handleContinue} className="flex-1">
-                    Continue
+                    Browse Files
                   </Button>
                   <Button variant="outline" onClick={handleClose}>
                     Close

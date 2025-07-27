@@ -23,14 +23,24 @@ const CloudCallback: React.FC = () => {
     const error = urlParams.get('error');
     const errorDescription = urlParams.get('error_description');
 
-    // Determine provider from URL or state
-    const path = window.location.pathname;
-    if (path.includes('github')) {
+    // Determine provider from state parameter or URL
+    const stateParam = urlParams.get('state');
+    if (stateParam && stateParam.startsWith('github_')) {
       setProvider('github');
-    } else if (path.includes('dropbox')) {
+    } else if (stateParam && stateParam.startsWith('dropbox_')) {
       setProvider('dropbox');
-    } else if (path.includes('google')) {
+    } else if (stateParam && stateParam.startsWith('google-drive_')) {
       setProvider('google-drive');
+    } else {
+      // Fallback to URL path detection
+      const path = window.location.pathname;
+      if (path.includes('github')) {
+        setProvider('github');
+      } else if (path.includes('dropbox')) {
+        setProvider('dropbox');
+      } else if (path.includes('google')) {
+        setProvider('google-drive');
+      }
     }
 
     if (error) {
