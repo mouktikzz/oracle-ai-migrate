@@ -20,6 +20,7 @@ import PerformanceMetricsDashboard from '@/components/PerformanceMetricsDashboar
 import { useConversionLogic } from '@/components/dashboard/ConversionLogic';
 import { useMigrationManager } from '@/components/dashboard/MigrationManager';
 import { useUnreviewedFiles } from '@/hooks/useUnreviewedFiles';
+import GitHubAuth from '@/components/GitHubAuth';
 
 interface FileItem {
   id: string;
@@ -51,6 +52,7 @@ const Dashboard = () => {
   const [showHelp, setShowHelp] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingCompleteMigration, setPendingCompleteMigration] = useState(false);
+  const [showGitHubAuth, setShowGitHubAuth] = useState(false);
 
   const { handleCodeUpload } = useMigrationManager();
   const {
@@ -227,6 +229,15 @@ const Dashboard = () => {
     navigate('/');
   };
 
+  const handleGitHubSuccess = (user: any) => {
+    // Handle successful GitHub authentication
+    console.log('GitHub user authenticated:', user);
+    toast({
+      title: "GitHub Connected!",
+      description: `Successfully connected to GitHub as ${user.login}`,
+    });
+  };
+
   const handleResetAndUpload = () => {
     setFiles([]);
     setSelectedFile(null);
@@ -356,11 +367,12 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <DashboardHeader
-        onGoToHistory={handleGoToHistory}
-        onGoHome={handleGoHome}
-        onShowHelp={() => setShowHelp(true)}
-      />
+              <DashboardHeader
+          onGoToHistory={handleGoToHistory}
+          onGoHome={handleGoHome}
+          onShowHelp={() => setShowHelp(true)}
+          onConnectGitHub={() => setShowGitHubAuth(true)}
+        />
 
       <main className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'upload' | 'conversion' | 'devReview' | 'metrics')}>
@@ -453,6 +465,14 @@ const Dashboard = () => {
       {showHelp && (
         <Help onClose={() => setShowHelp(false)} />
       )}
+
+      {/* GitHub Auth Modal */}
+      <GitHubAuth 
+        isOpen={showGitHubAuth}
+        onClose={() => setShowGitHubAuth(false)}
+        onSuccess={handleGitHubSuccess}
+      />
+
       <footer className="w-full text-center py-4 text-gray-500 text-sm border-t bg-white/80 mt-8">
         © 2025 Migration Platform. All rights reserved. Developed by CosmoAgents | <a href="https://www.github.com/mouktikzz/oracle-ai-migrate" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>GitHub</a>
       </footer>

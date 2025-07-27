@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Database, FileText, Zap, Shield, Clock, Users, ArrowRight, History, HelpCircle } from 'lucide-react';
+import { Database, FileText, Zap, Shield, Clock, Users, ArrowRight, History, HelpCircle, Github } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import Help from '@/components/Help';
 import UserDropdown from '@/components/UserDropdown';
+import GitHubAuth from '@/components/GitHubAuth';
 
 // Typing animation for tagline
 const useTypingEffect = (text: string, speed = 40) => {
@@ -26,6 +27,7 @@ const Landing = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const [showHelp, setShowHelp] = useState(false);
+  const [showGitHubAuth, setShowGitHubAuth] = useState(false);
 
   const handleGetStarted = () => {
     if (user) {
@@ -41,6 +43,12 @@ const Landing = () => {
     } else {
       navigate('/auth');
     }
+  };
+
+  const handleGitHubSuccess = (user: any) => {
+    // Handle successful GitHub authentication
+    console.log('GitHub user authenticated:', user);
+    // You can store the GitHub user data or perform additional actions here
   };
 
   const mainTagline = 'Migrate Your Sybase Database to Oracle with AI-Powered Precision';
@@ -65,6 +73,14 @@ const Landing = () => {
               >
                 <HelpCircle className="h-4 w-4" />
                 <span>Help</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowGitHubAuth(true)}
+                className="flex items-center space-x-2"
+              >
+                <Github className="h-4 w-4" />
+                <span>Connect GitHub</span>
               </Button>
               {user ? (
                 <>
@@ -91,6 +107,13 @@ const Landing = () => {
 
       {/* Help Modal */}
       {showHelp && <Help onClose={() => setShowHelp(false)} />}
+
+      {/* GitHub Auth Modal */}
+      <GitHubAuth 
+        isOpen={showGitHubAuth}
+        onClose={() => setShowGitHubAuth(false)}
+        onSuccess={handleGitHubSuccess}
+      />
 
       {/* Hero Section */}
       <section className="py-20">
