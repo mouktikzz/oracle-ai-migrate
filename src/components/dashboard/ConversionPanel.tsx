@@ -323,6 +323,7 @@ const ConversionPanel: React.FC<ConversionPanelProps> = ({
               </CardHeader>
               <CardContent className="pt-4 pb-2">
                 <ConversionViewer
+                  key={selectedFile.id} // Add key to force re-render when file changes
                   file={{
                     ...selectedFile,
                     aiGeneratedCode: (selectedFile as any).aiGeneratedCode || selectedFile.convertedContent || '',

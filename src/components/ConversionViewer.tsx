@@ -120,7 +120,7 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
 
   useEffect(() => {
     setEditedContent(file.convertedContent || '');
-  }, [file.convertedContent]);
+  }, [file.id, file.convertedContent]); // Add file.id to dependency array
 
   // Helper to calculate human edit percentage (character-based)
   function getEditPercentage(aiCode: string, finalCode: string): number {
