@@ -9,6 +9,7 @@ import { javascript } from '@codemirror/lang-javascript';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { searchKeymap, search, SearchQuery } from '@codemirror/search';
 
 interface CodeEditorProps {
   initialCode: string;
@@ -36,12 +37,17 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
   const [rewriteInProgress, setRewriteInProgress] = useState(false);
   const editorRef = useRef<ReactCodeMirrorRef>(null);
   const { toast } = useToast();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [goToLine, setGoToLine] = useState('');
 
   // Language extensions
   const getExtensions = () => {
-    if (language === 'sql' || language === 'plsql') return [sql()];
-    if (language === 'js' || language === 'javascript') return [javascript()];
-    return [];
+    let exts = [];
+    if (language === 'sql' || language === 'plsql') exts.push(sql());
+    if (language === 'js' || language === 'javascript') exts.push(javascript());
+    exts.push(search({ top: true }));
+    exts.push(EditorView.lineWrapping);
+    return exts;
   };
 
   // Save logic
@@ -118,11 +124,56 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
     }
   };
 
+  const handleSearch = () => {
+    if (editorRef.current && searchTerm) {
+      const view = editorRef.current.view;
+      if (view) {
+        view.dispatch({
+          effects: SearchQuery.set(searchTerm, false)
+        });
+      }
+    }
+  };
+
+  const handleGoToLine = () => {
+    if (editorRef.current && goToLine) {
+      const view = editorRef.current.view;
+      if (view) {
+        const line = Math.max(1, Math.min(Number(goToLine), view.state.doc.lines));
+        const pos = view.state.doc.line(line).from;
+        view.dispatch({ selection: { anchor: pos }, scrollIntoView: true });
+      }
+    }
+  };
+
   return (
     <div className="w-full">
       <div className="rounded-md border bg-card">
-        {!readOnly && (
-          <div className="flex justify-between p-2 bg-muted">
+        <div className="flex flex-wrap items-center justify-between p-2 bg-muted gap-2">
+          <div className="flex gap-2 items-center">
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleSearch(); }}
+              className="border rounded px-2 py-1 text-sm w-32"
+              disabled={readOnly && !isEditing}
+            />
+            <Button size="sm" variant="outline" onClick={handleSearch} disabled={!searchTerm}>Find</Button>
+            <input
+              type="number"
+              min={1}
+              placeholder="Go to line"
+              value={goToLine}
+              onChange={e => setGoToLine(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleGoToLine(); }}
+              className="border rounded px-2 py-1 text-sm w-20 ml-2"
+              disabled={readOnly && !isEditing}
+            />
+            <Button size="sm" variant="outline" onClick={handleGoToLine} disabled={!goToLine}>Go</Button>
+          </div>
+          {!readOnly && (
             <div>
               {isEditing && (
                 <TooltipProvider>
@@ -146,24 +197,24 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
                 </TooltipProvider>
               )}
             </div>
-            <div>
-              {!isEditing ? (
-                <Button variant="ghost" size="sm" onClick={handleEdit}>
-                  Edit
+          )}
+          <div>
+            {!isEditing ? (
+              <Button variant="ghost" size="sm" onClick={handleEdit}>
+                Edit
+              </Button>
+            ) : (
+              <div className="flex gap-2">
+                <Button variant="ghost" size="sm" onClick={handleCancel}>
+                  Cancel
                 </Button>
-              ) : (
-                <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" onClick={handleCancel}>
-                    Cancel
-                  </Button>
-                  <Button variant="default" size="sm" onClick={handleSave}>
-                    Save
-                  </Button>
-                </div>
-              )}
-            </div>
+                <Button variant="default" size="sm" onClick={handleSave}>
+                  Save
+                </Button>
+              </div>
+            )}
           </div>
-        )}
+        </div>
         <div style={{ height }}>
           <CodeMirror
             value={code}

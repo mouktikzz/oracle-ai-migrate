@@ -215,9 +215,13 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
                     )
                   ) : (
                     <>
-                      <pre className="bg-green-50 p-4 rounded text-sm overflow-auto max-h-64 whitespace-pre-wrap">
-                        {file.convertedContent}
-                      </pre>
+                      <CodeEditor
+                        initialCode={file.convertedContent || ''}
+                        readOnly={true}
+                        height="300px"
+                        language="plsql"
+                        showLineNumbers={true}
+                      />
                       {!hideEdit && (
                         <div className="flex items-center gap-2 mt-2">
                           <Button
