@@ -107,6 +107,10 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
 
   // GitHub Integration
   const handleGitHubAuth = () => {
+    // Prevent any file input triggering
+    event?.preventDefault();
+    event?.stopPropagation();
+    
     // Check if we have a stored token
     const storedToken = localStorage.getItem('github_token');
     if (storedToken) {
@@ -279,6 +283,10 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
 
   // Dropbox Integration
   const handleDropboxAuth = () => {
+    // Prevent any file input triggering
+    event?.preventDefault();
+    event?.stopPropagation();
+    
     setIsLoadingCloud(true);
     
     const storedToken = localStorage.getItem('dropbox_token');
@@ -306,6 +314,10 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
 
   // Google Drive Integration
   const handleGoogleDriveAuth = () => {
+    // Prevent any file input triggering
+    event?.preventDefault();
+    event?.stopPropagation();
+    
     setIsLoadingCloud(true);
     
     const storedToken = localStorage.getItem('google_token');
@@ -681,81 +693,89 @@ END`;
                   </Button>
                 </div>
 
-                {/* Cloud Service Buttons */}
-                <TooltipProvider>
-                  <div className="flex justify-center items-center gap-4 mb-4">
-                    {/* GitHub Button */}
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          className="w-12 h-12 rounded-full bg-white border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 transition-all duration-300"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleGitHubAuth();
-                          }}
-                          disabled={isLoadingCloud}
-                        >
-                          <Github className="h-5 w-5 text-gray-600" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>GitHub</p>
-                      </TooltipContent>
-                    </Tooltip>
+                                 {/* Cloud Service Dropdown */}
+                 <div className="flex justify-center mb-4">
+                   <DropdownMenu>
+                     <DropdownMenuTrigger asChild>
+                       <Button
+                         variant="outline"
+                         className="bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-200 hover:border-blue-300 hover:bg-gradient-to-r hover:from-blue-100 hover:to-purple-100 transition-all duration-300 px-6 py-3 rounded-full shadow-md hover:shadow-lg"
+                         onClick={(e) => e.stopPropagation()}
+                       >
+                         <UploadCloud className="h-5 w-5 mr-2 text-blue-600" />
+                         <span className="font-medium text-blue-700">Import from Cloud</span>
+                         <svg className="w-4 h-4 ml-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                         </svg>
+                       </Button>
+                     </DropdownMenuTrigger>
+                     <DropdownMenuContent className="w-56 p-2 bg-white border-2 border-blue-200 rounded-xl shadow-xl">
+                       <div className="space-y-2">
+                         {/* GitHub Option */}
+                         <DropdownMenuItem
+                           className="flex items-center p-3 rounded-lg hover:bg-blue-50 cursor-pointer transition-all duration-200"
+                           onClick={(e) => {
+                             e.preventDefault();
+                             e.stopPropagation();
+                             handleGitHubAuth();
+                           }}
+                         >
+                           <div className="w-10 h-10 rounded-full bg-gray-900 flex items-center justify-center mr-3">
+                             <Github className="h-5 w-5 text-white" />
+                           </div>
+                           <div>
+                             <div className="font-medium text-gray-900">GitHub</div>
+                             <div className="text-xs text-gray-500">Import from repositories</div>
+                           </div>
+                         </DropdownMenuItem>
 
-                    {/* Dropbox Button */}
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          className="w-12 h-12 rounded-full bg-white border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 transition-all duration-300"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDropboxAuth();
-                          }}
-                          disabled={isLoadingCloud}
-                        >
-                          <Folder className="h-5 w-5 text-gray-600" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Dropbox</p>
-                      </TooltipContent>
-                    </Tooltip>
+                         {/* Dropbox Option */}
+                         <DropdownMenuItem
+                           className="flex items-center p-3 rounded-lg hover:bg-blue-50 cursor-pointer transition-all duration-200"
+                           onClick={(e) => {
+                             e.preventDefault();
+                             e.stopPropagation();
+                             handleDropboxAuth();
+                           }}
+                         >
+                           <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center mr-3">
+                             <Folder className="h-5 w-5 text-white" />
+                           </div>
+                           <div>
+                             <div className="font-medium text-gray-900">Dropbox</div>
+                             <div className="text-xs text-gray-500">Import from Dropbox</div>
+                           </div>
+                         </DropdownMenuItem>
 
-                    {/* Google Drive Button */}
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          className="w-12 h-12 rounded-full bg-white border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 transition-all duration-300"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleGoogleDriveAuth();
-                          }}
-                          disabled={isLoadingCloud}
-                        >
-                          <ExternalLink className="h-5 w-5 text-gray-600" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Google Drive</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-                </TooltipProvider>
+                         {/* Google Drive Option */}
+                         <DropdownMenuItem
+                           className="flex items-center p-3 rounded-lg hover:bg-blue-50 cursor-pointer transition-all duration-200"
+                           onClick={(e) => {
+                             e.preventDefault();
+                             e.stopPropagation();
+                             handleGoogleDriveAuth();
+                           }}
+                         >
+                           <div className="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center mr-3">
+                             <ExternalLink className="h-5 w-5 text-white" />
+                           </div>
+                           <div>
+                             <div className="font-medium text-gray-900">Google Drive</div>
+                             <div className="text-xs text-gray-500">Import from Drive</div>
+                           </div>
+                         </DropdownMenuItem>
+                       </div>
+                     </DropdownMenuContent>
+                   </DropdownMenu>
+                 </div>
 
-                {/* Loading State */}
-                {isLoadingCloud && (
-                  <div className="flex items-center justify-center gap-2 text-blue-600">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                    <span className="text-sm">Connecting to cloud service...</span>
-                  </div>
-                )}
+                                 {/* Loading State - Only show when actually loading */}
+                 {isLoadingCloud && (
+                   <div className="flex items-center justify-center gap-2 text-blue-600 mb-4">
+                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                     <span className="text-sm">Connecting to cloud service...</span>
+                   </div>
+                 )}
 
                 {/* Drag & Drop Text */}
                 <p className="text-gray-500 text-sm mt-4">
