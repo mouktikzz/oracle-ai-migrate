@@ -20,7 +20,7 @@ import PerformanceMetricsDashboard from '@/components/PerformanceMetricsDashboar
 import { useConversionLogic } from '@/components/dashboard/ConversionLogic';
 import { useMigrationManager } from '@/components/dashboard/MigrationManager';
 import { useUnreviewedFiles } from '@/hooks/useUnreviewedFiles';
-import GitHubAuth from '@/components/GitHubAuth';
+import CloudStorageAuth from '@/components/CloudStorageAuth';
 
 interface FileItem {
   id: string;
@@ -52,7 +52,7 @@ const Dashboard = () => {
   const [showHelp, setShowHelp] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingCompleteMigration, setPendingCompleteMigration] = useState(false);
-  const [showGitHubAuth, setShowGitHubAuth] = useState(false);
+  const [showCloudAuth, setShowCloudAuth] = useState(false);
 
   const { handleCodeUpload } = useMigrationManager();
   const {
@@ -229,12 +229,13 @@ const Dashboard = () => {
     navigate('/');
   };
 
-  const handleGitHubSuccess = (user: any) => {
-    // Handle successful GitHub authentication
-    console.log('GitHub user authenticated:', user);
+  const handleCloudSuccess = (user: any, files?: any[]) => {
+    // Handle successful cloud storage authentication
+    console.log('Cloud user authenticated:', user);
+    console.log('Available files:', files);
     toast({
-      title: "GitHub Connected!",
-      description: `Successfully connected to GitHub as ${user.login}`,
+      title: `${user.provider.charAt(0).toUpperCase() + user.provider.slice(1)} Connected!`,
+      description: `Successfully connected as ${user.name}`,
     });
   };
 
@@ -371,7 +372,7 @@ const Dashboard = () => {
           onGoToHistory={handleGoToHistory}
           onGoHome={handleGoHome}
           onShowHelp={() => setShowHelp(true)}
-          onConnectGitHub={() => setShowGitHubAuth(true)}
+          onConnectCloud={() => setShowCloudAuth(true)}
         />
 
       <main className="container mx-auto px-4 py-8">
@@ -466,12 +467,12 @@ const Dashboard = () => {
         <Help onClose={() => setShowHelp(false)} />
       )}
 
-      {/* GitHub Auth Modal */}
-      <GitHubAuth 
-        isOpen={showGitHubAuth}
-        onClose={() => setShowGitHubAuth(false)}
-        onSuccess={handleGitHubSuccess}
-      />
+        {/* Cloud Storage Auth Modal */}
+  <CloudStorageAuth 
+    isOpen={showCloudAuth}
+    onClose={() => setShowCloudAuth(false)}
+    onSuccess={handleCloudSuccess}
+  />
 
       <footer className="w-full text-center py-4 text-gray-500 text-sm border-t bg-white/80 mt-8">
         © 2025 Migration Platform. All rights reserved. Developed by CosmoAgents | <a href="https://www.github.com/mouktikzz/oracle-ai-migrate" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>GitHub</a>

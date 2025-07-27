@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import Help from '@/components/Help';
 import UserDropdown from '@/components/UserDropdown';
-import GitHubAuth from '@/components/GitHubAuth';
+import CloudStorageAuth from '@/components/CloudStorageAuth';
 
 // Typing animation for tagline
 const useTypingEffect = (text: string, speed = 40) => {
@@ -27,7 +27,7 @@ const Landing = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const [showHelp, setShowHelp] = useState(false);
-  const [showGitHubAuth, setShowGitHubAuth] = useState(false);
+  const [showCloudAuth, setShowCloudAuth] = useState(false);
 
   const handleGetStarted = () => {
     if (user) {
@@ -45,10 +45,11 @@ const Landing = () => {
     }
   };
 
-  const handleGitHubSuccess = (user: any) => {
-    // Handle successful GitHub authentication
-    console.log('GitHub user authenticated:', user);
-    // You can store the GitHub user data or perform additional actions here
+  const handleCloudSuccess = (user: any, files?: any[]) => {
+    // Handle successful cloud storage authentication
+    console.log('Cloud user authenticated:', user);
+    console.log('Available files:', files);
+    // You can store the cloud user data or perform additional actions here
   };
 
   const mainTagline = 'Migrate Your Sybase Database to Oracle with AI-Powered Precision';
@@ -74,14 +75,14 @@ const Landing = () => {
                 <HelpCircle className="h-4 w-4" />
                 <span>Help</span>
               </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => setShowGitHubAuth(true)}
-                className="flex items-center space-x-2"
-              >
-                <Github className="h-4 w-4" />
-                <span>Connect GitHub</span>
-              </Button>
+                      <Button 
+          variant="outline" 
+          onClick={() => setShowCloudAuth(true)}
+          className="flex items-center space-x-2"
+        >
+          <Folder className="h-4 w-4" />
+          <span>Connect Cloud</span>
+        </Button>
               {user ? (
                 <>
                   <Button variant="ghost" onClick={handleGoToHistory}>
@@ -108,11 +109,11 @@ const Landing = () => {
       {/* Help Modal */}
       {showHelp && <Help onClose={() => setShowHelp(false)} />}
 
-      {/* GitHub Auth Modal */}
-      <GitHubAuth 
-        isOpen={showGitHubAuth}
-        onClose={() => setShowGitHubAuth(false)}
-        onSuccess={handleGitHubSuccess}
+      {/* Cloud Storage Auth Modal */}
+      <CloudStorageAuth 
+        isOpen={showCloudAuth}
+        onClose={() => setShowCloudAuth(false)}
+        onSuccess={handleCloudSuccess}
       />
 
       {/* Hero Section */}

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Database, History, HelpCircle, Github } from 'lucide-react';
+import { Database, History, HelpCircle, Folder } from 'lucide-react';
 import UserDropdown from '@/components/UserDropdown';
 import HomeButton from '@/components/HomeButton';
 
@@ -9,7 +9,7 @@ interface DashboardHeaderProps {
   onGoToHistory: () => void;
   onGoHome: () => void;
   onShowHelp: () => void;
-  onConnectGitHub: () => void;
+  onConnectCloud: () => void;
   title?: string;
 }
 
@@ -17,7 +17,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onGoToHistory,
   onGoHome,
   onShowHelp,
-  onConnectGitHub,
+  onConnectCloud,
   title = "Migration Dashboard"
 }) => {
   return (
@@ -33,14 +33,14 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           </div>
           
           <div className="flex items-center gap-4">
-            <Button 
-              variant="outline" 
-              onClick={onConnectGitHub}
-              className="flex items-center gap-2"
-            >
-              <Github className="h-4 w-4" />
-              Connect GitHub
-            </Button>
+                  <Button 
+        variant="outline" 
+        onClick={onConnectCloud}
+        className="flex items-center gap-2"
+      >
+        <Folder className="h-4 w-4" />
+        Connect Cloud
+      </Button>
             <Button 
               variant="outline" 
               onClick={onGoToHistory}
