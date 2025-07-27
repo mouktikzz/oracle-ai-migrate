@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Database, FileText, Zap, Shield, Clock, Users, ArrowRight, History, HelpCircle, Github } from 'lucide-react';
+import { Database, FileText, Zap, Shield, Clock, Users, ArrowRight, History, HelpCircle, Github, Folder } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import Help from '@/components/Help';
