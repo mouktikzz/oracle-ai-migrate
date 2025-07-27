@@ -629,10 +629,10 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
                   onSaveEdit={(newContent) => handleSaveEdit(selectedFile, newContent)}
                   hideEdit={selectedFile.status === 'reviewed'}
                   onPrevFile={hasPrev ? () => setSelectedFileId(allFilteredFiles[currentIndex - 1].id) : undefined}
-              onNextFile={hasNext ? () => setSelectedFileId(allFilteredFiles[currentIndex + 1].id) : undefined}
-              hasPrev={hasPrev}
-              hasNext={hasNext}
-            />
+                  onNextFile={hasNext ? () => setSelectedFileId(allFilteredFiles[currentIndex + 1].id) : undefined}
+                  hasPrev={hasPrev}
+                  hasNext={hasNext}
+                />
               </CardContent>
               <CardFooter className="flex justify-end gap-4">
                 {/* Action Buttons previously outside the card, now inside */}

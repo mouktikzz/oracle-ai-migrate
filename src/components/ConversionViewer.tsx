@@ -204,8 +204,7 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
         
         <TabsContent value="code" className="space-y-4">
           {(file.content || file.convertedContent) ? (
-            file.convertedContent ? (
-              <div className="relative grid grid-cols-2 gap-4">
+            <div className={`relative grid gap-4 ${file.convertedContent ? 'grid-cols-2' : 'grid-cols-1'}`}>
                 {/* Left Column: Original Sybase Code with Prev Arrow */}
                 <div className="flex items-start">
                   {hasPrev && onPrevFile && (
@@ -227,122 +226,8 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
                       language="sql"
                     />
                   </div>
-                </div>
-                {/* Right Column: Converted Oracle Code with Next Arrow */}
-                <div className="flex items-start">
-                  <div className="flex-1">
-                    <h3 className="text-sm font-medium mb-2 text-green-700">Converted Oracle Code:</h3>
-                    {isEditing ? (
-                      hideEdit ? (
-                        <CodeEditor
-                          initialCode={file.convertedContent}
-                          readOnly={true}
-                          showLineNumbers={true}
-                          height="400px"
-                          language="plsql"
-                        />
-                      ) : (
-                        <>
-                          <CodeEditor
-                            initialCode={file.convertedContent}
-                            value={editedContent}
-                            onChange={setEditedContent}
-                            readOnly={false}
-                            showLineNumbers={true}
-                            height="400px"
-                            language="plsql"
-                            selection={selection}
-                            onSelectionChange={setSelection}
-                          />
-                          <div className="flex items-center gap-2 mt-2">
-                            <Button
-                              size="sm"
-                              variant="default"
-                              onClick={handleSaveEdit}
-                            >
-                              <Save className="h-4 w-4 mr-1" />
-                              Save
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setIsEditing(false)}
-                            >
-                              Cancel
-                            </Button>
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => setShowRewriteDialog(true)}
-                                    disabled={isRewriting || selection.start === selection.end}
-                                    className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white border-0 shadow-md hover:from-purple-600 hover:to-indigo-700 transition-all duration-200 flex items-center gap-2"
-                                  >
-                                    <Sparkles className="h-4 w-4 mr-1 text-yellow-200" />
-                                    {isRewriting ? 'Rewriting...' : 'Rewrite with AI'}
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Rewrite the code using AI to optimize performance, add comments, or improve readability.</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          </div>
-                        </>
-                      )
-                    ) : (
-                      <>
-                        <CodeEditor
-                          initialCode={file.convertedContent}
-                          readOnly={true}
-                          showLineNumbers={true}
-                          height="400px"
-                          language="plsql"
-                        />
-                        {!hideEdit && !isEditing && (
-                          <div className="flex items-center gap-2 mt-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setIsEditing(true)}
-                            >
-                              <Edit className="h-4 w-4 mr-1" />
-                              Edit
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={async () => {
-                                setShowExplainDialog(true);
-                                setIsExplaining(true);
-                                setExplanation('');
-                                try {
-                                  const res = await fetch('/.netlify/functions/ai-explain', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ code: file.convertedContent, language: 'oracle sql' }),
-                                  });
-                                  const data = await res.json();
-                                  setExplanation(data.explanation || 'No explanation returned.');
-                                } catch (err) {
-                                  setExplanation('Failed to get explanation.');
-                                } finally {
-                                  setIsExplaining(false);
-                                }
-                              }}
-                              className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0 shadow-md hover:from-blue-600 hover:to-cyan-700 transition-all duration-200 flex items-center gap-2"
-                            >
-                              <Sparkles className="h-4 w-4 mr-1 text-yellow-200" />
-                              AI Code Analyzer
-                            </Button>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                  {hasNext && onNextFile && (
+                  {/* Next arrow for single column layout */}
+                  {!file.convertedContent && hasNext && onNextFile && (
                     <button
                       className="ml-2 bg-white border rounded-full shadow p-1 hover:bg-gray-100"
                       onClick={onNextFile}
@@ -352,33 +237,135 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
                     </button>
                   )}
                 </div>
-              </div>
-            ) : (
-              <div className="relative">
-                {/* Single full-width column for original code only */}
-                <div className="flex items-start">
-                  {hasPrev && onPrevFile && (
-                    <button
-                      className="mr-2 bg-white border rounded-full shadow p-1 hover:bg-gray-100"
-                      onClick={onPrevFile}
-                      aria-label="Previous file"
-                    >
-                      <ArrowLeft className="h-6 w-6" />
-                    </button>
-                  )}
-                  <div className="flex-1">
-                    <h3 className="text-sm font-medium mb-2">Original Sybase Code:</h3>
-                    <CodeEditor
-                      initialCode={file.content}
-                      readOnly={true}
-                      showLineNumbers={true}
-                      height="400px"
-                      language="sql"
-                    />
+                {/* Middle Column: Converted Oracle Code (only if available) */}
+                {file.convertedContent && (
+                  <div className="flex items-start">
+                    <div className="flex-1">
+                      <h3 className="text-sm font-medium mb-2 text-green-700">Converted Oracle Code:</h3>
+                      {isEditing ? (
+                        hideEdit ? (
+                          <CodeEditor
+                            initialCode={file.convertedContent}
+                            readOnly={true}
+                            showLineNumbers={true}
+                            height="400px"
+                            language="plsql"
+                          />
+                        ) : (
+                          <>
+                            <CodeEditor
+                              initialCode={file.convertedContent}
+                              value={editedContent}
+                              onChange={setEditedContent}
+                              readOnly={false}
+                              showLineNumbers={true}
+                              height="400px"
+                              language="plsql"
+                              selection={selection}
+                              onSelectionChange={setSelection}
+                            />
+                            <div className="flex items-center gap-2 mt-2">
+                              <Button
+                                size="sm"
+                                variant="default"
+                                onClick={handleSaveEdit}
+                              >
+                                <Save className="h-4 w-4 mr-1" />
+                                Save
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setIsEditing(false)}
+                              >
+                                Cancel
+                              </Button>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => setShowRewriteDialog(true)}
+                                      disabled={isRewriting || selection.start === selection.end}
+                                      className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white border-0 shadow-md hover:from-purple-600 hover:to-indigo-700 transition-all duration-200 flex items-center gap-2"
+                                    >
+                                      <Sparkles className="h-4 w-4 mr-1 text-yellow-200" />
+                                      {isRewriting ? 'Rewriting...' : 'Rewrite with AI'}
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Rewrite the code using AI to optimize performance, add comments, or improve readability.</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
+                          </>
+                        )
+                      ) : (
+                        <>
+                          <CodeEditor
+                            initialCode={file.convertedContent}
+                            readOnly={true}
+                            showLineNumbers={true}
+                            height="400px"
+                            language="plsql"
+                          />
+                          {!hideEdit && !isEditing && (
+                            <div className="flex items-center gap-2 mt-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setIsEditing(true)}
+                              >
+                                <Edit className="h-4 w-4 mr-1" />
+                                Edit
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={async () => {
+                                  setShowExplainDialog(true);
+                                  setIsExplaining(true);
+                                  setExplanation('');
+                                  try {
+                                    const res = await fetch('/.netlify/functions/ai-explain', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ code: file.convertedContent, language: 'oracle sql' }),
+                                    });
+                                    const data = await res.json();
+                                    setExplanation(data.explanation || 'No explanation returned.');
+                                  } catch (err) {
+                                    setExplanation('Failed to get explanation.');
+                                  } finally {
+                                    setIsExplaining(false);
+                                  }
+                                }}
+                                className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0 shadow-md hover:from-blue-600 hover:to-cyan-700 transition-all duration-200 flex items-center gap-2"
+                              >
+                                <Sparkles className="h-4 w-4 mr-1 text-yellow-200" />
+                                AI Code Analyzer
+                              </Button>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                    {hasNext && onNextFile && (
+                      <button
+                        className="ml-2 bg-white border rounded-full shadow p-1 hover:bg-gray-100"
+                        onClick={onNextFile}
+                        aria-label="Next file"
+                      >
+                        <ArrowRight className="h-6 w-6" />
+                      </button>
+                    )}
                   </div>
-                </div>
-              </div>
-            )
+                )}
+                
+
+               </div>
           ) : (
             <div className="text-center text-gray-400">No code available.</div>
           )}
@@ -665,42 +652,19 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
                     {/* Bulk Operations Used */}
                     <Card className="p-4 text-center">
                       <p className={`text-2xl font-bold ${getBulkColor(file.performanceMetrics.scalabilityMetrics.bulkOperationsUsed)}`}>
-                        {file.performanceMetrics.scalabilityMetrics.bulkOperationsUsed ? (
-                          <span style={{ color: 'green' }}>✔️</span>
-                        ) : (
-                          <span style={{ color: 'red' }}>❌</span>
-                        )}
+                        {file.performanceMetrics.scalabilityMetrics.bulkOperationsUsed ? 'Yes' : 'No'}
                       </p>
                       <p className="text-sm text-gray-600">Bulk Operations Used</p>
                     </Card>
                     {/* Bulk Collect Used */}
                     <Card className="p-4 text-center">
                       <p className={`text-2xl font-bold ${getBulkColor(file.performanceMetrics.scalabilityMetrics.bulkCollectUsed)}`}>
-                        {file.performanceMetrics.scalabilityMetrics.bulkCollectUsed ? (
-                          <span style={{ color: 'green' }}>✔️</span>
-                        ) : (
-                          <span style={{ color: 'red' }}>❌</span>
-                        )}
+                        {file.performanceMetrics.scalabilityMetrics.bulkCollectUsed ? 'Yes' : 'No'}
                       </p>
                       <p className="text-sm text-gray-600">Bulk Collect Used</p>
                     </Card>
                   </div>
                 </>
-              )}
-              
-              {/* Recommendations */}
-              {file.performanceMetrics.recommendations && file.performanceMetrics.recommendations.length > 0 && (
-                <Card className="p-6">
-                  <h4 className="text-lg font-medium mb-4">Performance Recommendations</h4>
-                  <ul className="space-y-3">
-                    {file.performanceMetrics.recommendations.map((rec, index) => (
-                      <li key={index} className="flex items-start gap-3">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                        <span className="text-sm text-gray-700">{rec}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </Card>
               )}
             </div>
           ) : (
@@ -711,87 +675,91 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
         </TabsContent>
       </Tabs>
 
+      {/* Rewrite Dialog */}
       <Dialog open={showRewriteDialog} onOpenChange={setShowRewriteDialog}>
-        <DialogContent aria-describedby="rewrite-instruction">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Rewrite with AI</DialogTitle>
+            <DialogTitle>Rewrite Code with AI</DialogTitle>
           </DialogHeader>
-          <div id="rewrite-instruction" className="space-y-2">
-            <label className="block text-sm font-medium">Instruction for AI:</label>
-            <Input
-              value={rewritePrompt}
-              onChange={e => setRewritePrompt(e.target.value)}
-              placeholder="E.g. Optimize for performance, add comments, etc."
-              disabled={isRewriting}
-            />
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Rewrite Instructions (Optional)</label>
+              <Textarea
+                value={rewritePrompt}
+                onChange={(e) => setRewritePrompt(e.target.value)}
+                placeholder="Describe how you want the code to be rewritten (e.g., 'Add comments', 'Optimize performance', 'Improve readability')"
+                rows={3}
+              />
+            </div>
+            <div className="text-sm text-gray-600">
+              <p>Selected code will be rewritten using AI. You can provide specific instructions or let AI optimize automatically.</p>
+            </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRewriteDialog(false)} disabled={isRewriting}>Cancel</Button>
+            <Button variant="outline" onClick={() => setShowRewriteDialog(false)}>
+              Cancel
+            </Button>
             <Button
-              variant="default"
               onClick={async () => {
+                setShowRewriteDialog(false);
                 setIsRewriting(true);
                 try {
-                  // Only send the selected code to the AI
-                  const selectedText = editedContent.slice(selection.start, selection.end);
                   const res = await fetch('/.netlify/functions/ai-rewrite', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                      code: selectedText,
-                      prompt: `${rewritePrompt}\n\nOnly return the rewritten code. Do not include explanations, markdown, or comments unless they are part of the code itself.`,
-                      language: 'oracle sql',
+                      code: file.convertedContent,
+                      prompt: rewritePrompt || 'Rewrite this code to improve performance, readability, and add appropriate comments',
+                      language: 'oracle sql'
                     }),
                   });
                   const data = await res.json();
                   if (data.rewrittenCode) {
-                    // Post-process: remove markdown/code fences and explanations
-                    let rewritten = data.rewrittenCode;
-                    rewritten = rewritten.replace(/```[a-zA-Z]*\n?/g, '').replace(/```/g, '');
-                    rewritten = rewritten.split('\n').filter(line =>
-                      !line.trim().startsWith('I changed') &&
-                      !line.trim().startsWith('Here\'s') &&
-                      !line.trim().startsWith('If you prefer') &&
-                      !line.trim().startsWith('Explanation:')
-                    ).join('\n');
-                    setEditedContent(
-                      editedContent.slice(0, selection.start) +
-                      rewritten +
-                      editedContent.slice(selection.end)
-                    );
-                    toast({ title: 'AI Rewrite Complete', description: 'The selected code has been rewritten by AI.' });
-                    setShowRewriteDialog(false);
-                  } else {
-                    toast({ title: 'AI Rewrite Failed', description: data.error || 'Unknown error', variant: 'destructive' });
+                    setEditedContent(data.rewrittenCode);
+                    toast({
+                      title: "Code Rewritten",
+                      description: "The code has been successfully rewritten by AI.",
+                    });
                   }
                 } catch (err) {
-                  toast({ title: 'AI Rewrite Failed', description: 'Network or server error', variant: 'destructive' });
+                  toast({
+                    title: "Rewrite Failed",
+                    description: "Failed to rewrite the code. Please try again.",
+                    variant: "destructive",
+                  });
                 } finally {
                   setIsRewriting(false);
                 }
               }}
-              disabled={isRewriting || !rewritePrompt}
+              disabled={isRewriting}
             >
-              {isRewriting ? 'Rewriting...' : 'Rewrite'}
+              {isRewriting ? 'Rewriting...' : 'Rewrite Code'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      {/* Explain Dialog */}
       <Dialog open={showExplainDialog} onOpenChange={setShowExplainDialog}>
-        <DialogContent aria-describedby="ai-explanation">
+        <DialogContent className="max-w-4xl">
           <DialogHeader>
-            <DialogTitle>AI Code Analyzer</DialogTitle>
+            <DialogTitle>AI Code Analysis</DialogTitle>
           </DialogHeader>
-          <div id="ai-explanation" className="space-y-2">
+          <div className="space-y-4">
             {isExplaining ? (
-              <div className="text-center py-4">Analyzing code with AI...</div>
+              <div className="text-center py-8">
+                <p className="text-gray-500">Analyzing code...</p>
+              </div>
             ) : (
-              <pre className="bg-gray-100 p-4 rounded text-sm whitespace-pre-wrap max-h-96 overflow-auto">{explanation}</pre>
+              <div className="prose max-w-none">
+                <pre className="whitespace-pre-wrap text-sm bg-gray-50 p-4 rounded">{explanation}</pre>
+              </div>
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowExplainDialog(false)}>Close</Button>
+            <Button onClick={() => setShowExplainDialog(false)}>
+              Close
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
