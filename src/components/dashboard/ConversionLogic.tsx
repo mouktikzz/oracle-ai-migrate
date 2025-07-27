@@ -115,64 +115,77 @@ export const useConversionLogic = (
     if (typeFiles.length === 0) return;
 
     setIsConverting(true);
-    
-    for (const file of typeFiles) {
-      setConvertingFileIds([file.id]);
-      try {
-        const result = await convertSybaseToOracle(file, selectedAiModel);
-        
-        const conversionResult: ConversionResult = {
-          id: result.id,
-          originalFile: {
-            id: file.id,
-            name: file.name,
-            content: file.content,
-            type: file.type,
-            status: 'pending'
-          },
-          aiGeneratedCode: result.convertedCode, // Store original AI output
-          convertedCode: result.convertedCode,
-          issues: result.issues,
-          dataTypeMapping: result.dataTypeMapping,
-          performance: result.performance,
-          status: result.status
-        };
-        
-        setConversionResults(prev => [...prev, conversionResult]);
-        
-        setFiles(prev => prev.map(f => 
-          f.id === file.id 
-            ? { 
-                ...f, 
-                conversionStatus: mapConversionStatus(result.status),
-                convertedContent: result.convertedCode,
-                dataTypeMapping: result.dataTypeMapping,
-                issues: result.issues,
-                performanceMetrics: result.performance
-              }
-            : f
-        ));
 
-        await supabase.from('migration_files').update({
-          conversion_status: mapConversionStatus(result.status),
-          converted_content: result.convertedCode,
-          performance_metrics: result.performance || {
-            score: 85,
-            maintainability: 90,
-            orig_complexity: 10,
-            conv_complexity: 7,
-            improvement: 30,
-            lines_reduced: 15,
-            loops_reduced: 2,
-            time_ms: 120
+    // Helper to process a batch of files in parallel
+    const processBatch = async (batch: FileItem[]) => {
+      setConvertingFileIds(prev => [...prev, ...batch.map(f => f.id)]);
+      await Promise.all(
+        batch.map(async (file) => {
+          try {
+            const result = await convertSybaseToOracle(file, selectedAiModel);
+            
+            const conversionResult: ConversionResult = {
+              id: result.id,
+              originalFile: {
+                id: file.id,
+                name: file.name,
+                content: file.content,
+                type: file.type,
+                status: 'pending'
+              },
+              aiGeneratedCode: result.convertedCode, // Store original AI output
+              convertedCode: result.convertedCode,
+              issues: result.issues,
+              dataTypeMapping: result.dataTypeMapping,
+              performance: result.performance,
+              status: result.status
+            };
+            
+            setConversionResults(prev => [...prev, conversionResult]);
+            
+            setFiles(prev => prev.map(f => 
+              f.id === file.id 
+                ? { 
+                    ...f, 
+                    conversionStatus: mapConversionStatus(result.status),
+                    convertedContent: result.convertedCode,
+                    dataTypeMapping: result.dataTypeMapping,
+                    issues: result.issues,
+                    performanceMetrics: result.performance
+                  }
+                : f
+            ));
+
+            await supabase.from('migration_files').update({
+              conversion_status: mapConversionStatus(result.status),
+              converted_content: result.convertedCode,
+              performance_metrics: result.performance || {
+                score: 85,
+                maintainability: 90,
+                orig_complexity: 10,
+                conv_complexity: 7,
+                improvement: 30,
+                lines_reduced: 15,
+                loops_reduced: 2,
+                time_ms: 120
+              }
+            }).eq('file_name', file.name);
+          } catch (error) {
+            console.error(`Conversion failed for ${file.name}:`, error);
+            setFiles(prev => prev.map(f => 
+              f.id === file.id ? { ...f, conversionStatus: 'failed' } : f
+            ));
+          } finally {
+            setConvertingFileIds(prev => prev.filter(id => id !== file.id));
           }
-        }).eq('file_name', file.name);
-      } catch (error) {
-        console.error(`Conversion failed for ${file.name}:`, error);
-        setFiles(prev => prev.map(f => 
-          f.id === file.id ? { ...f, conversionStatus: 'failed' } : f
-        ));
-      }
+        })
+      );
+    };
+
+    // Process in batches of 5
+    for (let i = 0; i < typeFiles.length; i += 5) {
+      const batch = typeFiles.slice(i, i + 5);
+      await processBatch(batch);
     }
     
     setConvertingFileIds([]);
