@@ -116,6 +116,7 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
   const [rewritePrompt, setRewritePrompt] = useState('');
   const [isRewriting, setIsRewriting] = useState(false);
   const [selection, setSelection] = useState<{ start: number; end: number }>({ start: 0, end: 0 });
+  const [preservedSelection, setPreservedSelection] = useState<{ start: number; end: number } | null>(null);
   const [showExplainDialog, setShowExplainDialog] = useState(false);
   const [isExplaining, setIsExplaining] = useState(false);
   const [explanation, setExplanation] = useState('');
@@ -690,26 +691,45 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
             <DialogTitle>Rewrite Code with AI</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Rewrite Instructions (Optional)</label>
-              <Textarea
-                value={rewritePrompt}
-                onChange={(e) => setRewritePrompt(e.target.value)}
-                placeholder="Describe how you want the code to be rewritten (e.g., 'Add comments', 'Optimize performance', 'Improve readability')"
-                rows={3}
-              />
-            </div>
-            <div className="text-sm text-gray-600">
-              <p>Selected code will be rewritten using AI. You can provide specific instructions or let AI optimize automatically.</p>
-            </div>
+            {isRewriting ? (
+              <div className="text-center py-8">
+                <div className="flex flex-col items-center space-y-4">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                  <div className="space-y-2">
+                    <p className="text-lg font-medium text-gray-900">Rewriting Code with AI...</p>
+                    <p className="text-sm text-gray-500">This may take a few moments</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Rewrite Instructions (Optional)</label>
+                  <Textarea
+                    value={rewritePrompt}
+                    onChange={(e) => setRewritePrompt(e.target.value)}
+                    placeholder="Describe how you want the code to be rewritten (e.g., 'Add comments', 'Optimize performance', 'Improve readability')"
+                    rows={3}
+                  />
+                </div>
+                <div className="text-sm text-gray-600">
+                  <p>Selected code will be rewritten using AI. You can provide specific instructions or let AI optimize automatically.</p>
+                </div>
+              </>
+            )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRewriteDialog(false)}>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowRewriteDialog(false)}
+              disabled={isRewriting}
+            >
               Cancel
             </Button>
             <Button
               onClick={async () => {
-                setShowRewriteDialog(false);
+                // Preserve the current selection
+                setPreservedSelection({ start: selection.start, end: selection.end });
                 setIsRewriting(true);
                 try {
                   // Get the selected code only
@@ -731,6 +751,16 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
                     const afterSelection = editedContent.substring(selection.end);
                     const newContent = beforeSelection + data.rewrittenCode + afterSelection;
                     setEditedContent(newContent);
+                    setShowRewriteDialog(false);
+                    
+                    // Restore the selection after a short delay to ensure the content is updated
+                    setTimeout(() => {
+                      if (preservedSelection) {
+                        setSelection(preservedSelection);
+                        setPreservedSelection(null);
+                      }
+                    }, 100);
+                    
                     toast({
                       title: "Code Rewritten",
                       description: "The selected code has been successfully rewritten by AI.",
