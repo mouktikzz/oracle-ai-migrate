@@ -337,6 +337,7 @@ const ConversionPanel: React.FC<ConversionPanelProps> = ({
                   onNextFile={hasNext ? () => onFileSelect(allFilteredFiles[currentIndex + 1]) : undefined}
                   hasPrev={hasPrev}
                   hasNext={hasNext}
+                  convertedFilename={`${selectedFile.name.replace(/\.[^/.]+$/, '')}_oracle.sql`}
                 />
               </CardContent>
             </Card>

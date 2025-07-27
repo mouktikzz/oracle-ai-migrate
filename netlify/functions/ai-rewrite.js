@@ -40,9 +40,10 @@ exports.handler = async function(event, context) {
   const body = {
     model: 'qwen/qwen3-coder:free',
     messages: [
-      { role: 'system', content: 'You are a helpful AI assistant for code rewriting and explanation.' },
-      { role: 'user', content: `${prompt}\n\n${code}` }
-    ]
+      { role: 'system', content: 'You are a code rewriting assistant. CRITICAL: Return ONLY the rewritten code. NO explanations, NO comments, NO markdown, NO text before or after. ONLY the code. If you include any explanations, the response will be rejected.' },
+      { role: 'user', content: `Rewrite this code: ${prompt}\n\n${code}\n\nIMPORTANT: Return ONLY the rewritten code, nothing else.` }
+    ],
+    temperature: 0.1
   };
   const result = await fetchWithRetry(body, 3);
   if (result.success) {

@@ -233,6 +233,8 @@ const ConversionResults: React.FC<ConversionResultsProps> = ({
                         originalCode={selectedResult.originalFile.content}
                         convertedCode={selectedResult.convertedCode}
                         onUpdateConvertedCode={(updatedCode) => handleUpdateConvertedCode(selectedResult.id, updatedCode)}
+                        originalFilename={selectedResult.originalFile.name}
+                        convertedFilename={`${selectedResult.originalFile.name.replace(/\.[^/.]+$/, '')}_oracle.sql`}
                       />
                     </TabsContent>
                     

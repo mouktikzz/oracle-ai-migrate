@@ -92,6 +92,7 @@ interface ConversionViewerProps {
   onNextFile?: () => void;
   hasPrev?: boolean;
   hasNext?: boolean;
+  convertedFilename?: string;
 }
 
 const ConversionViewer: React.FC<ConversionViewerProps> = ({
@@ -104,6 +105,7 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
   onNextFile,
   hasPrev,
   hasNext,
+  convertedFilename,
 }) => {
   const { toast } = useToast();
   const { addUnreviewedFile } = useUnreviewedFiles();
@@ -224,6 +226,7 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
                       showLineNumbers={true}
                       height="400px"
                       language="sql"
+                      filename={file.name}
                     />
                   </div>
                   {/* Next arrow for single column layout */}
@@ -250,6 +253,7 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
                             showLineNumbers={true}
                             height="400px"
                             language="plsql"
+                            filename={convertedFilename || file.name}
                           />
                         ) : (
                           <>
@@ -263,6 +267,7 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
                               language="plsql"
                               selection={selection}
                               onSelectionChange={setSelection}
+                              filename={convertedFilename || file.name}
                             />
                             <div className="flex items-center gap-2 mt-2">
                               <Button
@@ -310,6 +315,7 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
                             showLineNumbers={true}
                             height="400px"
                             language="plsql"
+                            filename={convertedFilename || file.name}
                           />
                           {!hideEdit && !isEditing && (
                             <div className="flex items-center gap-2 mt-2">
@@ -485,6 +491,8 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
                   <CodeDiffViewer 
                     originalCode={aiCode}
                     convertedCode={finalCode}
+                    originalFilename={`${file.name} (AI Generated)`}
+                    convertedFilename={`${file.name} (Human Edited)`}
                   />
                 </div>
               )}
@@ -704,21 +712,28 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
                 setShowRewriteDialog(false);
                 setIsRewriting(true);
                 try {
+                  // Get the selected code only
+                  const selectedCode = editedContent.substring(selection.start, selection.end);
+                  
                   const res = await fetch('/.netlify/functions/ai-rewrite', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                      code: file.convertedContent,
+                      code: selectedCode,
                       prompt: rewritePrompt || 'Rewrite this code to improve performance, readability, and add appropriate comments',
                       language: 'oracle sql'
                     }),
                   });
                   const data = await res.json();
                   if (data.rewrittenCode) {
-                    setEditedContent(data.rewrittenCode);
+                    // Replace only the selected portion with the rewritten code
+                    const beforeSelection = editedContent.substring(0, selection.start);
+                    const afterSelection = editedContent.substring(selection.end);
+                    const newContent = beforeSelection + data.rewrittenCode + afterSelection;
+                    setEditedContent(newContent);
                     toast({
                       title: "Code Rewritten",
-                      description: "The code has been successfully rewritten by AI.",
+                      description: "The selected code has been successfully rewritten by AI.",
                     });
                   }
                 } catch (err) {
@@ -741,18 +756,18 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
 
       {/* Explain Dialog */}
       <Dialog open={showExplainDialog} onOpenChange={setShowExplainDialog}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle>AI Code Analysis</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto max-h-[calc(90vh-120px)]">
             {isExplaining ? (
               <div className="text-center py-8">
                 <p className="text-gray-500">Analyzing code...</p>
               </div>
             ) : (
-              <div className="prose max-w-none">
-                <pre className="whitespace-pre-wrap text-sm bg-gray-50 p-4 rounded">{explanation}</pre>
+              <div className="w-full">
+                <pre className="whitespace-pre-wrap text-sm bg-gray-50 p-4 rounded overflow-x-auto max-w-full break-words">{explanation}</pre>
               </div>
             )}
           </div>

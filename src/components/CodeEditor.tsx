@@ -5,7 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Search, X, ChevronUp, ChevronDown, Replace, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Search, X, ChevronUp, ChevronDown, Replace, ChevronRight, ChevronLeft, Maximize2, Minimize2 } from 'lucide-react';
 
 interface CodeEditorProps {
   initialCode: string;
@@ -18,6 +18,7 @@ interface CodeEditorProps {
   showLineNumbers?: boolean;
   selection?: { start: number; end: number };
   onSelectionChange?: (sel: { start: number; end: number }) => void;
+  filename?: string;
 }
 
 interface SearchMatch {
@@ -38,6 +39,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
   showLineNumbers = true,
   selection,
   onSelectionChange,
+  filename,
 }) => {
   const [code, setCode] = useState<string>(value !== undefined ? value : initialCode);
   const [isRewriting, setIsRewriting] = useState<boolean>(false);
@@ -49,6 +51,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
   const [caseSensitive, setCaseSensitive] = useState<boolean>(false);
   const [useRegex, setUseRegex] = useState<boolean>(false);
   const [showReplace, setShowReplace] = useState<boolean>(false);
+  const [isFullScreen, setIsFullScreen] = useState<boolean>(false);
   const { toast } = useToast();
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -60,6 +63,19 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
   useEffect(() => {
     if (value !== undefined && value !== code) setCode(value);
   }, [value]);
+
+  // Handle full screen keyboard shortcut
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'F11') {
+        e.preventDefault();
+        setIsFullScreen(!isFullScreen);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isFullScreen]);
 
   // Find all matches in the code
   const findMatches = useCallback((searchText: string): SearchMatch[] => {
@@ -159,37 +175,37 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
         }
       }
       
-             if (showSearch && e.ctrlKey && e.key === 'h') {
-         e.preventDefault();
-         setShowReplace(!showReplace);
-         setTimeout(() => {
-           if (showReplace) {
-             // If we're hiding replace, focus back to search
-             searchInputRef.current?.focus();
-           } else {
-             // If we're showing replace, focus to replace input
-             replaceInputRef.current?.focus();
-           }
-         }, 100);
-       }
+      if (showSearch && e.ctrlKey && e.key === 'h') {
+        e.preventDefault();
+        setShowReplace(!showReplace);
+        setTimeout(() => {
+          if (showReplace) {
+            // If we're hiding replace, focus back to search
+            searchInputRef.current?.focus();
+          } else {
+            // If we're showing replace, focus to replace input
+            replaceInputRef.current?.focus();
+          }
+        }, 100);
+      }
       
       if (showSearch && e.ctrlKey && e.key === 'r') {
         e.preventDefault();
         replaceCurrent();
       }
       
-             if (showSearch && e.ctrlKey && e.key === 'a') {
-         e.preventDefault();
-         // Select all text in the search input
-         if (searchInputRef.current) {
-           searchInputRef.current.select();
-         }
-       }
-       
-       if (showSearch && e.ctrlKey && e.shiftKey && e.key === 'l') {
-         e.preventDefault();
-         replaceAll();
-       }
+      if (showSearch && e.ctrlKey && e.key === 'a') {
+        e.preventDefault();
+        // Select all text in the search input
+        if (searchInputRef.current) {
+          searchInputRef.current.select();
+        }
+      }
+      
+      if (showSearch && e.ctrlKey && e.shiftKey && e.key === 'l') {
+        e.preventDefault();
+        replaceAll();
+      }
     };
 
     document.addEventListener('keydown', handleKeyDown);
@@ -357,9 +373,209 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
     return highlightedLines.join('\n');
   };
 
+  const toggleFullScreen = () => {
+    setIsFullScreen(!isFullScreen);
+  };
+
+  if (isFullScreen) {
+    return (
+      <div className="fixed inset-0 z-50 bg-white flex flex-col">
+        {/* Minimal Top Bar */}
+        <div className="flex items-center justify-between px-4 py-2 border-b bg-gray-50/50 backdrop-blur-sm">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-700">{filename || 'main.py'}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500">Press F11 to exit</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleFullScreen}
+              className="h-8 w-8 p-0 hover:bg-gray-200"
+              title="Exit Full Screen (F11)"
+            >
+              <Minimize2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+        
+        {/* Full Screen Code Editor */}
+        <div className="flex-1 overflow-hidden">
+          <div className="h-full bg-white">
+            <ScrollArea ref={scrollContainerRef} className="h-full">
+              <div className="flex font-mono text-sm w-full h-full p-0 bg-white">
+                {/* Line numbers column */}
+                {showLineNumbers && (
+                  <div
+                    className="select-none text-right pr-4 py-4 bg-gray-50/30 border-r border-gray-200/50 text-gray-400 sticky left-0"
+                    style={{ userSelect: 'none', minWidth: '3.5em' }}
+                    aria-hidden="true"
+                  >
+                    {code.split('\n').map((_, i) => (
+                      <div key={i} style={{ height: '1.5em', lineHeight: '1.5em' }}>{i + 1}</div>
+                    ))}
+                  </div>
+                )}
+                {/* Code column */}
+                <div className="flex-1 py-4 px-4 relative">
+                  {readOnly ? (
+                    <pre
+                      ref={preRef}
+                      className="w-full h-full bg-transparent text-gray-900 whitespace-pre-wrap focus:outline-none"
+                      style={{ fontFamily: 'inherit', fontSize: 'inherit', margin: 0 }}
+                      tabIndex={0}
+                      dangerouslySetInnerHTML={{ __html: highlightMatches(code) }}
+                    />
+                  ) : (
+                    <Textarea
+                      ref={textareaRef}
+                      value={code}
+                      onChange={handleCodeChange}
+                      onSelect={handleSelection}
+                      className="w-full h-full p-0 border-none focus-visible:ring-0 bg-transparent text-gray-900 resize-none"
+                      style={{ fontFamily: 'inherit', fontSize: 'inherit' }}
+                    />
+                  )}
+                </div>
+              </div>
+            </ScrollArea>
+          </div>
+        </div>
+
+        {/* Full Screen Search Overlay - Only show when search is active */}
+        {showSearch && (
+          <div className="absolute top-16 right-4 bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-xl p-3 z-50 min-w-[400px]">
+            <div className="flex items-center gap-2 mb-2">
+              <Search className="h-4 w-4 text-gray-500" />
+              <Input
+                ref={searchInputRef}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search..."
+                className="flex-1 h-8 text-sm bg-white/80"
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowSearch(false);
+                  setSearchTerm('');
+                  setMatches([]);
+                  setCurrentMatchIndex(-1);
+                }}
+                className="h-8 w-8 p-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            {showReplace && (
+              <div className="flex items-center gap-2 mb-2">
+                <Replace className="h-4 w-4 text-gray-500" />
+                <Input
+                  ref={replaceInputRef}
+                  value={replaceTerm}
+                  onChange={(e) => setReplaceTerm(e.target.value)}
+                  placeholder="Replace with..."
+                  className="flex-1 h-8 text-sm bg-white/80"
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowReplace(false)}
+                  className="h-8 w-8 p-0"
+                  title="Collapse replace"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+            
+            <div className="flex items-center justify-between text-xs text-gray-500">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setCaseSensitive(!caseSensitive)}
+                  className={`px-2 py-1 rounded ${caseSensitive ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'}`}
+                >
+                  Aa
+                </button>
+                <button
+                  onClick={() => setUseRegex(!useRegex)}
+                  className={`px-2 py-1 rounded ${useRegex ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'}`}
+                >
+                  .*
+                </button>
+                {showReplace && (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={replaceCurrent}
+                      className="h-6 text-xs"
+                    >
+                      Replace
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={replaceAll}
+                      className="h-6 text-xs"
+                    >
+                      Replace All
+                    </Button>
+                  </>
+                )}
+              </div>
+              
+              <div className="flex items-center gap-2">
+                {matches.length > 0 && (
+                  <span>
+                    {currentMatchIndex + 1} of {matches.length}
+                  </span>
+                )}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={navigateToPreviousMatch}
+                  disabled={matches.length === 0}
+                  className="h-6 w-6 p-0"
+                >
+                  <ChevronUp className="h-3 w-3" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={navigateToNextMatch}
+                  disabled={matches.length === 0}
+                  className="h-6 w-6 p-0"
+                >
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="w-full relative">
       <div className="rounded-md border bg-card">
+        {/* Full Screen Button */}
+        <div className="flex items-center justify-between p-2 border-b bg-gray-50">
+          <div className="text-sm text-gray-600">Code Editor</div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleFullScreen}
+            className="h-8 w-8 p-0"
+            title="Full Screen (F11)"
+          >
+            <Maximize2 className="h-4 w-4" />
+          </Button>
+        </div>
+        
         <ScrollArea ref={scrollContainerRef} style={{ height }}>
           <div
             className={`flex font-mono text-sm w-full h-full p-0 bg-white`}
@@ -414,42 +630,42 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
               placeholder="Search..."
               className="flex-1 h-8 text-sm"
             />
-                         <Button
-               variant="ghost"
-               size="sm"
-               onClick={() => {
-                 setShowSearch(false);
-                 setSearchTerm('');
-                 setMatches([]);
-                 setCurrentMatchIndex(-1);
-               }}
-               className="h-8 w-8 p-0"
-             >
-               <X className="h-4 w-4" />
-             </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setShowSearch(false);
+                setSearchTerm('');
+                setMatches([]);
+                setCurrentMatchIndex(-1);
+              }}
+              className="h-8 w-8 p-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
           
-                     {showReplace && (
-             <div className="flex items-center gap-2 mb-2">
-               <Replace className="h-4 w-4 text-gray-500" />
-               <Input
-                 ref={replaceInputRef}
-                 value={replaceTerm}
-                 onChange={(e) => setReplaceTerm(e.target.value)}
-                 placeholder="Replace with..."
-                 className="flex-1 h-8 text-sm"
-               />
-               <Button
-                 variant="ghost"
-                 size="sm"
-                 onClick={() => setShowReplace(false)}
-                 className="h-8 w-8 p-0"
-                 title="Collapse replace"
-               >
-                 <ChevronLeft className="h-4 w-4" />
-               </Button>
-             </div>
-           )}
+          {showReplace && (
+            <div className="flex items-center gap-2 mb-2">
+              <Replace className="h-4 w-4 text-gray-500" />
+              <Input
+                ref={replaceInputRef}
+                value={replaceTerm}
+                onChange={(e) => setReplaceTerm(e.target.value)}
+                placeholder="Replace with..."
+                className="flex-1 h-8 text-sm"
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowReplace(false)}
+                className="h-8 w-8 p-0"
+                title="Collapse replace"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
           
           <div className="flex items-center justify-between text-xs text-gray-500">
             <div className="flex items-center gap-4">

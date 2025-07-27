@@ -813,6 +813,8 @@ const History = () => {
                   originalCode={selectedFile.original_content || ''}
                   convertedCode={selectedFile.converted_content || selectedFile.original_content || 'No converted code available'}
                   readOnly={true}
+                  originalFilename={selectedFile.file_name}
+                  convertedFilename={`${selectedFile.file_name.replace(/\.[^/.]+$/, '')}_oracle.sql`}
                 />
               )}
             </div>

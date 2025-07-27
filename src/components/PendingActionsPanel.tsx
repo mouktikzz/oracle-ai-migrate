@@ -102,6 +102,16 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
             if (lower.includes('trig')) type = 'trigger';
             else if (lower.includes('proc')) type = 'procedure';
             else if (lower.includes('tab') || lower.includes('table')) type = 'table';
+            
+            // Generate the converted filename
+            const fileExtension = f.file_name.includes('.') 
+              ? f.file_name.split('.').pop() 
+              : 'sql';
+            const baseName = f.file_name.includes('.')
+              ? f.file_name.substring(0, f.file_name.lastIndexOf('.'))
+              : f.file_name;
+            const convertedFilename = `${baseName}_oracle.${fileExtension}`;
+            
             return {
               ...f,
               name: f.file_name,
@@ -115,6 +125,7 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
       dataTypeMapping: f.data_type_mapping || [],
       issues: f.issues || [],
       performanceMetrics: f.performance_metrics || {},
+      convertedFilename: convertedFilename, // Add the converted filename
     };
   };
 
@@ -632,6 +643,7 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
                   onNextFile={hasNext ? () => setSelectedFileId(allFilteredFiles[currentIndex + 1].id) : undefined}
                   hasPrev={hasPrev}
                   hasNext={hasNext}
+                  convertedFilename={mapToFileItem(selectedFile).convertedFilename}
                 />
               </CardContent>
               <CardFooter className="flex justify-end gap-4">
