@@ -380,8 +380,8 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
   if (isFullScreen) {
     return (
       <div className="fixed inset-0 z-50 bg-white flex flex-col">
-        {/* Minimal Top Bar */}
-        <div className="flex items-center justify-between px-4 py-2 border-b bg-gray-50/50 backdrop-blur-sm">
+        {/* Minimal Top Bar with filename on left and full-screen button on right */}
+        <div className="flex items-center justify-between px-4 py-2 border-b bg-white">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-gray-700">{filename || 'main.py'}</span>
           </div>
@@ -391,7 +391,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
               variant="ghost"
               size="sm"
               onClick={toggleFullScreen}
-              className="h-8 w-8 p-0 hover:bg-gray-200"
+              className="h-8 w-8 p-0 hover:bg-gray-100"
               title="Exit Full Screen (F11)"
             >
               <Minimize2 className="h-4 w-4" />
@@ -400,7 +400,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
         </div>
         
         {/* Full Screen Code Editor */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden relative">
           <div className="h-full bg-white">
             <ScrollArea ref={scrollContainerRef} className="h-full">
               <div className="flex font-mono text-sm w-full h-full p-0 bg-white">
@@ -563,13 +563,13 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
     <div className="w-full relative">
       <div className="rounded-md border bg-card">
         {/* Full Screen Button */}
-        <div className="flex items-center justify-between p-2 border-b bg-gray-50">
-          <div className="text-sm text-gray-600">Code Editor</div>
+        <div className="flex items-center justify-between p-2 border-b bg-white">
+          <div className="text-sm text-gray-700">{filename || 'main.py'}</div>
           <Button
             variant="ghost"
             size="sm"
             onClick={toggleFullScreen}
-            className="h-8 w-8 p-0"
+            className="h-8 w-8 p-0 hover:bg-gray-100"
             title="Full Screen (F11)"
           >
             <Maximize2 className="h-4 w-4" />
@@ -581,18 +581,18 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
             className={`flex font-mono text-sm w-full h-full p-0 bg-white`}
             style={{ minHeight: height }}
           >
-            {/* Line numbers column */}
-            {showLineNumbers && (
-              <div
-                className="select-none text-right pr-4 py-4 bg-gray-50 border-r border-gray-200 text-gray-400"
-                style={{ userSelect: 'none', minWidth: '3em' }}
-                aria-hidden="true"
-              >
-                {code.split('\n').map((_, i) => (
-                  <div key={i} style={{ height: '1.5em', lineHeight: '1.5em' }}>{i + 1}</div>
-                ))}
-              </div>
-            )}
+                         {/* Line numbers column */}
+             {showLineNumbers && (
+               <div
+                 className="select-none text-right pr-4 py-4 bg-white border-r border-gray-200 text-gray-400"
+                 style={{ userSelect: 'none', minWidth: '3em' }}
+                 aria-hidden="true"
+               >
+                 {code.split('\n').map((_, i) => (
+                   <div key={i} style={{ height: '1.5em', lineHeight: '1.5em' }}>{i + 1}</div>
+                 ))}
+               </div>
+             )}
             {/* Code column */}
             <div className="flex-1 py-4 relative">
               {readOnly ? (
