@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Database, FileText, Upload, Clock, BarChart3 } from 'lucide-react';
+import { Database, FileText, Upload, Clock, BarChart3, Server } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { ConversionResult, ConversionReport } from '@/types';
+import { ConversionResult, ConversionReport, DatabaseConnection } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import CodeUploader from '@/components/CodeUploader';
 import ReportViewer from '@/components/ReportViewer';
 import Help from '@/components/Help';
+import ConnectionForm from '@/components/ConnectionForm';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import ConversionPanel from '@/components/dashboard/ConversionPanel';
 import DevReviewPanel from '@/components/PendingActionsPanel';
@@ -42,9 +43,9 @@ const Dashboard = () => {
   const location = useLocation();
   const { toast } = useToast();
   
-  const initialTab = (location.state?.activeTab as 'upload' | 'conversion' | 'devReview' | 'metrics') || 'upload';
+  const initialTab = (location.state?.activeTab as 'database' | 'upload' | 'conversion' | 'devReview' | 'metrics') || 'database';
   
-  const [activeTab, setActiveTab] = useState<'upload' | 'conversion' | 'devReview' | 'metrics'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'database' | 'upload' | 'conversion' | 'devReview' | 'metrics'>(initialTab);
   const [files, setFiles] = useState<FileItem[]>([]);
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
   const [conversionResults, setConversionResults] = useState<ConversionResult[]>([]);
@@ -53,10 +54,39 @@ const Dashboard = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingCompleteMigration, setPendingCompleteMigration] = useState(false);
   const [cacheEnabled, setCacheEnabledState] = useState(isCacheEnabled());
+  const [sybaseConnection, setSybaseConnection] = useState<DatabaseConnection>({
+    type: 'sybase',
+    host: '',
+    port: '',
+    username: '',
+    password: '',
+    database: '',
+    connectionString: '',
+  });
+  
+  const [oracleConnection, setOracleConnection] = useState<DatabaseConnection>({
+    type: 'oracle',
+    host: '',
+    port: '',
+    username: '',
+    password: '',
+    database: '',
+    connectionString: '',
+  });
 
   const handleToggleCache = () => {
     setCacheEnabled(!cacheEnabled);
     setCacheEnabledState(!cacheEnabled);
+  };
+
+  const handleConnectionComplete = (sybaseConn: DatabaseConnection, oracleConn: DatabaseConnection) => {
+    setSybaseConnection(sybaseConn);
+    setOracleConnection(oracleConn);
+    setActiveTab('upload');
+    toast({
+      title: 'Database Connections Saved',
+      description: 'Your database connections have been configured successfully.',
+    });
   };
 
   const { handleCodeUpload } = useMigrationManager();
@@ -370,8 +400,12 @@ const Dashboard = () => {
       />
 
       <main className="container mx-auto px-4 py-8">
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'upload' | 'conversion' | 'devReview' | 'metrics')}>
-          <TabsList className="grid w-full grid-cols-4 max-w-2xl mx-auto mb-8">
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'database' | 'upload' | 'conversion' | 'devReview' | 'metrics')}>
+          <TabsList className="grid w-full grid-cols-5 max-w-3xl mx-auto mb-8">
+            <TabsTrigger value="database" className="flex items-center gap-2">
+              <Server className="h-4 w-4" />
+              Database
+            </TabsTrigger>
             <TabsTrigger value="upload" className="flex items-center gap-2">
               <Upload className="h-4 w-4" />
               Upload Code
@@ -394,6 +428,12 @@ const Dashboard = () => {
               Performance
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="database">
+            <div className="w-full max-w-4xl mx-auto">
+              <ConnectionForm onComplete={handleConnectionComplete} />
+            </div>
+          </TabsContent>
 
           <TabsContent value="upload">
             <CodeUploader onComplete={handleCodeUploadWrapper} />

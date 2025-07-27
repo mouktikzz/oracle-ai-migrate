@@ -14,38 +14,74 @@ export const loadConnection = (type: 'sybase' | 'oracle'): DatabaseConnection | 
   return savedConnection ? JSON.parse(savedConnection) : null;
 };
 
-// Simulated function to test database connection
-export const testConnection = async (connection: DatabaseConnection): Promise<{ success: boolean; message: string }> => {
-  // In a real app, this would attempt to connect to the database
-  // For this demo, we'll simulate a connection test
-  
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 1500));
-  
-  // Randomly succeed or fail for demo purposes
-  const success = Math.random() > 0.2;
-  
-  return {
-    success,
-    message: success ? 'Connection successful!' : 'Connection failed. Please check your credentials and try again.'
-  };
+// Real function to test Oracle database connection
+export const testConnection = async (connection: DatabaseConnection): Promise<{ success: boolean; message: string; details?: any }> => {
+  try {
+    const response = await fetch('http://localhost:3001/oracle-test-connection', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ connection })
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(result.error || 'Connection test failed');
+    }
+
+    return {
+      success: result.success,
+      message: result.message,
+      details: result.details
+    };
+  } catch (error) {
+    console.error('Connection test error:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Connection test failed',
+      details: { error: 'Network or server error' }
+    };
+  }
 };
 
-// Simulated function to deploy code to Oracle database
+// Real function to deploy code to Oracle database
 export const deployToOracle = async (
   connection: DatabaseConnection, 
-  code: string
-): Promise<{ success: boolean; message: string }> => {
-  // In a real app, this would execute the code against the Oracle database
-  
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 2000));
-  
-  // Randomly succeed or fail for demo purposes
-  const success = Math.random() > 0.1;
-  
-  return {
-    success,
-    message: success ? 'Code deployed successfully!' : 'Deployment failed. Check the code and database connection.'
-  };
+  code: string,
+  fileName?: string
+): Promise<{ success: boolean; message: string; details?: any }> => {
+  try {
+    const response = await fetch('http://localhost:3001/oracle-deploy', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        connection, 
+        code, 
+        fileName: fileName || 'converted_file.sql' 
+      })
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(result.error || 'Deployment failed');
+    }
+
+    return {
+      success: result.success,
+      message: result.message,
+      details: result.details
+    };
+  } catch (error) {
+    console.error('Deployment error:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Deployment failed',
+      details: { error: 'Network or server error' }
+    };
+  }
 };

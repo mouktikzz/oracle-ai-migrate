@@ -209,7 +209,8 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ report, onBack }) => {
             password: 'password',
             database: 'ORCL',
           },
-          file.converted_content
+          file.converted_content,
+          file.file_name
         );
         if (!deployResult.success) allSuccess = false;
       }

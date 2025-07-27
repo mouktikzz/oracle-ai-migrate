@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oracle Connectivity Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .form-group { margin: 10px 0; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 15px; padding: 10px; border-radius: 4px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .loading { background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Oracle Database Connectivity Test</h1>
+    
+    <div class="test-section">
+        <h2>Connection Parameters</h2>
+        <div class="form-group">
+            <label for="host">Host:</label>
+            <input type="text" id="host" value="localhost" placeholder="localhost">
+        </div>
+        <div class="form-group">
+            <label for="port">Port:</label>
+            <input type="number" id="port" value="1521" placeholder="1521">
+        </div>
+        <div class="form-group">
+            <label for="username">Username:</label>
+            <input type="text" id="username" placeholder="your_username">
+        </div>
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" placeholder="your_password">
+        </div>
+        <div class="form-group">
+            <label for="database">Database/SID:</label>
+            <input type="text" id="database" value="ORCL" placeholder="ORCL">
+        </div>
+        <div class="form-group">
+            <label for="serviceName">Service Name (optional):</label>
+            <input type="text" id="serviceName" placeholder="Leave empty if using SID">
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Connection</h2>
+        <button onclick="testConnection()">🔗 Test Oracle Connection</button>
+        <div id="connectionResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Deployment</h2>
+        <button onclick="testDeployment()">🚀 Test Oracle Deployment</button>
+        <div id="deploymentResult"></div>
+    </div>
+
+    <script>
+        const baseUrl = 'http://localhost:3001'; // Express.js backend URL
+
+        function getConnectionParams() {
+            return {
+                type: 'oracle',
+                host: document.getElementById('host').value,
+                port: parseInt(document.getElementById('port').value),
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value,
+                database: document.getElementById('database').value,
+                serviceName: document.getElementById('serviceName').value || null
+            };
+        }
+
+        function showResult(elementId, message, isSuccess = true) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="result ${isSuccess ? 'success' : 'error'}">${message}</div>`;
+        }
+
+        function showLoading(elementId) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = '<div class="result loading">Testing connection...</div>';
+        }
+
+        async function testConnection() {
+            showLoading('connectionResult');
+            
+            try {
+                const connection = getConnectionParams();
+                
+                const response = await fetch(`${baseUrl}/oracle-test-connection`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ connection })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    let message = `✅ ${result.message}`;
+                    if (result.details?.version) {
+                        message += `<br><strong>Oracle Version:</strong> ${result.details.version}`;
+                    }
+                    showResult('connectionResult', message, true);
+                } else {
+                    let message = `❌ ${result.message}`;
+                    if (result.details?.suggestion) {
+                        message += `<br><strong>Suggestion:</strong> ${result.details.suggestion}`;
+                    }
+                    showResult('connectionResult', message, false);
+                }
+            } catch (error) {
+                showResult('connectionResult', `❌ Error: ${error.message}`, false);
+            }
+        }
+
+        async function testDeployment() {
+            showLoading('deploymentResult');
+            
+            try {
+                const connection = getConnectionParams();
+                const testSQL = `
+                    CREATE TABLE test_migration (
+                        id NUMBER PRIMARY KEY,
+                        name VARCHAR2(100),
+                        created_date DATE DEFAULT SYSDATE
+                    );
+                    
+                    INSERT INTO test_migration (id, name) VALUES (1, 'Test Record');
+                `;
+                
+                const response = await fetch(`${baseUrl}/oracle-deploy`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        connection,
+                        code: testSQL,
+                        fileName: 'test_migration.sql'
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    let message = `✅ ${result.message}`;
+                    if (result.details) {
+                        message += `<br><strong>Details:</strong><pre>${JSON.stringify(result.details, null, 2)}</pre>`;
+                    }
+                    showResult('deploymentResult', message, true);
+                } else {
+                    let message = `❌ ${result.message}`;
+                    if (result.details) {
+                        message += `<br><strong>Details:</strong><pre>${JSON.stringify(result.details, null, 2)}</pre>`;
+                    }
+                    showResult('deploymentResult', message, false);
+                }
+            } catch (error) {
+                showResult('deploymentResult', `❌ Error: ${error.message}`, false);
+            }
+        }
+    </script>
+</body>
+</html> 

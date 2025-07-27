@@ -74,11 +74,18 @@ const ConnectionForm: React.FC<ConnectionFormProps> = ({ onComplete }) => {
     try {
       const result = await testConnection(connection);
       
-      toast({
-        title: result.success ? 'Connection Successful' : 'Connection Failed',
-        description: result.message,
-        variant: result.success ? 'default' : 'destructive',
-      });
+      if (result.success) {
+        toast({
+          title: 'Connection Successful',
+          description: `${result.message}${result.details?.version ? ` (Oracle ${result.details.version})` : ''}`,
+        });
+      } else {
+        toast({
+          title: 'Connection Failed',
+          description: `${result.message}${result.details?.suggestion ? ` - ${result.details.suggestion}` : ''}`,
+          variant: 'destructive',
+        });
+      }
     } catch (error) {
       toast({
         title: 'Connection Error',

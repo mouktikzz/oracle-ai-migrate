@@ -1,0 +1,18 @@
+[dev]
+  targetPort = 8080
+  port = 8888
+
+[build]
+  functions = "netlify/functions"
+  publish = "dist"
+
+[functions]
+  node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+[build.environment]
+  NODE_VERSION = "18" 
