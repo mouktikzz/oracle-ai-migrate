@@ -34,7 +34,7 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
   const [manualFileName, setManualFileName] = useState<string>('');
   const [templateType, setTemplateType] = useState<'table' | 'procedure' | 'trigger'>('table');
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [isLoadingCloud, setIsLoadingCloud] = useState<boolean>(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
   
@@ -114,39 +114,18 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
     // Check if we have a stored token
     const storedToken = localStorage.getItem('github_token');
     if (storedToken) {
-      // Immediately show repositories without loading state
+      // Immediately show repositories without any loading state
       openGitHubFilePicker(storedToken);
     } else {
-      // Show loading state only when opening OAuth
-      setIsLoadingCloud(true);
+      // For now, just open GitHub directly since OAuth setup is complex
+      // In production, you'd implement proper OAuth flow
+      toast({
+        title: 'GitHub Integration',
+        description: 'Please visit GitHub directly to access your repositories. OAuth integration will be available soon!',
+      });
       
-      // Open GitHub OAuth popup
-      const authUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(GITHUB_REDIRECT_URI)}&scope=repo&state=github`;
-      
-      const popup = window.open(
-        authUrl,
-        'github-auth',
-        'width=500,height=600,scrollbars=yes,resizable=yes'
-      );
-
-      // Listen for OAuth callback
-      const handleMessage = (event: MessageEvent) => {
-        if (event.origin !== window.location.origin) return;
-        
-        if (event.data.type === 'github-auth-success') {
-          localStorage.setItem('github_token', event.data.token);
-          openGitHubFilePicker(event.data.token);
-          popup?.close();
-          window.removeEventListener('message', handleMessage);
-          setIsLoadingCloud(false);
-        } else if (event.data.type === 'github-auth-error' || event.data.type === 'github-auth-cancelled') {
-          setIsLoadingCloud(false);
-          popup?.close();
-          window.removeEventListener('message', handleMessage);
-        }
-      };
-
-      window.addEventListener('message', handleMessage);
+      // Open GitHub in new tab
+      window.open('https://github.com', '_blank');
     }
   };
 
@@ -287,20 +266,12 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
     event?.preventDefault();
     event?.stopPropagation();
     
-    setIsLoadingCloud(true);
-    
-    const storedToken = localStorage.getItem('dropbox_token');
-    if (storedToken) {
-      openDropboxFilePicker(storedToken);
-    } else {
-      // For demo purposes, we'll show a coming soon message
-      // In production, you'd implement Dropbox OAuth
-      toast({
-        title: 'Dropbox Integration',
-        description: 'Dropbox integration will be available soon!',
-      });
-      setIsLoadingCloud(false);
-    }
+    // For demo purposes, we'll show a coming soon message
+    // In production, you'd implement Dropbox OAuth
+    toast({
+      title: 'Dropbox Integration',
+      description: 'Dropbox integration will be available soon!',
+    });
   };
 
   const openDropboxFilePicker = async (token: string) => {
@@ -309,7 +280,6 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
       title: 'Dropbox Integration',
       description: 'Dropbox file picker will be implemented soon!',
     });
-    setIsLoadingCloud(false);
   };
 
   // Google Drive Integration
@@ -318,20 +288,12 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
     event?.preventDefault();
     event?.stopPropagation();
     
-    setIsLoadingCloud(true);
-    
-    const storedToken = localStorage.getItem('google_token');
-    if (storedToken) {
-      openGoogleDriveFilePicker(storedToken);
-    } else {
-      // For demo purposes, we'll show a coming soon message
-      // In production, you'd implement Google OAuth
-      toast({
-        title: 'Google Drive Integration',
-        description: 'Google Drive integration will be available soon!',
-      });
-      setIsLoadingCloud(false);
-    }
+    // For demo purposes, we'll show a coming soon message
+    // In production, you'd implement Google OAuth
+    toast({
+      title: 'Google Drive Integration',
+      description: 'Google Drive integration will be available soon!',
+    });
   };
 
   const openGoogleDriveFilePicker = async (token: string) => {
@@ -340,7 +302,6 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
       title: 'Google Drive Integration',
       description: 'Google Drive file picker will be implemented soon!',
     });
-    setIsLoadingCloud(false);
   };
    
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -769,13 +730,7 @@ END`;
                    </DropdownMenu>
                  </div>
 
-                                 {/* Loading State - Only show when actually loading */}
-                 {isLoadingCloud && (
-                   <div className="flex items-center justify-center gap-2 text-blue-600 mb-4">
-                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                     <span className="text-sm">Connecting to cloud service...</span>
-                   </div>
-                 )}
+                
 
                 {/* Drag & Drop Text */}
                 <p className="text-gray-500 text-sm mt-4">
