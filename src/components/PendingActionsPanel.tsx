@@ -99,41 +99,27 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
   // Map to FileItem for type property
   const mapToFileItem = (f: UnreviewedFile) => {
     let type: 'table' | 'procedure' | 'trigger' | 'other' = 'other';
-<<<<<<< HEAD
     const lower = f.file_name.toLowerCase();
     if (lower.includes('trig')) type = 'trigger';
     else if (lower.includes('proc')) type = 'procedure';
     else if (lower.includes('tab') || lower.includes('table')) type = 'table';
+    
+    // Generate the converted filename
+    const fileExtension = f.file_name.includes('.') 
+      ? f.file_name.split('.').pop() 
+      : 'sql';
+    const baseName = f.file_name.includes('.')
+      ? f.file_name.substring(0, f.file_name.lastIndexOf('.'))
+      : f.file_name;
+    const convertedFilename = `${baseName}_oracle.${fileExtension}`;
+    
     return {
       ...f,
       name: f.file_name,
       content: f.original_code,
       convertedContent: f.converted_code,
-      aiGeneratedCode: f.ai_generated_code || '',
-      conversionStatus: 'pending' as 'pending',
-=======
-            const lower = f.file_name.toLowerCase();
-            if (lower.includes('trig')) type = 'trigger';
-            else if (lower.includes('proc')) type = 'procedure';
-            else if (lower.includes('tab') || lower.includes('table')) type = 'table';
-            
-            // Generate the converted filename
-            const fileExtension = f.file_name.includes('.') 
-              ? f.file_name.split('.').pop() 
-              : 'sql';
-            const baseName = f.file_name.includes('.')
-              ? f.file_name.substring(0, f.file_name.lastIndexOf('.'))
-              : f.file_name;
-            const convertedFilename = `${baseName}_oracle.${fileExtension}`;
-            
-            return {
-              ...f,
-              name: f.file_name,
-              content: f.original_code,
-              convertedContent: f.converted_code,
-              aiGeneratedCode: f.ai_generated_code || '', // Always use the ai_generated_code column as the AI baseline
-              conversionStatus: 'pending',
->>>>>>> 71985dc3a7b1d56ab2ab9c63463807d7eb1f2fbe
+      aiGeneratedCode: f.ai_generated_code || '', // Always use the ai_generated_code column as the AI baseline
+      conversionStatus: 'pending',
       errorMessage: undefined,
       type,
       path: f.file_name,
@@ -201,10 +187,7 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
     const updateData: UnreviewedFileUpdate = {
       id: file.id,
       converted_code: newCode,
-<<<<<<< HEAD
-      // ai_generated_code: prevAICode, // Only include if UnreviewedFileUpdate allows it
-=======
->>>>>>> 71985dc3a7b1d56ab2ab9c63463807d7eb1f2fbe
+
       ...(newMetrics ? { performance_metrics: newMetrics } : {}),
     };
     const success = await updateUnreviewedFile(updateData);
@@ -226,15 +209,6 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
       setEditedContent('');
     }
     // After marking as reviewed, trigger parent refresh
-<<<<<<< HEAD
-    if (onFileReviewed) await onFileReviewed();
-    setSelectedFileId(
-      pendingFiles.filter(f => f.id !== file.id)[0]?.id ||
-      reviewedFiles.concat([{ ...file, status: 'reviewed' }])[0]?.id ||
-      null
-    );
-    setMarkingReviewed(false);
-=======
     if (onFileReviewed) onFileReviewed();
     // Select next unreviewed file if available, else previous, else clear
     const currentIdx = mappedPendingFiles.findIndex(f => f.id === file.id);
@@ -247,7 +221,7 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
       }
     }
     setSelectedFileId(nextId);
->>>>>>> 71985dc3a7b1d56ab2ab9c63463807d7eb1f2fbe
+    setMarkingReviewed(false);
   };
 
   const handleDelete = async (fileId: string) => {
@@ -314,16 +288,6 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
     });
   };
 
-<<<<<<< HEAD
-  // Handler for AI Rewrite button
-  const handleAIRewrite = async (file: UnreviewedFile) => {
-    // TODO: Implement AI rewrite logic here
-    toast({
-      title: 'AI Rewrite Triggered',
-      description: `AI rewrite requested for ${file.file_name}`,
-    });
-  };
-
   // Add state for AI Analyzer dialog
   const [showAnalyzerDialog, setShowAnalyzerDialog] = useState(false);
   const [analyzerLoading, setAnalyzerLoading] = useState(false);
@@ -358,7 +322,6 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
     }
   };
 
-=======
   // Replace setActiveTab with a handler that also sets the selected file
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
@@ -380,8 +343,6 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
     if (onFileReviewed) onFileReviewed();
     refreshUnreviewedFiles();
   };
-
->>>>>>> 71985dc3a7b1d56ab2ab9c63463807d7eb1f2fbe
   if (isLoading) {
     return (
       <Card>
@@ -712,11 +673,7 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
                 <ConversionViewer
                   key={selectedFile.id} /* Add key to force re-render */
                   file={mapToFileItem(selectedFile)}
-<<<<<<< HEAD
-                  onManualEdit={(newContent) => { handleSaveEdit(selectedFile, newContent); }}
-=======
                   onManualEdit={(newContent) => handleSaveEdit(selectedFile, newContent)}
->>>>>>> 71985dc3a7b1d56ab2ab9c63463807d7eb1f2fbe
                   onDismissIssue={() => {}}
                   onSaveEdit={(newContent) => { handleSaveEdit(selectedFile, newContent); }}
                   hideEdit={selectedFile.status === 'reviewed'}
@@ -735,11 +692,9 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
                     {markingReviewed ? 'Marking...' : 'Mark as Reviewed'}
                   </Button>
               )}
-<<<<<<< HEAD
                 <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => handleAIAnalyze(selectedFile)} disabled={analyzerLoading}>
                   {analyzerLoading ? 'Analyzing...' : 'AI Analyzer'}
                 </Button>
-=======
                 {selectedFile.status === 'reviewed' && (
                   <Button className="bg-yellow-600 hover:bg-yellow-700 text-white" onClick={async () => {
                     await updateUnreviewedFile({ id: selectedFile.id, status: 'unreviewed' });
@@ -760,7 +715,6 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
                     Move to Unreviewed
                   </Button>
                 )}
->>>>>>> 71985dc3a7b1d56ab2ab9c63463807d7eb1f2fbe
                 <Button className="bg-red-600 hover:bg-red-700 text-white" onClick={() => deleteUnreviewedFile(selectedFile.id)}>
                   Delete File
                 </Button>

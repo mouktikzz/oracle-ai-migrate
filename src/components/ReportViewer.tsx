@@ -12,13 +12,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-<<<<<<< HEAD
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
-=======
 import { diffChars } from 'diff';
 import { analyzeCodeComplexity, generateBalancedPerformanceMetrics } from '@/utils/componentUtilswithlangchain';
->>>>>>> 71985dc3a7b1d56ab2ab9c63463807d7eb1f2fbe
 
 interface ReportViewerProps {
   report: ConversionReport;

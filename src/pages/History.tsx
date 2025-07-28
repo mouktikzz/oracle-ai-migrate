@@ -354,11 +354,7 @@ const History = () => {
         original_code: file.original_content,
         data_type_mapping: [], // If you have mapping info, add here
         issues: [], // If you have issues info, add here
-<<<<<<< HEAD
-        performance_metrics: {}, // If you have metrics, add here
-=======
         performance_metrics: file.performance_metrics || {}, // If you have metrics, add here
->>>>>>> 71985dc3a7b1d56ab2ab9c63463807d7eb1f2fbe
         user_id: user?.id || '',
       });
       toast({
@@ -484,10 +480,7 @@ const History = () => {
           linesBefore: before,
           linesAfter: after,
           issues: file.error_message ? [file.error_message] : [],
-<<<<<<< HEAD
-=======
           performance: file.performance_metrics || {},
->>>>>>> 71985dc3a7b1d56ab2ab9c63463807d7eb1f2fbe
         };
       });
       const report = {
@@ -506,12 +499,8 @@ const History = () => {
           .from('migration_reports')
           .insert({
             migration_id: migration.id,
-<<<<<<< HEAD
-            report_content: JSON.stringify(report),
-=======
             user_id: user?.id,
             report: report,
->>>>>>> 71985dc3a7b1d56ab2ab9c63463807d7eb1f2fbe
           })
           .select()
           .single();

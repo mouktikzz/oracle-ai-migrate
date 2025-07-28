@@ -20,11 +20,8 @@ import PerformanceMetricsDashboard from '@/components/PerformanceMetricsDashboar
 import { useConversionLogic } from '@/components/dashboard/ConversionLogic';
 import { useMigrationManager } from '@/components/dashboard/MigrationManager';
 import { useUnreviewedFiles } from '@/hooks/useUnreviewedFiles';
-<<<<<<< HEAD
 import CloudStorageAuth from '@/components/CloudStorageAuth';
-=======
 import { isCacheEnabled, setCacheEnabled } from '@/utils/conversionUtils';
->>>>>>> 71985dc3a7b1d56ab2ab9c63463807d7eb1f2fbe
 
 interface FileItem {
   id: string;
@@ -56,16 +53,13 @@ const Dashboard = () => {
   const [showHelp, setShowHelp] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingCompleteMigration, setPendingCompleteMigration] = useState(false);
-<<<<<<< HEAD
   const [showCloudAuth, setShowCloudAuth] = useState(false);
-=======
   const [cacheEnabled, setCacheEnabledState] = useState(isCacheEnabled());
 
   const handleToggleCache = () => {
     setCacheEnabled(!cacheEnabled);
     setCacheEnabledState(!cacheEnabled);
   };
->>>>>>> 71985dc3a7b1d56ab2ab9c63463807d7eb1f2fbe
 
   const { handleCodeUpload } = useMigrationManager();
   const {

@@ -11,18 +11,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useUnreviewedFiles } from '@/hooks/useUnreviewedFiles';
 import CodeDiffViewer from './CodeDiffViewer';
-<<<<<<< HEAD
 import { diffChars, Change } from 'diff';
 import { analyzeCodeComplexity, generatePerformanceMetrics } from '@/utils/conversionUtils';
-import CodeEditor from './CodeEditor';
-=======
-import { diffChars } from 'diff';
-import { analyzeCodeComplexity, generateBalancedPerformanceMetrics } from '@/utils/componentUtilswithlangchain';
+import { analyzeCodeComplexity as analyzeComplexity, generateBalancedPerformanceMetrics } from '@/utils/componentUtilswithlangchain';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import CodeEditor from './CodeEditor'; // Added import for CodeEditor
->>>>>>> 71985dc3a7b1d56ab2ab9c63463807d7eb1f2fbe
+import CodeEditor from './CodeEditor';
 
 interface DataTypeMapping {
   sybaseType: string;
@@ -162,10 +157,6 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
       originalComplexity,
       convertedComplexity,
       conversionTime,
-<<<<<<< HEAD
-      originalCode,
-      codeToSave
-=======
       // The next three arguments are required: complexityAssessment, optimizationLevel, expansionRatio
       // For manual edits, we can estimate or reuse previous values if available, or use defaults
       file.performanceMetrics?.complexityAssessment || 'moderate',
@@ -173,7 +164,6 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
       (convertedComplexity.totalLines || 1) / (originalComplexity.totalLines || 1),
       newCode,
       originalCode
->>>>>>> 71985dc3a7b1d56ab2ab9c63463807d7eb1f2fbe
     );
 
     // 2. Update in Supabase
@@ -186,11 +176,7 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
       .eq('id', file.id);
 
     // 3. Update in local state/UI
-<<<<<<< HEAD
-    onManualEdit(codeToSave); // pass only the new code to update state/UI
-=======
     onManualEdit(newCode); // pass only newCode as expected
->>>>>>> 71985dc3a7b1d56ab2ab9c63463807d7eb1f2fbe
     setIsEditing(false);
     if (onSaveEdit) {
       await onSaveEdit(codeToSave);
