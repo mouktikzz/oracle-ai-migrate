@@ -117,7 +117,7 @@ const Auth = () => {
             <Database className="h-12 w-12 text-primary mr-3" />
             <h1 className="text-2xl font-bold text-gray-900">Migration Tool</h1>
           </div>
-          <p className="text-gray-600">Sign in to start your Sybase to Oracle migration</p>
+          <p className="text-gray-600">Sign in to start your Cosmo Agents migration</p>
         </div>
 
         <Card>

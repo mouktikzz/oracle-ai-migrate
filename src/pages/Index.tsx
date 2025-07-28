@@ -409,7 +409,7 @@ const Index = () => {
           <div className="flex justify-between items-center">
             <div className="flex items-center">
               <DatabaseIcon className="h-8 w-8 mr-3" />
-              <h1 className="text-2xl font-bold">Sybase to Oracle Migration Tool</h1>
+              <h1 className="text-2xl font-bold">Cosmo Agents</h1>
             </div>
             
             <div className="flex gap-2">
@@ -445,7 +445,7 @@ const Index = () => {
       
       <footer className="bg-muted py-1">
         <div className="container mx-auto px-4 text-center text-muted-foreground text-sm">
-          <p>Sybase to Oracle Migration Tool - Powered by AI</p>
+          <p>Cosmo Agents - Powered by AI</p>
         </div>
       </footer>
     </div>

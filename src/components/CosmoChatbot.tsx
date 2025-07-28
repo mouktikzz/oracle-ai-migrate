@@ -198,7 +198,7 @@ const CosmoChatbot: React.FC<CosmoChatbotProps> = ({ onRefreshConversions }) => 
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-50">
+    <div className="fixed bottom-6 right-6 z-50">
       {/* Animated Chat Toggle Button */}
       <Button
         onClick={handleButtonClick}
@@ -222,7 +222,7 @@ const CosmoChatbot: React.FC<CosmoChatbotProps> = ({ onRefreshConversions }) => 
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="absolute bottom-16 sm:bottom-20 right-0 w-[300px] h-[450px] sm:w-[380px] sm:h-[520px] md:w-[420px] md:h-[560px] lg:w-[450px] lg:h-[580px] xl:w-[480px] xl:h-[600px] bg-white rounded-2xl shadow-2xl border-2 border-blue-200 overflow-hidden max-h-[80vh] max-w-[90vw]">
+        <div className="absolute bottom-20 sm:bottom-24 right-0 w-[300px] h-[450px] sm:w-[380px] sm:h-[520px] md:w-[420px] md:h-[560px] lg:w-[450px] lg:h-[580px] xl:w-[480px] xl:h-[600px] bg-white rounded-2xl shadow-2xl border-2 border-blue-200 overflow-hidden max-h-[75vh] max-w-[90vw]">
           {/* Header */}
           <div className="flex items-center justify-between p-2 sm:p-3 md:p-4 bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white">
             <div className="flex items-center gap-2 sm:gap-3">
