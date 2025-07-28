@@ -36,6 +36,7 @@ interface MigrationFile {
   error_message: string | null;
   created_at: string;
   migration_id: string; // Added for multi-select
+  performance_metrics?: any | null;
 }
 
 const History = () => {
@@ -76,8 +77,7 @@ const History = () => {
   const fetchHistory = async () => {
     try {
       setIsLoading(true);
-      
-      // Fetch migrations with file counts
+      // Fetch migrations with file counts and reports
       const { data: migrationsData, error: migrationsError } = await supabase
         .from('migrations')
         .select(`
@@ -92,7 +92,6 @@ const History = () => {
         `)
         .eq('user_id', user?.id)
         .order('created_at', { ascending: false });
-
       if (migrationsError) {
         console.error('Error fetching migrations:', migrationsError);
         toast({
@@ -118,10 +117,8 @@ const History = () => {
             report_id: reportId,
           };
         }) || [];
-        
         setMigrations(processedMigrations);
       }
-      
     } catch (error) {
       console.error('Error fetching history:', error);
       toast({
@@ -156,7 +153,7 @@ const History = () => {
     try {
       const { data, error } = await supabase
         .from('migration_files')
-        .select('*, migration_id')
+        .select('id, file_name, file_path, file_type, original_content, converted_content, conversion_status, error_message, created_at, migration_id, performance_metrics')
         .eq('migration_id', migrationId)
         .order('file_name', { ascending: true });
         
@@ -210,21 +207,26 @@ const History = () => {
   // Handle file download
   const handleDownloadFile = (e: React.MouseEvent, file: MigrationFile) => {
     e.stopPropagation();
-    
     const content = file.converted_content || file.original_content;
+    const fileExtension = file.file_name.includes('.') 
+      ? file.file_name.split('.').pop() 
+      : 'sql';
+    const baseName = file.file_name.includes('.')
+      ? file.file_name.substring(0, file.file_name.lastIndexOf('.'))
+      : file.file_name;
+    const downloadName = `${baseName}_oracle.${fileExtension}`;
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = file.file_name;
+    a.download = downloadName;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    
     toast({
       title: "Downloaded",
-      description: `${file.file_name} has been downloaded`,
+      description: `${downloadName} has been downloaded`,
     });
   };
 
@@ -352,7 +354,11 @@ const History = () => {
         original_code: file.original_content,
         data_type_mapping: [], // If you have mapping info, add here
         issues: [], // If you have issues info, add here
+<<<<<<< HEAD
         performance_metrics: {}, // If you have metrics, add here
+=======
+        performance_metrics: file.performance_metrics || {}, // If you have metrics, add here
+>>>>>>> 71985dc3a7b1d56ab2ab9c63463807d7eb1f2fbe
         user_id: user?.id || '',
       });
       toast({
@@ -478,6 +484,10 @@ const History = () => {
           linesBefore: before,
           linesAfter: after,
           issues: file.error_message ? [file.error_message] : [],
+<<<<<<< HEAD
+=======
+          performance: file.performance_metrics || {},
+>>>>>>> 71985dc3a7b1d56ab2ab9c63463807d7eb1f2fbe
         };
       });
       const report = {
@@ -496,7 +506,12 @@ const History = () => {
           .from('migration_reports')
           .insert({
             migration_id: migration.id,
+<<<<<<< HEAD
             report_content: JSON.stringify(report),
+=======
+            user_id: user?.id,
+            report: report,
+>>>>>>> 71985dc3a7b1d56ab2ab9c63463807d7eb1f2fbe
           })
           .select()
           .single();
@@ -707,6 +722,14 @@ const History = () => {
                               <Button 
                                 size="sm" 
                                 variant="ghost"
+                                onClick={(e) => handleViewReport(e, migration)}
+                                title="View Report"
+                              >
+                                <FileText className="h-4 w-4 text-blue-600" />
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="ghost"
                                 onClick={(e) => handleDeleteMigration(e, migration.id)}
                                 title="Delete Migration"
                               >
@@ -770,7 +793,7 @@ const History = () => {
                                     size="sm" 
                                     variant="ghost"
                                     onClick={(e) => handleDownloadFile(e, file)}
-                                    title="Download File"
+                                    title="Download converted Oracle code"
                                   >
                                     <Download className="h-4 w-4" />
                                   </Button>
@@ -809,11 +832,28 @@ const History = () => {
                   originalCode={selectedFile.original_content || ''}
                   convertedCode={selectedFile.converted_content || selectedFile.original_content || 'No converted code available'}
                   readOnly={true}
+                  originalFilename={selectedFile.file_name}
+                  convertedFilename={`${selectedFile.file_name.replace(/\.[^/.]+$/, '')}_oracle.sql`}
                 />
               )}
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Dialog for Generated Report */}
+        {showGeneratedReport && generatedReport && (
+          <Dialog open={showGeneratedReport} onOpenChange={setShowGeneratedReport}>
+            <DialogContent className="max-w-4xl">
+              <DialogHeader>
+                <DialogTitle>Migration Report (Generated)</DialogTitle>
+                <DialogClose />
+              </DialogHeader>
+              <div className="overflow-y-auto max-h-[80vh]">
+                <ReportViewer report={generatedReport} onBack={() => setShowGeneratedReport(false)} />
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
       </main>
       {showGeneratedReport && generatedReport && (
         <Dialog open={showGeneratedReport} onOpenChange={setShowGeneratedReport}>

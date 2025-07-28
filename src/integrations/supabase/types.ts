@@ -111,27 +111,27 @@ export type Database = {
       }
       migration_reports: {
         Row: {
-          created_at: string
-          efficiency_metrics: Json | null
-          id: string
-          migration_id: string
-          report_content: string
-        }
+          id: string;
+          user_id: string | null;
+          created_at: string;
+          report: Json;
+          migration_id: string | null;
+        };
         Insert: {
-          created_at?: string
-          efficiency_metrics?: Json | null
-          id?: string
-          migration_id: string
-          report_content: string
-        }
+          id?: string;
+          user_id?: string | null;
+          created_at?: string;
+          report: Json;
+          migration_id?: string | null;
+        };
         Update: {
-          created_at?: string
-          efficiency_metrics?: Json | null
-          id?: string
-          migration_id?: string
-          report_content?: string
-        }
-        Relationships: []
+          id?: string;
+          user_id?: string | null;
+          created_at?: string;
+          report?: Json;
+          migration_id?: string | null;
+        };
+        Relationships: [];
       }
       migrations: {
         Row: {
@@ -216,7 +216,43 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
-      }
+      },
+      conversion_cache: {
+        Row: {
+          id: string;
+          content_hash: string;
+          original_code: string;
+          converted_code: string;
+          created_at: string | null;
+          ai_model: string | null;
+          metrics: Json | null;
+          issues: Json | null;
+          data_type_mapping: Json | null;
+        };
+        Insert: {
+          id?: string;
+          content_hash: string;
+          original_code: string;
+          converted_code: string;
+          created_at?: string | null;
+          ai_model?: string | null;
+          metrics?: Json | null;
+          issues?: Json | null;
+          data_type_mapping?: Json | null;
+        };
+        Update: {
+          id?: string;
+          content_hash?: string;
+          original_code?: string;
+          converted_code?: string;
+          created_at?: string | null;
+          ai_model?: string | null;
+          metrics?: Json | null;
+          issues?: Json | null;
+          data_type_mapping?: Json | null;
+        };
+        Relationships: [];
+      },
     }
     Views: {
       [_ in never]: never

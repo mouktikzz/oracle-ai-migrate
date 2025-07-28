@@ -30,9 +30,16 @@ const FileDownloader: React.FC<FileDownloaderProps> = ({
       const url = URL.createObjectURL(blob);
       
       // Create a temporary anchor element and trigger download
+      const fileExtension = fileName.includes('.') 
+        ? fileName.split('.').pop() 
+        : 'sql';
+      const baseName = fileName.includes('.')
+        ? fileName.substring(0, fileName.lastIndexOf('.'))
+        : fileName;
+      const downloadName = `${baseName}_oracle.${fileExtension}`;
       const link = document.createElement('a');
       link.href = url;
-      link.download = fileName.endsWith('.sql') ? fileName : `${fileName}.sql`;
+      link.download = downloadName;
       document.body.appendChild(link);
       link.click();
       
@@ -42,7 +49,7 @@ const FileDownloader: React.FC<FileDownloaderProps> = ({
       
       toast({
         title: 'Download Started',
-        description: `${fileName} has been downloaded successfully.`,
+        description: `${downloadName} has been downloaded successfully.`,
       });
     } catch (error) {
       console.error('Error downloading file:', error);

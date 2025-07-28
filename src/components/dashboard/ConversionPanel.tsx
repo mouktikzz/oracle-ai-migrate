@@ -14,6 +14,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { isCacheEnabled, setCacheEnabled } from '@/utils/conversionUtils';
 
 interface FileItem {
   id: string;
@@ -74,6 +75,12 @@ const ConversionPanel: React.FC<ConversionPanelProps> = ({
   const [statusFilter, setStatusFilter] = React.useState('All');
   const [showResetDialog, setShowResetDialog] = React.useState(false);
   const [isMinimized, setIsMinimized] = React.useState(false);
+  const [cacheEnabled, setCacheEnabledState] = React.useState(isCacheEnabled());
+
+  const handleToggleCache = () => {
+    setCacheEnabled(!cacheEnabled);
+    setCacheEnabledState(!cacheEnabled);
+  };
 
   if (files.length === 0) {
     return (
@@ -187,11 +194,18 @@ const ConversionPanel: React.FC<ConversionPanelProps> = ({
                 Files to Convert
               </CardTitle>
               <div className="flex items-center gap-2">
+                <Button
+                  variant={cacheEnabled ? 'outline' : 'secondary'}
+                  onClick={handleToggleCache}
+                  className={`text-xs px-3 py-1 h-7 border ${cacheEnabled ? 'border-green-400 text-green-700' : 'border-red-400 text-red-700'}`}
+                >
+                  {cacheEnabled ? 'Cache On' : 'Cache Off'}
+                </Button>
                 <Button variant="destructive" onClick={handleResetMigration} className="text-xs px-3 py-1 h-7">
-                    Reset
+                  Reset
                 </Button>
                 <Button variant="ghost" size="icon" onClick={() => setIsMinimized(true)}>
-                    <ChevronLeft className="h-5 w-5" />
+                  <ChevronLeft className="h-5 w-5" />
                 </Button>
               </div>
             </div>
@@ -284,17 +298,24 @@ const ConversionPanel: React.FC<ConversionPanelProps> = ({
                     size="icon"
                     variant="outline"
                     onClick={() => {
-                      const blob = new Blob([selectedFile.content], { type: 'text/plain' });
+                      const code = selectedFile.convertedContent || '';
+                      const fileExtension = selectedFile.name.includes('.') 
+                        ? selectedFile.name.split('.').pop() 
+                        : 'sql';
+                      const baseName = selectedFile.name.includes('.')
+                        ? selectedFile.name.substring(0, selectedFile.name.lastIndexOf('.'))
+                        : selectedFile.name;
+                      const blob = new Blob([code], { type: 'text/plain' });
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement('a');
                       a.href = url;
-                      a.download = selectedFile.name;
+                      a.download = `${baseName}_oracle.${fileExtension}`;
                       document.body.appendChild(a);
                       a.click();
                       document.body.removeChild(a);
                       URL.revokeObjectURL(url);
                     }}
-                    title="Download original code"
+                    title="Download converted Oracle code"
                   >
                     <Download className="h-4 w-4" />
                   </Button>
@@ -302,6 +323,7 @@ const ConversionPanel: React.FC<ConversionPanelProps> = ({
               </CardHeader>
               <CardContent className="pt-4 pb-2">
                 <ConversionViewer
+                  key={selectedFile.id} // Add key to force re-render when file changes
                   file={{
                     ...selectedFile,
                     aiGeneratedCode: (selectedFile as any).aiGeneratedCode || selectedFile.convertedContent || '',
@@ -315,6 +337,7 @@ const ConversionPanel: React.FC<ConversionPanelProps> = ({
                   onNextFile={hasNext ? () => onFileSelect(allFilteredFiles[currentIndex + 1]) : undefined}
                   hasPrev={hasPrev}
                   hasNext={hasNext}
+                  convertedFilename={`${selectedFile.name.replace(/\.[^/.]+$/, '')}_oracle.sql`}
                 />
               </CardContent>
             </Card>

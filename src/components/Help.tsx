@@ -89,7 +89,6 @@ const Help: React.FC<HelpProps> = ({ onClose }) => {
     e.preventDefault();
     
     // Here you would typically send the form data to your backend
-    console.log('Contact form submitted:', contactForm);
     
     toast({
       title: 'Message Sent',

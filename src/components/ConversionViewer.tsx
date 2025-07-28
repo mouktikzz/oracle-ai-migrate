@@ -4,16 +4,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Edit, Save, Clock, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Edit, Save, Clock, ArrowLeft, ArrowRight, Sparkles } from 'lucide-react';
 import ConversionIssuesPanel from './ConversionIssuesPanel';
 import FileDownloader from './FileDownloader';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useUnreviewedFiles } from '@/hooks/useUnreviewedFiles';
 import CodeDiffViewer from './CodeDiffViewer';
+<<<<<<< HEAD
 import { diffChars, Change } from 'diff';
 import { analyzeCodeComplexity, generatePerformanceMetrics } from '@/utils/conversionUtils';
 import CodeEditor from './CodeEditor';
+=======
+import { diffChars } from 'diff';
+import { analyzeCodeComplexity, generateBalancedPerformanceMetrics } from '@/utils/componentUtilswithlangchain';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import CodeEditor from './CodeEditor'; // Added import for CodeEditor
+>>>>>>> 71985dc3a7b1d56ab2ab9c63463807d7eb1f2fbe
 
 interface DataTypeMapping {
   sybaseType: string;
@@ -51,6 +60,16 @@ interface PerformanceMetrics {
   convertedLoops?: number;
   linesReduced?: number;
   loopsReduced?: number;
+  complexityAssessment?: string;
+  optimizationLevel?: string;
+  scalabilityMetrics?: {
+    scalabilityScore: number;
+    maintainabilityScore: number;
+    modernOracleFeaturesCount: number;
+    bulkOperationsUsed: boolean;
+    bulkCollectUsed: boolean;
+  };
+  complexityCategory?: string; // Added this field
 }
 
 interface FileItem {
@@ -79,6 +98,7 @@ interface ConversionViewerProps {
   onNextFile?: () => void;
   hasPrev?: boolean;
   hasNext?: boolean;
+  convertedFilename?: string;
 }
 
 const ConversionViewer: React.FC<ConversionViewerProps> = ({
@@ -91,16 +111,25 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
   onNextFile,
   hasPrev,
   hasNext,
+  convertedFilename,
 }) => {
   const { toast } = useToast();
   const { addUnreviewedFile } = useUnreviewedFiles();
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState('');
   const [isMarkedUnreviewed, setIsMarkedUnreviewed] = useState(false);
+  const [showRewriteDialog, setShowRewriteDialog] = useState(false);
+  const [rewritePrompt, setRewritePrompt] = useState('');
+  const [isRewriting, setIsRewriting] = useState(false);
+  const [selection, setSelection] = useState<{ start: number; end: number }>({ start: 0, end: 0 });
+  const [preservedSelection, setPreservedSelection] = useState<{ start: number; end: number } | null>(null);
+  const [showExplainDialog, setShowExplainDialog] = useState(false);
+  const [isExplaining, setIsExplaining] = useState(false);
+  const [explanation, setExplanation] = useState('');
 
   useEffect(() => {
     setEditedContent(file.convertedContent || '');
-  }, [file.convertedContent]);
+  }, [file.id, file.convertedContent]); // Add file.id to dependency array
 
   // Helper to calculate human edit percentage (character-based)
   function getEditPercentage(aiCode: string, finalCode: string): number {
@@ -128,12 +157,23 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
     const originalComplexity = analyzeCodeComplexity(originalCode);
     const convertedComplexity = analyzeCodeComplexity(codeToSave);
     const conversionTime = 0; // Optionally, you can track edit time
-    const newMetrics = generatePerformanceMetrics(
+    // Use the correct arguments for generateBalancedPerformanceMetrics
+    const newMetrics = generateBalancedPerformanceMetrics(
       originalComplexity,
       convertedComplexity,
       conversionTime,
+<<<<<<< HEAD
       originalCode,
       codeToSave
+=======
+      // The next three arguments are required: complexityAssessment, optimizationLevel, expansionRatio
+      // For manual edits, we can estimate or reuse previous values if available, or use defaults
+      file.performanceMetrics?.complexityAssessment || 'moderate',
+      file.performanceMetrics?.optimizationLevel || 'basic',
+      (convertedComplexity.totalLines || 1) / (originalComplexity.totalLines || 1),
+      newCode,
+      originalCode
+>>>>>>> 71985dc3a7b1d56ab2ab9c63463807d7eb1f2fbe
     );
 
     // 2. Update in Supabase
@@ -146,13 +186,29 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
       .eq('id', file.id);
 
     // 3. Update in local state/UI
+<<<<<<< HEAD
     onManualEdit(codeToSave); // pass only the new code to update state/UI
+=======
+    onManualEdit(newCode); // pass only newCode as expected
+>>>>>>> 71985dc3a7b1d56ab2ab9c63463807d7eb1f2fbe
     setIsEditing(false);
     if (onSaveEdit) {
       await onSaveEdit(codeToSave);
       return;
     }
   };
+
+  // Add color helpers:
+  const getScalabilityColor = (score) => {
+    if (score >= 8) return 'text-green-700 font-semibold';
+    if (score >= 5) return 'text-orange-600 font-semibold';
+    return 'text-red-700 font-semibold';
+  };
+  const getModernFeaturesColor = (count) => count > 0 ? 'text-blue-700 font-semibold' : 'text-gray-700 font-semibold';
+  const getBulkColor = (used) => used ? 'text-green-700 font-semibold' : 'text-red-700 font-semibold';
+  const getLinesColor = (v) => v > 0 ? 'text-green-700 font-semibold' : v < 0 ? 'text-red-700 font-semibold' : 'text-gray-700 font-semibold';
+  const getLoopsColor = (v) => v > 0 ? 'text-green-700 font-semibold' : v < 0 ? 'text-red-700 font-semibold' : 'text-gray-700 font-semibold';
+  const getComplexityColor = (orig, conv) => conv < orig ? 'text-green-700 font-semibold' : conv > orig ? 'text-red-700 font-semibold' : 'text-gray-700 font-semibold';
 
   return (
     <>
@@ -166,6 +222,7 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
         </TabsList>
         
         <TabsContent value="code" className="space-y-4">
+<<<<<<< HEAD
           {file.convertedContent ? (
             <div className="relative grid grid-cols-2 gap-4">
               {/* Left Column: Original Sybase Code with Prev Arrow */}
@@ -235,46 +292,177 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
                         </div>
                       )}
                     </>
+=======
+          {(file.content || file.convertedContent) ? (
+            <div className={`relative grid gap-4 ${file.convertedContent ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                {/* Left Column: Original Sybase Code with Prev Arrow */}
+                <div className="flex items-start">
+                  {hasPrev && onPrevFile && (
+                    <button
+                      className="mr-2 bg-white border rounded-full shadow p-1 hover:bg-gray-100"
+                      onClick={onPrevFile}
+                      aria-label="Previous file"
+                    >
+                      <ArrowLeft className="h-6 w-6" />
+                    </button>
+                  )}
+                  <div className="flex-1">
+                    <h3 className="text-sm font-medium mb-2">Original Sybase Code:</h3>
+                    <CodeEditor
+                      initialCode={file.content}
+                      readOnly={true}
+                      showLineNumbers={true}
+                      height="400px"
+                      language="sql"
+                      filename={file.name}
+                    />
+                  </div>
+                  {/* Next arrow for single column layout */}
+                  {!file.convertedContent && hasNext && onNextFile && (
+                    <button
+                      className="ml-2 bg-white border rounded-full shadow p-1 hover:bg-gray-100"
+                      onClick={onNextFile}
+                      aria-label="Next file"
+                    >
+                      <ArrowRight className="h-6 w-6" />
+                    </button>
+>>>>>>> 71985dc3a7b1d56ab2ab9c63463807d7eb1f2fbe
                   )}
                 </div>
-                {hasNext && onNextFile && (
-                  <button
-                    className="ml-2 bg-white border rounded-full shadow p-1 hover:bg-gray-100"
-                    onClick={onNextFile}
-                    aria-label="Next file"
-                  >
-                    <ArrowRight className="h-6 w-6" />
-                  </button>
+                {/* Middle Column: Converted Oracle Code (only if available) */}
+                {file.convertedContent && (
+                  <div className="flex items-start">
+                    <div className="flex-1">
+                      <h3 className="text-sm font-medium mb-2 text-green-700">Converted Oracle Code:</h3>
+                      {isEditing ? (
+                        hideEdit ? (
+                          <CodeEditor
+                            initialCode={file.convertedContent}
+                            readOnly={true}
+                            showLineNumbers={true}
+                            height="400px"
+                            language="plsql"
+                            filename={convertedFilename || file.name}
+                          />
+                        ) : (
+                          <>
+                            <CodeEditor
+                              initialCode={file.convertedContent}
+                              value={editedContent}
+                              onChange={setEditedContent}
+                              readOnly={false}
+                              showLineNumbers={true}
+                              height="400px"
+                              language="plsql"
+                              selection={selection}
+                              onSelectionChange={setSelection}
+                              filename={convertedFilename || file.name}
+                            />
+                            <div className="flex items-center gap-2 mt-2">
+                              <Button
+                                size="sm"
+                                variant="default"
+                                onClick={handleSaveEdit}
+                              >
+                                <Save className="h-4 w-4 mr-1" />
+                                Save
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setIsEditing(false)}
+                              >
+                                Cancel
+                              </Button>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => setShowRewriteDialog(true)}
+                                      disabled={isRewriting || selection.start === selection.end}
+                                      className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white border-0 shadow-md hover:from-purple-600 hover:to-indigo-700 transition-all duration-200 flex items-center gap-2"
+                                    >
+                                      <Sparkles className="h-4 w-4 mr-1 text-yellow-200" />
+                                      {isRewriting ? 'Rewriting...' : 'Rewrite with AI'}
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Rewrite the code using AI to optimize performance, add comments, or improve readability.</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
+                          </>
+                        )
+                      ) : (
+                        <>
+                          <CodeEditor
+                            initialCode={file.convertedContent}
+                            readOnly={true}
+                            showLineNumbers={true}
+                            height="400px"
+                            language="plsql"
+                            filename={convertedFilename || file.name}
+                          />
+                          {!hideEdit && !isEditing && (
+                            <div className="flex items-center gap-2 mt-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setIsEditing(true)}
+                              >
+                                <Edit className="h-4 w-4 mr-1" />
+                                Edit
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={async () => {
+                                  setShowExplainDialog(true);
+                                  setIsExplaining(true);
+                                  setExplanation('');
+                                  try {
+                                    const res = await fetch('/.netlify/functions/ai-explain', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ code: file.convertedContent, language: 'oracle sql' }),
+                                    });
+                                    const data = await res.json();
+                                    setExplanation(data.explanation || 'No explanation returned.');
+                                  } catch (err) {
+                                    setExplanation('Failed to get explanation.');
+                                  } finally {
+                                    setIsExplaining(false);
+                                  }
+                                }}
+                                className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0 shadow-md hover:from-blue-600 hover:to-cyan-700 transition-all duration-200 flex items-center gap-2"
+                              >
+                                <Sparkles className="h-4 w-4 mr-1 text-yellow-200" />
+                                AI Code Analyzer
+                              </Button>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                    {hasNext && onNextFile && (
+                      <button
+                        className="ml-2 bg-white border rounded-full shadow p-1 hover:bg-gray-100"
+                        onClick={onNextFile}
+                        aria-label="Next file"
+                      >
+                        <ArrowRight className="h-6 w-6" />
+                      </button>
+                    )}
+                  </div>
                 )}
-              </div>
-            </div>
+                
+
+               </div>
           ) : (
-            <div className="relative flex items-start justify-center">
-              {hasPrev && onPrevFile && (
-                <button
-                  className="mr-2 bg-white border rounded-full shadow p-1 hover:bg-gray-100 self-center"
-                  onClick={onPrevFile}
-                  aria-label="Previous file"
-                >
-                  <ArrowLeft className="h-6 w-6" />
-                </button>
-              )}
-              <div className="flex-1 w-full">
-                <h3 className="text-sm font-medium mb-2">Original Sybase Code:</h3>
-                <pre className="bg-gray-100 p-4 rounded text-sm overflow-auto max-h-64 whitespace-pre-wrap">
-                  {file.content}
-                </pre>
-              </div>
-              {hasNext && onNextFile && (
-                <button
-                  className="ml-2 bg-white border rounded-full shadow p-1 hover:bg-gray-100 self-center"
-                  onClick={onNextFile}
-                  aria-label="Next file"
-                >
-                  <ArrowRight className="h-6 w-6" />
-                </button>
-              )}
-            </div>
+            <div className="text-center text-gray-400">No code available.</div>
           )}
           {file.errorMessage && (
             <div>
@@ -337,6 +525,19 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
           {file.performanceMetrics ? (
             <div className="space-y-6">
               <h3 className="text-lg font-medium">Quantitative Performance Analysis</h3>
+              {file.performanceMetrics.complexityCategory && (
+                <div className="text-center">
+                  <span
+                    className={`inline-block rounded-full px-3 py-1 text-sm font-semibold mb-2
+                      ${file.performanceMetrics.complexityCategory === 'Simple' ? 'bg-green-100 text-green-700' : ''}
+                      ${file.performanceMetrics.complexityCategory === 'Moderate' ? 'bg-orange-100 text-orange-700' : ''}
+                      ${file.performanceMetrics.complexityCategory === 'Complex' ? 'bg-red-100 text-red-700' : ''}
+                    `}
+                  >
+                    Complexity Category: {file.performanceMetrics.complexityCategory}
+                  </span>
+                </div>
+              )}
               
               {/* Performance Score */}
               <Card className="p-6">
@@ -379,51 +580,64 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
                   <CodeDiffViewer 
                     originalCode={aiCode}
                     convertedCode={finalCode}
+                    originalFilename={`${file.name} (AI Generated)`}
+                    convertedFilename={`${file.name} (Human Edited)`}
                   />
                 </div>
               )}
 
               {/* Complexity Metrics */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className="p-4 text-center">
-                  <h4 className="text-sm font-medium text-gray-600 mb-2">Original Complexity</h4>
-                  <p className="text-2xl font-bold text-red-600">
-                    {file.performanceMetrics.originalComplexity || 0}
-                  </p>
-                  <p className="text-xs text-gray-500">Cyclomatic Complexity</p>
-                </Card>
-                
-                <Card className="p-4 text-center">
-                  <h4 className="text-sm font-medium text-gray-600 mb-2">Converted Complexity</h4>
-                  <p className={`text-2xl font-bold ${
-                    file.performanceMetrics.convertedComplexity < file.performanceMetrics.originalComplexity
-                      ? 'text-green-600'
-                      : file.performanceMetrics.convertedComplexity > file.performanceMetrics.originalComplexity
-                        ? 'text-red-600'
-                        : 'text-gray-600'
-                  }`}>
-                    {file.performanceMetrics.convertedComplexity || 0}
-                  </p>
-                  <p className="text-xs text-gray-500">Cyclomatic Complexity</p>
-                </Card>
-                
-                <Card className="p-4 text-center">
-                  <h4 className="text-sm font-medium text-gray-600 mb-2">Improvement</h4>
-                  <p className={`text-2xl font-bold ${
-                    file.performanceMetrics.improvementPercentage > 0
-                      ? 'text-blue-600'
-                      : file.performanceMetrics.improvementPercentage < 0
-                        ? 'text-red-600'
-                        : 'text-gray-600'
-                  }`}>
-                    {file.performanceMetrics.improvementPercentage > 0
-                      ? `+${file.performanceMetrics.improvementPercentage}`
-                      : file.performanceMetrics.improvementPercentage}
-                    %
-                  </p>
-                  <p className="text-xs text-gray-500">Performance Gain</p>
-                </Card>
-              </div>
+              <Card className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Original Complexity */}
+                  <div className="text-center">
+                    <h4 className="text-sm font-medium text-gray-600 mb-2">Original Complexity</h4>
+                    <p className="text-2xl font-bold text-red-600">
+                      {file.performanceMetrics.originalComplexity || 0}
+                    </p>
+                    <p className="text-xs text-gray-500">Cyclomatic Complexity</p>
+                  </div>
+                  {/* Converted Complexity */}
+                  <div className="text-center">
+                    <h4 className="text-sm font-medium text-gray-600 mb-2">Converted Complexity</h4>
+                    <p className={`text-2xl font-bold ${
+                      file.performanceMetrics.convertedComplexity < file.performanceMetrics.originalComplexity
+                        ? 'text-green-600'
+                        : file.performanceMetrics.convertedComplexity > file.performanceMetrics.originalComplexity
+                          ? 'text-red-600'
+                          : 'text-gray-600'
+                    }`}>
+                      {file.performanceMetrics.convertedComplexity || 0}
+                    </p>
+                    <p className="text-xs text-gray-500">Cyclomatic Complexity</p>
+                  </div>
+                  {/* Improvement */}
+                  <div className="text-center">
+                    <h4 className="text-sm font-medium text-gray-600 mb-2">Improvement</h4>
+                    <p className={`text-2xl font-bold ${
+                      (() => {
+                        const orig = file.performanceMetrics.originalComplexity || 0;
+                        const conv = file.performanceMetrics.convertedComplexity || 0;
+                        if (orig === 0) return 'text-gray-600';
+                        if (conv < orig) return 'text-blue-600';
+                        if (conv > orig) return 'text-red-600';
+                        return 'text-gray-600';
+                      })()
+                    }`}>
+                      {(() => {
+                        const orig = file.performanceMetrics.originalComplexity || 0;
+                        const conv = file.performanceMetrics.convertedComplexity || 0;
+                        if (orig === 0) return '0%';
+                        const percent = Math.round(((orig - conv) / orig) * 100);
+                        if (percent > 0) return `+${percent}%`;
+                        if (percent < 0) return `${percent}%`;
+                        return '0%';
+                      })()}
+                    </p>
+                    <p className="text-xs text-gray-500">Performance Gain</p>
+                  </div>
+                </div>
+              </Card>
 
               {/* Code Quality Metrics */}
               {file.performanceMetrics.codeQuality && (
@@ -439,7 +653,7 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
                       <p className="text-sm text-gray-600">Code Lines</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-2xl font-bold text-gray-800">{file.performanceMetrics.codeQuality.commentRatio}%</p>
+                      <p className="text-2xl font-bold text-gray-800">{parseInt(file.performanceMetrics.codeQuality.commentRatio.toString(), 10)}%</p>
                       <p className="text-sm text-gray-600">Comment Ratio</p>
                     </div>
                     <div className="text-center">
@@ -456,17 +670,17 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
               )}
 
               {/* Maintainability Index */}
-              {file.performanceMetrics.maintainabilityIndex && (
+              {file.performanceMetrics.maintainabilityIndex !== undefined && file.performanceMetrics.maintainabilityIndex !== null && (
                 <Card className="p-6">
                   <h4 className="text-lg font-medium mb-4">Maintainability Index</h4>
                   <div className="text-center">
                     <div className="text-3xl font-bold text-purple-600 mb-2">
-                      {file.performanceMetrics.maintainabilityIndex}/100
+                      {Math.min(100, Math.round(file.performanceMetrics.maintainabilityIndex))}/100
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-3">
                       <div 
                         className="bg-purple-600 h-3 rounded-full transition-all duration-300"
-                        style={{ width: `${file.performanceMetrics.maintainabilityIndex}%` }}
+                        style={{ width: `${Math.min(100, Math.round(file.performanceMetrics.maintainabilityIndex))}%` }}
                       ></div>
                     </div>
                     <p className="text-sm text-gray-600 mt-2">
@@ -479,65 +693,75 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
               )}
 
               {/* Enhanced Performance Metrics */}
-              {/* Lines Reduced/Increased */}
-              <Card className="p-4 text-center">
-                <h4 className="text-sm font-medium text-gray-600 mb-2">{(() => {
-                  const diff = (file.performanceMetrics.convertedLines || 0) - (file.performanceMetrics.originalLines || 0);
-                  if (diff < 0) return 'Lines Reduced';
-                  if (diff > 0) return 'Lines Increased';
-                  return 'No Change';
-                })()}</h4>
-                <p className={`text-2xl font-bold ${(() => {
-                  const diff = (file.performanceMetrics.convertedLines || 0) - (file.performanceMetrics.originalLines || 0);
-                  if (diff < 0) return 'text-green-600';
-                  if (diff > 0) return 'text-red-600';
-                  return 'text-gray-600';
-                })()}`}>{Math.abs((file.performanceMetrics.convertedLines || 0) - (file.performanceMetrics.originalLines || 0))}</p>
-                <p className="text-xs text-gray-500">
-                  {(file.performanceMetrics.originalLines || 0)} → {(file.performanceMetrics.convertedLines || 0)}
-                </p>
-              </Card>
-              {/* Loops Reduced/Increased */}
-              <Card className="p-4 text-center">
-                <h4 className="text-sm font-medium text-gray-600 mb-2">{(() => {
-                  const diff = (file.performanceMetrics.convertedLoops || 0) - (file.performanceMetrics.originalLoops || 0);
-                  if (diff < 0) return 'Loops Reduced';
-                  if (diff > 0) return 'Loops Increased';
-                  return 'No Change';
-                })()}</h4>
-                <p className={`text-2xl font-bold ${(() => {
-                  const diff = (file.performanceMetrics.convertedLoops || 0) - (file.performanceMetrics.originalLoops || 0);
-                  if (diff < 0) return 'text-blue-600';
-                  if (diff > 0) return 'text-red-600';
-                  return 'text-gray-600';
-                })()}`}>{Math.abs((file.performanceMetrics.convertedLoops || 0) - (file.performanceMetrics.originalLoops || 0))}</p>
-                <p className="text-xs text-gray-500">
-                  {(file.performanceMetrics.originalLoops || 0)} → {(file.performanceMetrics.convertedLoops || 0)}
-                </p>
-              </Card>
-              
-              {/* Conversion Time */}
-              <Card className="p-4 text-center">
-                <h4 className="text-sm font-medium text-gray-600 mb-2">Conversion Time</h4>
-                <p className="text-2xl font-bold text-orange-600">
-                  {file.performanceMetrics.conversionTimeMs || 0}ms
-                </p>
-                <p className="text-xs text-gray-500">Processing Time</p>
-              </Card>
-              
-              {/* Recommendations */}
-              {file.performanceMetrics.recommendations && file.performanceMetrics.recommendations.length > 0 && (
-                <Card className="p-6">
-                  <h4 className="text-lg font-medium mb-4">Performance Recommendations</h4>
-                  <ul className="space-y-3">
-                    {file.performanceMetrics.recommendations.map((rec, index) => (
-                      <li key={index} className="flex items-start gap-3">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                        <span className="text-sm text-gray-700">{rec}</span>
-                      </li>
-                    ))}
-                  </ul>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Lines Reduced/Increased */}
+                <Card className="p-4 text-center">
+                  <div className="font-semibold text-gray-700 mb-2">Lines Change</div>
+                  <p className={`text-2xl font-bold ${getLinesColor((file.performanceMetrics.convertedLines || 0) - (file.performanceMetrics.originalLines || 0))}`}>{Math.abs(parseInt(((file.performanceMetrics.convertedLines || 0) - (file.performanceMetrics.originalLines || 0)).toString(), 10))}</p>
+                  <p className="text-xs text-gray-500">
+                    {parseInt((file.performanceMetrics.originalLines || 0).toString(), 10)} → {parseInt((file.performanceMetrics.convertedLines || 0).toString(), 10)}
+                  </p>
+                  <h4 className="text-sm font-medium text-gray-600 mt-2">{(() => {
+                    const diff = (file.performanceMetrics.convertedLines || 0) - (file.performanceMetrics.originalLines || 0);
+                    if (diff < 0) return 'Lines Reduced';
+                    if (diff > 0) return 'Lines Increased';
+                    return 'No Change';
+                  })()}</h4>
                 </Card>
+                {/* Loops Reduced/Increased */}
+                <Card className="p-4 text-center">
+                  <div className="font-semibold text-gray-700 mb-2">Loops Change</div>
+                  <p className={`text-2xl font-bold ${getLoopsColor((file.performanceMetrics.convertedLoops || 0) - (file.performanceMetrics.originalLoops || 0))}`}>{Math.abs(parseInt(((file.performanceMetrics.convertedLoops || 0) - (file.performanceMetrics.originalLoops || 0)).toString(), 10))}</p>
+                  <p className="text-xs text-gray-500">
+                    {parseInt((file.performanceMetrics.originalLoops || 0).toString(), 10)} → {parseInt((file.performanceMetrics.convertedLoops || 0).toString(), 10)}
+                  </p>
+                  <h4 className="text-sm font-medium text-gray-600 mt-2">{(() => {
+                    const diff = (file.performanceMetrics.convertedLoops || 0) - (file.performanceMetrics.originalLoops || 0);
+                    if (diff < 0) return 'Loops Reduced';
+                    if (diff > 0) return 'Loops Increased';
+                    return 'No Change';
+                  })()}</h4>
+                </Card>
+                {/* Conversion Time */}
+                <Card className="p-4 text-center">
+                  <h4 className="text-sm font-medium text-gray-600 mb-2">Conversion Time</h4>
+                  <p className="text-2xl font-bold text-orange-600">
+                    {file.performanceMetrics.conversionTimeMs || 0}ms
+                  </p>
+                  <p className="text-xs text-gray-500">Processing Time</p>
+                </Card>
+              </div>
+              
+              {/* Scalability & Maintainability Metrics */}
+              {file.performanceMetrics.scalabilityMetrics && (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    {/* Scalability Score */}
+                    <Card className="p-4 text-center">
+                      <p className={`text-2xl font-bold ${getScalabilityColor(file.performanceMetrics.scalabilityMetrics.scalabilityScore)}`}>{file.performanceMetrics.scalabilityMetrics.scalabilityScore}/10</p>
+                      <p className="text-sm text-gray-600">Scalability Score</p>
+                    </Card>
+                    {/* Modern Features Used */}
+                    <Card className="p-4 text-center">
+                      <p className={`text-2xl font-bold ${getModernFeaturesColor(file.performanceMetrics.scalabilityMetrics.modernOracleFeaturesCount)}`}>{file.performanceMetrics.scalabilityMetrics.modernOracleFeaturesCount}</p>
+                      <p className="text-sm text-gray-600">Modern Features Used</p>
+                    </Card>
+                    {/* Bulk Operations Used */}
+                    <Card className="p-4 text-center">
+                      <p className={`text-2xl font-bold ${getBulkColor(file.performanceMetrics.scalabilityMetrics.bulkOperationsUsed)}`}>
+                        {file.performanceMetrics.scalabilityMetrics.bulkOperationsUsed ? 'Yes' : 'No'}
+                      </p>
+                      <p className="text-sm text-gray-600">Bulk Operations Used</p>
+                    </Card>
+                    {/* Bulk Collect Used */}
+                    <Card className="p-4 text-center">
+                      <p className={`text-2xl font-bold ${getBulkColor(file.performanceMetrics.scalabilityMetrics.bulkCollectUsed)}`}>
+                        {file.performanceMetrics.scalabilityMetrics.bulkCollectUsed ? 'Yes' : 'No'}
+                      </p>
+                      <p className="text-sm text-gray-600">Bulk Collect Used</p>
+                    </Card>
+                  </div>
+                </>
               )}
             </div>
           ) : (
@@ -547,6 +771,131 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Rewrite Dialog */}
+      <Dialog open={showRewriteDialog} onOpenChange={setShowRewriteDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Rewrite Code with AI</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {isRewriting ? (
+              <div className="text-center py-8">
+                <div className="flex flex-col items-center space-y-4">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                  <div className="space-y-2">
+                    <p className="text-lg font-medium text-gray-900">Rewriting Code with AI...</p>
+                    <p className="text-sm text-gray-500">This may take a few moments</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Rewrite Instructions (Optional)</label>
+                  <Textarea
+                    value={rewritePrompt}
+                    onChange={(e) => setRewritePrompt(e.target.value)}
+                    placeholder="Describe how you want the code to be rewritten (e.g., 'Add comments', 'Optimize performance', 'Improve readability')"
+                    rows={3}
+                  />
+                </div>
+                <div className="text-sm text-gray-600">
+                  <p>Selected code will be rewritten using AI. You can provide specific instructions or let AI optimize automatically.</p>
+                </div>
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowRewriteDialog(false)}
+              disabled={isRewriting}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={async () => {
+                // Preserve the current selection
+                setPreservedSelection({ start: selection.start, end: selection.end });
+                setIsRewriting(true);
+                try {
+                  // Get the selected code only
+                  const selectedCode = editedContent.substring(selection.start, selection.end);
+                  
+                  const res = await fetch('/.netlify/functions/ai-rewrite', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      code: selectedCode,
+                      prompt: rewritePrompt || 'Rewrite this code to improve performance, readability, and add appropriate comments',
+                      language: 'oracle sql'
+                    }),
+                  });
+                  const data = await res.json();
+                  if (data.rewrittenCode) {
+                    // Replace only the selected portion with the rewritten code
+                    const beforeSelection = editedContent.substring(0, selection.start);
+                    const afterSelection = editedContent.substring(selection.end);
+                    const newContent = beforeSelection + data.rewrittenCode + afterSelection;
+                    setEditedContent(newContent);
+                    setShowRewriteDialog(false);
+                    
+                    // Restore the selection after a short delay to ensure the content is updated
+                    setTimeout(() => {
+                      if (preservedSelection) {
+                        setSelection(preservedSelection);
+                        setPreservedSelection(null);
+                      }
+                    }, 100);
+                    
+                    toast({
+                      title: "Code Rewritten",
+                      description: "The selected code has been successfully rewritten by AI.",
+                    });
+                  }
+                } catch (err) {
+                  toast({
+                    title: "Rewrite Failed",
+                    description: "Failed to rewrite the code. Please try again.",
+                    variant: "destructive",
+                  });
+                } finally {
+                  setIsRewriting(false);
+                }
+              }}
+              disabled={isRewriting}
+            >
+              {isRewriting ? 'Rewriting...' : 'Rewrite Code'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Explain Dialog */}
+      <Dialog open={showExplainDialog} onOpenChange={setShowExplainDialog}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>AI Code Analysis</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 overflow-y-auto max-h-[calc(90vh-120px)]">
+            {isExplaining ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">Analyzing code...</p>
+              </div>
+            ) : (
+              <div className="w-full">
+                <pre className="whitespace-pre-wrap text-sm bg-gray-50 p-4 rounded overflow-x-auto max-w-full break-words">{explanation}</pre>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowExplainDialog(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

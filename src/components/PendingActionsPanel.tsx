@@ -99,6 +99,7 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
   // Map to FileItem for type property
   const mapToFileItem = (f: UnreviewedFile) => {
     let type: 'table' | 'procedure' | 'trigger' | 'other' = 'other';
+<<<<<<< HEAD
     const lower = f.file_name.toLowerCase();
     if (lower.includes('trig')) type = 'trigger';
     else if (lower.includes('proc')) type = 'procedure';
@@ -110,12 +111,36 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
       convertedContent: f.converted_code,
       aiGeneratedCode: f.ai_generated_code || '',
       conversionStatus: 'pending' as 'pending',
+=======
+            const lower = f.file_name.toLowerCase();
+            if (lower.includes('trig')) type = 'trigger';
+            else if (lower.includes('proc')) type = 'procedure';
+            else if (lower.includes('tab') || lower.includes('table')) type = 'table';
+            
+            // Generate the converted filename
+            const fileExtension = f.file_name.includes('.') 
+              ? f.file_name.split('.').pop() 
+              : 'sql';
+            const baseName = f.file_name.includes('.')
+              ? f.file_name.substring(0, f.file_name.lastIndexOf('.'))
+              : f.file_name;
+            const convertedFilename = `${baseName}_oracle.${fileExtension}`;
+            
+            return {
+              ...f,
+              name: f.file_name,
+              content: f.original_code,
+              convertedContent: f.converted_code,
+              aiGeneratedCode: f.ai_generated_code || '', // Always use the ai_generated_code column as the AI baseline
+              conversionStatus: 'pending',
+>>>>>>> 71985dc3a7b1d56ab2ab9c63463807d7eb1f2fbe
       errorMessage: undefined,
       type,
       path: f.file_name,
       dataTypeMapping: f.data_type_mapping || [],
       issues: f.issues || [],
       performanceMetrics: f.performance_metrics || {},
+      convertedFilename: convertedFilename, // Add the converted filename
     };
   };
 
@@ -140,7 +165,6 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
     ...reviewedOther
   ];
   const currentIndex = allFilteredFiles.findIndex(f => f.id === selectedFileId);
-  console.log('DEBUG: currentIndex', currentIndex, 'selectedFileId', selectedFileId, 'allFilteredFiles', allFilteredFiles.map(f => f.id));
   const hasPrev = currentIndex > 0;
   const hasNext = currentIndex >= 0 && currentIndex < allFilteredFiles.length - 1;
 
@@ -173,13 +197,17 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
   // Update handleSaveEdit to accept newMetrics and update local state
   const handleSaveEdit = async (file: UnreviewedFile, newCode: string, newMetrics?: any) => {
     // Always use ai_generated_code as the AI baseline
-    const prevAICode = file.ai_generated_code || file.converted_code;
-    const success = await updateUnreviewedFile({
+    // Remove ai_generated_code if not in UnreviewedFileUpdate type
+    const updateData: UnreviewedFileUpdate = {
       id: file.id,
       converted_code: newCode,
+<<<<<<< HEAD
       // ai_generated_code: prevAICode, // Only include if UnreviewedFileUpdate allows it
+=======
+>>>>>>> 71985dc3a7b1d56ab2ab9c63463807d7eb1f2fbe
       ...(newMetrics ? { performance_metrics: newMetrics } : {}),
-    });
+    };
+    const success = await updateUnreviewedFile(updateData);
     if (success) {
       setEditingFile(null);
       setEditedContent('');
@@ -198,6 +226,7 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
       setEditedContent('');
     }
     // After marking as reviewed, trigger parent refresh
+<<<<<<< HEAD
     if (onFileReviewed) await onFileReviewed();
     setSelectedFileId(
       pendingFiles.filter(f => f.id !== file.id)[0]?.id ||
@@ -205,6 +234,20 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
       null
     );
     setMarkingReviewed(false);
+=======
+    if (onFileReviewed) onFileReviewed();
+    // Select next unreviewed file if available, else previous, else clear
+    const currentIdx = mappedPendingFiles.findIndex(f => f.id === file.id);
+    let nextId = null;
+    if (mappedPendingFiles.length > 1) {
+      if (currentIdx < mappedPendingFiles.length - 1) {
+        nextId = mappedPendingFiles[currentIdx + 1].id;
+      } else if (currentIdx > 0) {
+        nextId = mappedPendingFiles[currentIdx - 1].id;
+      }
+    }
+    setSelectedFileId(nextId);
+>>>>>>> 71985dc3a7b1d56ab2ab9c63463807d7eb1f2fbe
   };
 
   const handleDelete = async (fileId: string) => {
@@ -233,6 +276,20 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
       setSelectedFileIds([]);
   };
 
+  const handleMoveSelectedToReviewed = async () => {
+    for (const fileId of selectedFileIds) {
+      const file = pendingFiles.find(f => f.id === fileId);
+      if (file) {
+        const codeToSave = editingFile === file.id ? editedContent : file.converted_code;
+        const originalCode = file.original_code || '';
+        await markAsReviewed(file.id, file.file_name, codeToSave, originalCode);
+      }
+    }
+    setSelectedFileIds([]);
+    if (onFileReviewed) onFileReviewed();
+    refreshUnreviewedFiles();
+  };
+
   // Clear all unreviewed files
   const handleClearAllUnreviewed = async () => {
     for (const file of pendingFiles) {
@@ -257,6 +314,7 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
     });
   };
 
+<<<<<<< HEAD
   // Handler for AI Rewrite button
   const handleAIRewrite = async (file: UnreviewedFile) => {
     // TODO: Implement AI rewrite logic here
@@ -300,6 +358,30 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
     }
   };
 
+=======
+  // Replace setActiveTab with a handler that also sets the selected file
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    if (tab === 'unreviewed' && mappedPendingFiles.length > 0) {
+      setSelectedFileId(mappedPendingFiles[0].id);
+    } else if (tab === 'reviewed' && mappedReviewedFiles.length > 0) {
+      setSelectedFileId(mappedReviewedFiles[0].id);
+    }
+  };
+
+  const handleMoveSelectedToUnreviewed = async () => {
+    for (const fileId of selectedFileIds) {
+      const file = reviewedFiles.find(f => f.id === fileId);
+      if (file) {
+        await updateUnreviewedFile({ id: file.id, status: 'unreviewed' });
+      }
+    }
+    setSelectedFileIds([]);
+    if (onFileReviewed) onFileReviewed();
+    refreshUnreviewedFiles();
+  };
+
+>>>>>>> 71985dc3a7b1d56ab2ab9c63463807d7eb1f2fbe
   if (isLoading) {
     return (
       <Card>
@@ -426,29 +508,85 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
                 </TooltipProvider>
 
               </div>
-                {isSelectMode && selectedFileIds.length > 0 && (
-                    <div className="flex items-center gap-2 mt-2">
-                        <span className="text-sm text-muted-foreground">{selectedFileIds.length} files selected</span>
-                        <TooltipProvider>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        variant="destructive"
-                                        size="icon"
-                                        onClick={handleDeleteSelected}
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>Delete Selected</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
-                    </div>
+                {isSelectMode && (
+                  <div className="flex items-center gap-2 mt-2">
+                    {selectedFileIds.length > 0 && (
+                      <span className="text-sm text-muted-foreground">{selectedFileIds.length} files selected</span>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const filesInTab = activeTab === 'unreviewed' ? mappedPendingFiles : mappedReviewedFiles;
+                        if (selectedFileIds.length === filesInTab.length) {
+                          setSelectedFileIds([]); // Deselect all
+                        } else {
+                          setSelectedFileIds(filesInTab.map(f => f.id)); // Select all
+                        }
+                      }}
+                    >
+                      {selectedFileIds.length === (activeTab === 'unreviewed' ? mappedPendingFiles.length : mappedReviewedFiles.length) ? 'Deselect All' : 'Select All'}
+                    </Button>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    variant="destructive"
+                                    size="icon"
+                                    onClick={handleDeleteSelected}
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Delete Selected</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                    {activeTab === 'unreviewed' && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={handleMoveSelectedToReviewed}
+                              className="flex items-center gap-2"
+                            >
+                              <Check className="h-4 w-4" />
+                              Move to Reviewed
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Move to Reviewed</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                    {activeTab === 'reviewed' && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={handleMoveSelectedToUnreviewed}
+                              className="flex items-center gap-2"
+                            >
+                              <Clock className="h-4 w-4" />
+                              Move to Unreviewed
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Move to Unreviewed</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                  </div>
                 )}
         </div>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-4">
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full mt-4">
               <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="unreviewed">
                       Unreviewed <Badge className="ml-2">{pendingFiles.length}</Badge>
@@ -496,11 +634,11 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
           </Tabs>
         {/* Unreviewed Files Section (no inner scroll) */}
           <Dialog open={showClearUnreviewedDialog} onOpenChange={setShowClearUnreviewedDialog}>
-            <DialogContent>
+            <DialogContent aria-describedby="clear-unreviewed-description">
               <DialogHeader>
                 <DialogTitle>Clear All Unreviewed Files?</DialogTitle>
               </DialogHeader>
-              <div className="py-2">Are you sure you want to clear all unreviewed files? This action cannot be undone.</div>
+              <div id="clear-unreviewed-description" className="py-2">Are you sure you want to clear all unreviewed files? This action cannot be undone.</div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setShowClearUnreviewedDialog(false)}>Cancel</Button>
                 <Button variant="destructive" onClick={handleClearAllUnreviewed}>Clear All</Button>
@@ -509,11 +647,11 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
           </Dialog>
         {/* Reviewed Files Section (no inner scroll) */}
           <Dialog open={showClearReviewedDialog} onOpenChange={setShowClearReviewedDialog}>
-            <DialogContent>
+            <DialogContent aria-describedby="clear-reviewed-description">
               <DialogHeader>
                 <DialogTitle>Clear All Reviewed Files?</DialogTitle>
               </DialogHeader>
-              <div className="py-2">Are you sure you want to clear all reviewed files? This action cannot be undone.</div>
+              <div id="clear-reviewed-description" className="py-2">Are you sure you want to clear all reviewed files? This action cannot be undone.</div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setShowClearReviewedDialog(false)}>Cancel</Button>
                 <Button variant="destructive" onClick={handleClearAllReviewed}>Clear All</Button>
@@ -547,17 +685,24 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
                     size="icon"
                     variant="outline"
                     onClick={() => {
-                      const blob = new Blob([selectedFile.original_code], { type: 'text/plain' });
+                      const code = selectedFile.converted_code || '';
+                      const fileExtension = selectedFile.file_name.includes('.') 
+                        ? selectedFile.file_name.split('.').pop() 
+                        : 'sql';
+                      const baseName = selectedFile.file_name.includes('.')
+                        ? selectedFile.file_name.substring(0, selectedFile.file_name.lastIndexOf('.'))
+                        : selectedFile.file_name;
+                      const blob = new Blob([code], { type: 'text/plain' });
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement('a');
                       a.href = url;
-                      a.download = selectedFile.file_name;
+                      a.download = `${baseName}_oracle.${fileExtension}`;
                       document.body.appendChild(a);
                       a.click();
                       document.body.removeChild(a);
                       URL.revokeObjectURL(url);
                     }}
-                    title="Download original code"
+                    title="Download converted Oracle code"
                   >
                     <Download className="h-4 w-4" />
                   </Button>
@@ -567,15 +712,20 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
                 <ConversionViewer
                   key={selectedFile.id} /* Add key to force re-render */
                   file={mapToFileItem(selectedFile)}
+<<<<<<< HEAD
                   onManualEdit={(newContent) => { handleSaveEdit(selectedFile, newContent); }}
+=======
+                  onManualEdit={(newContent) => handleSaveEdit(selectedFile, newContent)}
+>>>>>>> 71985dc3a7b1d56ab2ab9c63463807d7eb1f2fbe
                   onDismissIssue={() => {}}
                   onSaveEdit={(newContent) => { handleSaveEdit(selectedFile, newContent); }}
                   hideEdit={selectedFile.status === 'reviewed'}
                   onPrevFile={hasPrev ? () => setSelectedFileId(allFilteredFiles[currentIndex - 1].id) : undefined}
-              onNextFile={hasNext ? () => setSelectedFileId(allFilteredFiles[currentIndex + 1].id) : undefined}
-              hasPrev={hasPrev}
-              hasNext={hasNext}
-            />
+                  onNextFile={hasNext ? () => setSelectedFileId(allFilteredFiles[currentIndex + 1].id) : undefined}
+                  hasPrev={hasPrev}
+                  hasNext={hasNext}
+                  convertedFilename={mapToFileItem(selectedFile).convertedFilename}
+                />
               </CardContent>
               <CardFooter className="flex justify-end gap-4">
                 {/* Action Buttons previously outside the card, now inside */}
@@ -585,9 +735,32 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
                     {markingReviewed ? 'Marking...' : 'Mark as Reviewed'}
                   </Button>
               )}
+<<<<<<< HEAD
                 <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => handleAIAnalyze(selectedFile)} disabled={analyzerLoading}>
                   {analyzerLoading ? 'Analyzing...' : 'AI Analyzer'}
                 </Button>
+=======
+                {selectedFile.status === 'reviewed' && (
+                  <Button className="bg-yellow-600 hover:bg-yellow-700 text-white" onClick={async () => {
+                    await updateUnreviewedFile({ id: selectedFile.id, status: 'unreviewed' });
+                    if (onFileReviewed) onFileReviewed();
+                    refreshUnreviewedFiles(); // Remove await here
+                    // Select next reviewed file if available, else previous, else clear
+                    const currentIdx = mappedReviewedFiles.findIndex(f => f.id === selectedFile.id);
+                    let nextId = null;
+                    if (mappedReviewedFiles.length > 1) {
+                      if (currentIdx < mappedReviewedFiles.length - 1) {
+                        nextId = mappedReviewedFiles[currentIdx + 1].id;
+                      } else if (currentIdx > 0) {
+                        nextId = mappedReviewedFiles[currentIdx - 1].id;
+                      }
+                    }
+                    setSelectedFileId(nextId);
+                  }}>
+                    Move to Unreviewed
+                  </Button>
+                )}
+>>>>>>> 71985dc3a7b1d56ab2ab9c63463807d7eb1f2fbe
                 <Button className="bg-red-600 hover:bg-red-700 text-white" onClick={() => deleteUnreviewedFile(selectedFile.id)}>
                   Delete File
                 </Button>

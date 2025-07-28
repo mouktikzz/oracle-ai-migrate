@@ -125,16 +125,42 @@ const PerformanceMetricsDashboard: React.FC<PerformanceMetricsDashboardProps> = 
   if (diffComplexity < 0) {
     complexityLabel = 'Complexity Reduction';
     complexityColor = 'text-purple-600';
-    complexityPercentLabel = `${Math.abs(Math.round(percentComplexityChange))}%`;
+    complexityPercentLabel = (totalOriginalComplexity === 0 || totalOriginalComplexity === undefined || totalOriginalComplexity === null || isNaN(percentComplexityChange))
+      ? '0%'
+      : `${Math.abs(Math.round(percentComplexityChange))}%`;
   } else if (diffComplexity > 0) {
     complexityLabel = 'Complexity Increase';
     complexityColor = 'text-red-600';
-    complexityPercentLabel = `${Math.abs(Math.round(percentComplexityChange))}%`;
+    complexityPercentLabel = (totalOriginalComplexity === 0 || totalOriginalComplexity === undefined || totalOriginalComplexity === null || isNaN(percentComplexityChange))
+      ? '0%'
+      : `${Math.abs(Math.round(percentComplexityChange))}%`;
   } else {
     complexityLabel = 'No Change';
     complexityColor = 'text-gray-600';
     complexityPercentLabel = '0%';
   }
+
+  // Clamp and fix metrics for dashboard consistency
+  const safePercent = (value) => isNaN(value) || value === undefined || value === null ? 0 : Math.min(100, Math.round(value));
+  const safeScore10 = (value) => isNaN(value) || value === undefined || value === null ? 0 : Math.min(10, Math.round(value));
+  const safeInt = (value) => isNaN(value) || value === undefined || value === null ? 0 : Math.round(value);
+
+  // In summary cards and file breakdown, apply color coding as follows:
+  // Scalability Score
+  const getScalabilityColor = (score) => {
+    if (score >= 8) return 'text-green-700 font-semibold';
+    if (score >= 5) return 'text-orange-600 font-semibold';
+    return 'text-red-700 font-semibold';
+  };
+  // Modern Features
+  const getModernFeaturesColor = (count) => count > 0 ? 'text-blue-700 font-semibold' : 'text-gray-700 font-semibold';
+  // Bulk Ops/Collect
+  const getBulkColor = (used) => used ? 'text-green-700 font-semibold' : 'text-red-700 font-semibold';
+  // Lines/Loops Reduced
+  const getLinesColor = (v) => v > 0 ? 'text-green-700 font-semibold' : v < 0 ? 'text-red-700 font-semibold' : 'text-gray-700 font-semibold';
+  const getLoopsColor = (v) => v > 0 ? 'text-green-700 font-semibold' : v < 0 ? 'text-red-700 font-semibold' : 'text-gray-700 font-semibold';
+  // Complexity
+  const getComplexityColor = (orig, conv) => conv < orig ? 'text-green-700 font-semibold' : conv > orig ? 'text-red-700 font-semibold' : 'text-gray-700 font-semibold';
 
   return (
     <div className="space-y-6">
@@ -400,6 +426,51 @@ const PerformanceMetricsDashboard: React.FC<PerformanceMetricsDashboardProps> = 
         </CardContent>
       </Card>
 
+      {/* Scalability & Maintainability Metrics */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Zap className="h-5 w-5 text-blue-500" />
+            Scalability Metrics
+          </CardTitle>
+          <CardDescription>
+            Aggregated scalability metrics across all conversions
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {/* Scalability Score */}
+            <Card className="p-4 text-center">
+              <p className="text-2xl font-bold text-blue-600">
+                {safeScore10(results.reduce((sum, r) => sum + (r.performance?.scalabilityMetrics?.scalabilityScore || 0), 0) / (totalFiles || 1))}/10
+              </p>
+              <p className="text-sm text-muted-foreground">Scalability Score</p>
+            </Card>
+            {/* Modern Features Used */}
+            <Card className="p-4 text-center">
+              <p className="text-2xl font-bold text-green-600">
+                {results.reduce((sum, r) => sum + (r.performance?.scalabilityMetrics?.modernOracleFeaturesCount || 0), 0)}
+              </p>
+              <p className="text-sm text-muted-foreground">Modern Features Used</p>
+            </Card>
+            {/* Bulk Operations Used */}
+            <Card className="p-4 text-center">
+              <p className="text-lg font-bold text-blue-700">
+                {results.filter(r => r.performance?.scalabilityMetrics?.bulkOperationsUsed).length} / {totalFiles}
+              </p>
+              <p className="text-sm text-muted-foreground">Bulk Operations Used</p>
+            </Card>
+            {/* Bulk Collect Used */}
+            <Card className="p-4 text-center">
+              <p className="text-lg font-bold text-blue-700">
+                {results.filter(r => r.performance?.scalabilityMetrics?.bulkCollectUsed).length} / {totalFiles}
+              </p>
+              <p className="text-sm text-muted-foreground">Bulk Collect Used</p>
+            </Card>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* File-by-File Performance Breakdown */}
       <Card>
         <CardHeader>
@@ -409,15 +480,19 @@ const PerformanceMetricsDashboard: React.FC<PerformanceMetricsDashboardProps> = 
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="border rounded-lg overflow-hidden">
+          <div className="border rounded-lg overflow-hidden w-full">
             {/* Header Row */}
-            <div className="flex items-center font-semibold bg-slate-100 border-b py-2">
-              <div className="w-1/4 px-2">File Name</div>
-              <div className="w-1/6 text-center">Lines</div>
-              <div className="w-1/6 text-center">Loops</div>
-              <div className="w-1/6 text-center">Time</div>
-              <div className="w-1/6 text-center">Human Edits</div>
-              <div className="w-1/12 text-center">Status</div>
+            <div className="flex items-center font-semibold bg-slate-100 border-b py-2 w-full">
+              <div className="flex-[2] px-2">File Name</div>
+              <div className="flex-1 text-center">Lines</div>
+              <div className="flex-1 text-center">Loops</div>
+              <div className="flex-1 text-center">Time</div>
+              <div className="flex-1 text-center">Status</div>
+              <div className="flex-1 text-center">Scalability</div>
+              <div className="flex-1 text-center">Human Edits</div>
+              <div className="flex-1 text-center">Bulk Ops</div>
+              <div className="flex-1 text-center">Bulk Collect</div>
+              <div className="flex-1 text-center">Modern Features</div>
             </div>
             {results.map((result, idx) => {
               const aiCode = result.aiGeneratedCode || result.convertedCode || '';
@@ -428,37 +503,53 @@ const PerformanceMetricsDashboard: React.FC<PerformanceMetricsDashboardProps> = 
               const lineDiff = convertedLines - originalLines;
               const linesColor = lineDiff < 0 ? 'text-green-600' : lineDiff > 0 ? 'text-red-600' : 'text-gray-600';
               const linesLabel = lineDiff < 0 ? 'Lines Reduced' : lineDiff > 0 ? 'Lines Increased' : 'No Change';
+              const scalability = result.performance?.scalabilityMetrics?.scalabilityScore ?? '-';
+              const maintainability = result.performance?.scalabilityMetrics?.maintainabilityScore ?? '-';
+              const bulkOps = result.performance?.scalabilityMetrics?.bulkOperationsUsed ? '✔️' : '❌';
+              const bulkCollect = result.performance?.scalabilityMetrics?.bulkCollectUsed ? '✔️' : '❌';
+              const modernFeatures = result.performance?.scalabilityMetrics?.modernOracleFeaturesCount ?? 0;
               return (
                 <div
                   key={result.id}
-                  className={`flex items-center py-1 border-b last:border-b-0 ${idx % 2 === 1 ? 'bg-slate-50' : ''}`}
+                  className={`flex items-center py-1 border-b ${idx === results.length - 1 ? '' : 'last:border-b-0'} ${idx % 2 === 1 ? 'bg-slate-50' : ''} w-full`}
                 >
-                  <div className="w-1/4 px-2 flex items-center gap-2 truncate">
+                  <div className="flex-[2] px-2 flex items-center gap-2 truncate">
                     {getStatusIcon(result.status)}
                     <span className="font-medium truncate">{result.originalFile.name}</span>
                     <span className="text-xs text-muted-foreground ml-2">{result.originalFile.type}</span>
                   </div>
-                  <div className="w-1/6 text-center">
+                  <div className="flex-1 text-center">
                     <span className={`font-medium ${linesColor}`}>{Math.abs(lineDiff)}</span>
                     <div className="text-xs text-muted-foreground">{linesLabel}</div>
                     <div className="text-xs text-gray-400">{originalLines} → {convertedLines}</div>
                   </div>
-                  <div className="w-1/6 text-center">
+                  <div className="flex-1 text-center">
                     <span className="font-medium text-blue-600">{result.performance?.loopsReduced || 0}</span>
                     <div className="text-xs text-muted-foreground">Loops</div>
                   </div>
-                  <div className="w-1/6 text-center">
+                  <div className="flex-1 text-center">
                     <span className="font-medium text-orange-600">{result.performance?.conversionTimeMs || 0}ms</span>
                     <div className="text-xs text-muted-foreground">Time</div>
                   </div>
-                  <div className="w-1/6 text-center">
-                    <span className="font-medium text-purple-600">{editPercent}%</span>
-                    <div className="text-xs text-muted-foreground">Human Edits</div>
-                  </div>
-                  <div className="w-1/12 text-center">
+                  <div className="flex-1 text-center">
                     <Badge variant="outline" className={getStatusColor(result.status)}>
                       {result.status}
                     </Badge>
+                  </div>
+                  <div className="flex-1 text-center">
+                    <span className={`font-medium ${getScalabilityColor(scalability)}`}>{scalability}</span>
+                  </div>
+                  <div className="flex-1 text-center">
+                    <span className="font-medium text-purple-600">{editPercent}%</span>
+                  </div>
+                  <div className="flex-1 text-center">
+                    <span className={`font-medium ${getBulkColor(bulkOps)}`}>{bulkOps}</span>
+                  </div>
+                  <div className="flex-1 text-center">
+                    <span className={`font-medium ${getBulkColor(bulkCollect)}`}>{bulkCollect}</span>
+                  </div>
+                  <div className="flex-1 text-center">
+                    <span className={`font-medium ${getModernFeaturesColor(modernFeatures)}`}>{modernFeatures}</span>
                   </div>
                 </div>
               );

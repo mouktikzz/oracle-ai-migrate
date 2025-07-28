@@ -47,8 +47,6 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
   const processFiles = useCallback((uploadedFiles: FileList | null) => {
     if (!uploadedFiles) return;
     
-    console.log('Processing files:', uploadedFiles.length);
-    
     Array.from(uploadedFiles).forEach(file => {
       // Skip if file is too large (10MB limit)
       if (file.size > 10 * 1024 * 1024) {
@@ -310,11 +308,9 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
   };
 
   const handleFolderUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('Folder upload triggered:', event.target.files);
     const files = event.target.files;
     
     if (files && files.length > 0) {
-      console.log('Processing folder with files:', files.length);
       
       // Filter for supported file types
       const supportedFiles = Array.from(files).filter(file => {

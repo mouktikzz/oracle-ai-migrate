@@ -37,7 +37,28 @@ const ReportPage: React.FC = () => {
           .eq('id', reportId)
           .single();
         if (error) throw error;
-        setReport(data.report as ConversionReport);
+        let loadedReport = data.report as ConversionReport;
+        function mapPerformanceMetrics(metrics: any) {
+          if (!metrics) return {};
+          return {
+            performanceScore: metrics.score,
+            maintainabilityIndex: metrics.maintainability,
+            originalComplexity: metrics.orig_complexity,
+            convertedComplexity: metrics.conv_complexity,
+            improvementPercentage: metrics.improvement,
+            linesReduced: metrics.lines_reduced,
+            loopsReduced: metrics.loops_reduced,
+            conversionTimeMs: metrics.time_ms,
+            // Add more mappings as needed
+          };
+        }
+        if (loadedReport && loadedReport.results) {
+          loadedReport.results = loadedReport.results.map((result: any) => ({
+            ...result,
+            performance: result.performance || mapPerformanceMetrics(result.performance_metrics),
+          }));
+        }
+        setReport(loadedReport);
       } catch (err: any) {
         setError('Failed to fetch report.');
       } finally {

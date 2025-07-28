@@ -8,6 +8,8 @@ interface CodeDiffViewerProps {
   convertedCode: string;
   onUpdateConvertedCode?: (updatedCode: string) => void;
   readOnly?: boolean;
+  originalFilename?: string;
+  convertedFilename?: string;
 }
 
 const CodeDiffViewer: React.FC<CodeDiffViewerProps> = ({
@@ -15,6 +17,8 @@ const CodeDiffViewer: React.FC<CodeDiffViewerProps> = ({
   convertedCode,
   onUpdateConvertedCode,
   readOnly = false,
+  originalFilename,
+  convertedFilename,
 }) => {
   return (
     <Card className="w-full">
@@ -30,6 +34,7 @@ const CodeDiffViewer: React.FC<CodeDiffViewerProps> = ({
               readOnly={true} 
               height="500px"
               language="sql"
+              filename={originalFilename}
             />
           </div>
           <div>
@@ -39,6 +44,7 @@ const CodeDiffViewer: React.FC<CodeDiffViewerProps> = ({
               readOnly={true} 
               height="500px"
               language="plsql"
+              filename={convertedFilename}
             />
           </div>
         </div>

@@ -10,7 +10,7 @@ import { Check, AlertTriangle, X, FileWarning, RefreshCw, Download, Clock } from
 import { useToast } from '@/hooks/use-toast';
 import { CodeFile, ConversionResult, DatabaseConnection } from '@/types';
 import CodeDiffViewer from './CodeDiffViewer';
-import { generateConversionReport } from '@/utils/conversionUtils';
+import { generateBalancedConversionReport } from '@/utils/componentUtilswithlangchain';
 
 interface ConversionResultsProps {
   results: ConversionResult[];
@@ -36,7 +36,6 @@ const ConversionResults: React.FC<ConversionResultsProps> = ({
   const selectedResult = results.find(r => r.id === selectedResultId);
   
   const handleUpdateConvertedCode = (resultId: string, updatedCode: string) => {
-    console.log('Updated code for', resultId, updatedCode);
     toast({
       title: 'Code Updated',
       description: 'Your changes to the converted code have been saved.'
@@ -171,7 +170,7 @@ const ConversionResults: React.FC<ConversionResultsProps> = ({
                               e.stopPropagation();
                               handleDownloadFile(result);
                             }}
-                            title="Download converted file"
+                            title="Download converted Oracle code"
                           >
                             <Download className="h-4 w-4" />
                           </Button>
@@ -199,6 +198,7 @@ const ConversionResults: React.FC<ConversionResultsProps> = ({
                       <Button 
                         variant="outline" 
                         onClick={() => handleDownloadFile(selectedResult)}
+                        title="Download converted Oracle code"
                       >
                         <Download className="h-4 w-4 mr-2" />
                         Download
@@ -233,6 +233,8 @@ const ConversionResults: React.FC<ConversionResultsProps> = ({
                         originalCode={selectedResult.originalFile.content}
                         convertedCode={selectedResult.convertedCode}
                         onUpdateConvertedCode={(updatedCode) => handleUpdateConvertedCode(selectedResult.id, updatedCode)}
+                        originalFilename={selectedResult.originalFile.name}
+                        convertedFilename={`${selectedResult.originalFile.name.replace(/\.[^/.]+$/, '')}_oracle.sql`}
                       />
                     </TabsContent>
                     

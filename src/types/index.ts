@@ -67,6 +67,14 @@ export interface PerformanceMetrics {
   convertedLoops?: number;
   recommendations?: string[];
   notes?: string[];
+  // Add scalabilityMetrics for dashboard and file breakdown
+  scalabilityMetrics?: {
+    bulkOperationsUsed: boolean;
+    bulkCollectUsed: boolean;
+    modernOracleFeaturesCount: number;
+    scalabilityScore: number;
+    maintainabilityScore: number;
+  };
 }
 
 export interface ConversionReport {
