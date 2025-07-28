@@ -72,12 +72,8 @@
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^11.1.0",
     "vaul": "^0.9.3",
-<<<<<<< HEAD
     "xlsx": "^0.18.5",
-    "zod": "^3.23.8"
-=======
     "zod": "^3.25.76"
->>>>>>> 71985dc3a7b1d56ab2ab9c63463807d7eb1f2fbe
   },
   "author": "Mouktik <https://github.com/mouktikzz>",
   "repository": {
