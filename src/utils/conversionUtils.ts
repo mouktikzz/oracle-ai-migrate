@@ -1,11 +1,27 @@
 import { ConversionResult, CodeFile, ConversionIssue, DataTypeMapping } from '@/types';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { v4 as uuidv4 } from 'uuid';
-import { getCachedConversion, setCachedConversion } from '@/utils/conversionUtils';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '../integrations/supabase/client';
 
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+let cacheEnabled = true;
+
+// Get API key safely for browser environment
+const getApiKey = () => {
+  if (typeof window !== 'undefined') {
+    // Browser environment - try to get from window or use empty string
+    return (window as any).__NEXT_PUBLIC_GOOGLE_API_KEY || '';
+  }
+  // Server environment
+  return process.env.NEXT_PUBLIC_GOOGLE_API_KEY || '';
+};
+
+export function isCacheEnabled() {
+  return cacheEnabled;
+}
+
+export function setCacheEnabled(enabled: boolean) {
+  cacheEnabled = enabled;
+}
 
 // Enhanced AI-based code conversion with comprehensive Sybase to Oracle rules
 export const convertSybaseToOracle = async (
@@ -19,30 +35,35 @@ export const convertSybaseToOracle = async (
   const hash = getConversionCacheKey(normalizedContent, aiModel);
 
   // 1. Check backend (DB) cache
-  const backendCached = await getBackendCachedConversion(hash, aiModel);
-  if (backendCached) {
-    console.log('[DB CACHE HIT]', file.name);
-    const result = {
-      id: backendCached.id,
-      originalFile: file,
-      convertedCode: backendCached.converted_code,
-      aiGeneratedCode: '',
-      issues: backendCached.issues || [],
-      dataTypeMapping: backendCached.data_type_mapping || [],
-      performance: backendCached.metrics,
-      status: 'success',
-      explanations: [],
-    };
-    if (result.performance) {
-      result.performance.conversionTimeMs = 1;
+  if (cacheEnabled) {
+    const backendCached = await getBackendCachedConversion(hash, aiModel);
+    if (backendCached) {
+      console.log('[DB CACHE HIT]', file.name);
+      const result = {
+        id: backendCached.id,
+        originalFile: file,
+        convertedCode: backendCached.converted_code,
+        aiGeneratedCode: '',
+        issues: (backendCached.issues as unknown as ConversionIssue[]) || [],
+        dataTypeMapping: (backendCached.data_type_mapping as unknown as DataTypeMapping[]) || [],
+        performance: backendCached.metrics as any,
+        status: 'success' as const,
+        explanations: [],
+      };
+      if (result.performance && typeof result.performance === 'object') {
+        (result.performance as any).conversionTimeMs = 1;
+      }
+      return result;
+    } else {
+      console.log('[DB CACHE MISS]', file.name);
     }
-    return result;
-  } else {
-    console.log('[DB CACHE MISS]', file.name);
   }
 
   // 2. Check local cache
-  const cached = getCachedConversion(normalizedContent, aiModel);
+  let cached = null;
+  if (cacheEnabled) {
+    cached = getCachedConversion(normalizedContent, aiModel);
+  }
   if (cached) {
     console.log('[LOCAL CACHE HIT]', file.name);
     const result = { ...cached };
@@ -51,7 +72,7 @@ export const convertSybaseToOracle = async (
     }
     return result;
   } else {
-    console.log('[LOCAL CACHE MISS]', file.name);
+    if (cacheEnabled) console.log('[LOCAL CACHE MISS]', file.name);
   }
 
   console.log(`[CONVERT] Starting conversion for file: ${file.name} with model: ${aiModel}`);
@@ -62,6 +83,14 @@ export const convertSybaseToOracle = async (
 
   // Analyze code complexity before conversion
   const originalComplexity = analyzeCodeComplexity(file.content);
+
+  // Initialize Google Generative AI only when needed
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    throw new Error('Google API key not found. Please set NEXT_PUBLIC_GOOGLE_API_KEY environment variable.');
+  }
+  
+  const genAI = new GoogleGenerativeAI(apiKey);
 
   // Use custom prompt if provided, otherwise use default
   const prompt = customPrompt && customPrompt.trim().length > 0
@@ -91,6 +120,7 @@ export const convertSybaseToOracle = async (
     file.content,
     convertedCode
   );
+  console.log('[PERF METRICS]', file.name, performanceMetrics);
 
   // Generate issues based on quantitative analysis
   const issues: ConversionIssue[] = generateQuantitativeIssues(
@@ -129,9 +159,9 @@ export const convertSybaseToOracle = async (
   };
 
   // Save to cache with normalized content
-  setCachedConversion(normalizedContent, aiModel, result);
+  if (cacheEnabled) setCachedConversion(normalizedContent, aiModel, result);
   // Save to backend cache
-  await setBackendCachedConversion(
+  if (cacheEnabled) await setBackendCachedConversion(
     hash,
     normalizedContent,
     aiModel,
@@ -375,7 +405,16 @@ const generatePerformanceMetrics = (
       commentRatio: Math.round(convertedComplexity.commentRatio * 100),
       complexityLevel: convertedComplexity.cyclomaticComplexity > 10 ? 'High' : convertedComplexity.cyclomaticComplexity > 5 ? 'Medium' : 'Low' as 'Low' | 'Medium' | 'High'
     },
-    recommendations
+    recommendations,
+    // Legacy/DB compatibility keys
+    score: performanceScore,
+    maintainability: convertedComplexity.maintainabilityIndex,
+    orig_complexity: originalComplexity.cyclomaticComplexity,
+    conv_complexity: convertedComplexity.cyclomaticComplexity,
+    improvement: improvementPercentage,
+    lines_reduced: Math.max(0, linesReduced),
+    loops_reduced: Math.max(0, loopsReduced),
+    time_ms: conversionTime,
   };
 };
 
@@ -522,12 +561,14 @@ export function getConversionCacheKey(code: string, model: string) {
 }
 
 export function getCachedConversion(code: string, model: string) {
+  if (!cacheEnabled) return null;
   const key = getConversionCacheKey(code, model);
   const cached = localStorage.getItem(key);
   return cached ? JSON.parse(cached) : null;
 }
 
 export function setCachedConversion(code: string, model: string, result: any) {
+  if (!cacheEnabled) return;
   const key = getConversionCacheKey(code, model);
   localStorage.setItem(key, JSON.stringify(result));
 }

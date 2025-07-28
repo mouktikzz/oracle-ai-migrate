@@ -4,7 +4,6 @@ import { DatabaseConnection } from '@/types';
 // Simulated function to save database connection details
 export const saveConnection = (connection: DatabaseConnection): Promise<boolean> => {
   // In a real app, this would save to localStorage, IndexedDB, or a backend
-  console.log('Saving connection:', connection);
   localStorage.setItem(`${connection.type}-connection`, JSON.stringify(connection));
   return Promise.resolve(true);
 };
@@ -19,7 +18,6 @@ export const loadConnection = (type: 'sybase' | 'oracle'): DatabaseConnection | 
 export const testConnection = async (connection: DatabaseConnection): Promise<{ success: boolean; message: string }> => {
   // In a real app, this would attempt to connect to the database
   // For this demo, we'll simulate a connection test
-  console.log('Testing connection:', connection);
   
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 1500));
@@ -39,7 +37,6 @@ export const deployToOracle = async (
   code: string
 ): Promise<{ success: boolean; message: string }> => {
   // In a real app, this would execute the code against the Oracle database
-  console.log('Deploying code to Oracle:', code);
   
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 2000));
