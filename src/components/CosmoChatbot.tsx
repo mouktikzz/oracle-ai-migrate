@@ -222,60 +222,34 @@ const CosmoChatbot: React.FC<CosmoChatbotProps> = ({ onRefreshConversions }) => 
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="absolute bottom-20 sm:bottom-24 right-0 w-[300px] h-[450px] sm:w-[380px] sm:h-[520px] md:w-[420px] md:h-[560px] lg:w-[450px] lg:h-[580px] xl:w-[480px] xl:h-[600px] bg-white rounded-2xl shadow-2xl border-2 border-blue-200 overflow-hidden max-h-[75vh] max-w-[90vw]">
+        <div className="absolute bottom-20 sm:bottom-24 right-0 w-[300px] h-[450px] sm:w-[380px] sm:h-[520px] md:w-[420px] md:h-[560px] lg:w-[450px] lg:h-[580px] xl:w-[480px] xl:h-[600px] bg-white rounded-2xl border-2 border-blue-600 shadow-2xl overflow-hidden max-h-[75vh] max-w-[90vw] flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between p-2 sm:p-3 md:p-4 bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="relative">
-                <Bot className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-white" />
-                <Zap className="h-1 w-1 sm:h-2 sm:w-2 absolute -top-0.5 -right-0.5 text-yellow-300 animate-pulse" />
+          <div className="relative">
+            <div className="flex flex-col px-4 pt-4 pb-2 bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Bot className="h-6 w-6 text-white" />
+                  <span className="text-lg sm:text-xl font-bold text-white tracking-wide">AI Chatbot</span>
+                </div>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={closeChat}
+                  className="h-8 w-8 p-0 text-white hover:bg-white/20"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
               </div>
-              <div>
-                <h3 className="text-sm sm:text-base md:text-lg font-bold">Cosmo Agents</h3>
-                <p className="text-xs sm:text-sm text-blue-100">AI Database Expert</p>
+              <div className="flex items-center gap-2 mt-1 ml-8">
+                <Sparkles className="h-4 w-4 text-yellow-300 animate-pulse" />
+                <span className="text-xs sm:text-sm text-blue-100 italic font-medium">Cosmo Agents 24/7</span>
               </div>
             </div>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={closeChat}
-              className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 p-0 text-white hover:bg-white/20"
-            >
-              <X className="h-3 w-3 sm:h-3 sm:w-3 md:h-4 md:w-4" />
-            </Button>
-          </div>
-
-          {/* Action Bar */}
-          <div className="flex items-center justify-between p-2 sm:p-3 bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200">
-            <div className="flex gap-1 sm:gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleRefreshConversions}
-                disabled={isRefreshing}
-                className="h-6 sm:h-7 md:h-8 text-xs sm:text-sm border-blue-300 text-blue-700 hover:bg-blue-50 px-1.5 sm:px-2 md:px-3"
-              >
-                <RefreshCw className={`h-3 w-3 sm:h-3 sm:w-3 md:h-4 md:w-4 mr-0.5 sm:mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
-                <span className="hidden sm:inline">Refresh</span>
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={startNewChat}
-                className="h-6 sm:h-7 md:h-8 text-xs sm:text-sm border-blue-300 text-blue-700 hover:bg-blue-50 px-1.5 sm:px-2 md:px-3"
-              >
-                <Plus className="h-3 w-3 sm:h-3 sm:w-3 md:h-4 md:w-4 mr-0.5 sm:mr-1" />
-                <span className="hidden sm:inline">New</span>
-              </Button>
-            </div>
-            <div className="flex items-center gap-1 text-xs text-blue-600">
-              <Clock className="h-3 w-3" />
-              <span className="hidden sm:inline">24/7</span>
-            </div>
+            <div className="absolute left-0 right-0 h-1 bg-gradient-to-r from-blue-400 via-blue-500 to-blue-700 opacity-60" />
           </div>
 
           {/* Messages Area */}
-          <div className="flex-1 h-[250px] sm:h-[320px] md:h-[360px] lg:h-[380px] xl:h-[400px] overflow-y-auto p-2 sm:p-3 md:p-4 bg-gradient-to-b from-gray-50 to-blue-50/30">
+          <div className="flex-1 h-[250px] sm:h-[320px] md:h-[360px] lg:h-[380px] xl:h-[400px] overflow-y-auto p-2 sm:p-3 md:p-4 bg-white">
             {messages.length === 0 ? (
               // Welcome Message - Always Displayed
               <div className="text-center py-3 sm:py-4 md:py-6">
@@ -288,7 +262,6 @@ const CosmoChatbot: React.FC<CosmoChatbotProps> = ({ onRefreshConversions }) => 
                 <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4 md:mb-6">
                   Your expert AI assistant for database technologies and development
                 </p>
-                
                 <div className="grid grid-cols-1 gap-1.5 sm:gap-2 md:gap-3 mb-3 sm:mb-4 md:mb-6">
                   <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 p-1.5 sm:p-2 md:p-3 bg-blue-50 rounded-xl border border-blue-200">
                     <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 md:w-3 md:h-3 bg-blue-500 rounded-full"></div>
@@ -311,7 +284,6 @@ const CosmoChatbot: React.FC<CosmoChatbotProps> = ({ onRefreshConversions }) => 
                     <span className="text-xs sm:text-sm font-medium text-gray-700">Git & GitHub Workflows</span>
                   </div>
                 </div>
-
                 <div className="flex items-center justify-center gap-2 sm:gap-3 md:gap-4 text-xs text-gray-500">
                   <div className="flex items-center gap-1">
                     <Clock className="h-3 w-3" />
@@ -374,7 +346,7 @@ const CosmoChatbot: React.FC<CosmoChatbotProps> = ({ onRefreshConversions }) => 
           </div>
 
           {/* Input Area */}
-          <div className="p-2 sm:p-3 md:p-4 border-t-2 border-blue-200 bg-gradient-to-r from-blue-50 to-blue-100">
+          <div className="p-2 sm:p-3 md:p-4 border-t-2 border-blue-100 bg-gradient-to-r from-blue-50 to-blue-100">
             <div className="flex gap-1.5 sm:gap-2 md:gap-3">
               <Input
                 ref={inputRef}
