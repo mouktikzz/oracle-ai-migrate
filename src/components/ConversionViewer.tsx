@@ -208,77 +208,6 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
         </TabsList>
         
         <TabsContent value="code" className="space-y-4">
-<<<<<<< HEAD
-          {file.convertedContent ? (
-            <div className="relative grid grid-cols-2 gap-4">
-              {/* Left Column: Original Sybase Code with Prev Arrow */}
-              <div className="flex items-start">
-                {hasPrev && onPrevFile && (
-                  <button
-                    className="mr-2 bg-white border rounded-full shadow p-1 hover:bg-gray-100"
-                    onClick={onPrevFile}
-                    aria-label="Previous file"
-                  >
-                    <ArrowLeft className="h-6 w-6" />
-                  </button>
-                )}
-                <div className="flex-1">
-                  <h3 className="text-sm font-medium mb-2">Original Sybase Code:</h3>
-                  <pre className="bg-gray-100 p-4 rounded text-sm overflow-auto max-h-64 whitespace-pre-wrap">
-                    {file.content}
-                  </pre>
-                </div>
-              </div>
-              {/* Right Column: Converted Oracle Code with Next Arrow */}
-              <div className="flex items-start">
-                <div className="flex-1">
-                  <h3 className="text-sm font-medium mb-2 text-green-700">Converted Oracle Code:</h3>
-                  {isEditing ? (
-                    hideEdit ? (
-                      <pre className="bg-green-50 p-4 rounded text-sm overflow-auto max-h-64 whitespace-pre-wrap">
-                        {file.convertedContent}
-                      </pre>
-                    ) : (
-                      <>
-                        <CodeEditor
-                          initialCode={editedContent}
-                          readOnly={false}
-                          onSave={(newCode) => {
-                            setEditedContent(newCode);
-                            handleSaveEdit(newCode);
-                          }}
-                          height="300px"
-                          language="plsql"
-                          showLineNumbers={true}
-                        />
-                        <div className="flex items-center gap-2 mt-2">
-                          {/* Save/Cancel handled in CodeEditor now */}
-                        </div>
-                      </>
-                    )
-                  ) : (
-                    <>
-                      <CodeEditor
-                        initialCode={file.convertedContent || ''}
-                        readOnly={true}
-                        height="300px"
-                        language="plsql"
-                        showLineNumbers={true}
-                      />
-                      {!hideEdit && (
-                        <div className="flex items-center gap-2 mt-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setIsEditing(true)}
-                          >
-                            <Edit className="h-4 w-4 mr-1" />
-                            Edit
-                          </Button>
-                        </div>
-                      )}
-                    </>
-=======
           {(file.content || file.convertedContent) ? (
             <div className={`relative grid gap-4 ${file.convertedContent ? 'grid-cols-2' : 'grid-cols-1'}`}>
                 {/* Left Column: Original Sybase Code with Prev Arrow */}
@@ -312,7 +241,6 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
                     >
                       <ArrowRight className="h-6 w-6" />
                     </button>
->>>>>>> 71985dc3a7b1d56ab2ab9c63463807d7eb1f2fbe
                   )}
                 </div>
                 {/* Middle Column: Converted Oracle Code (only if available) */}
@@ -348,7 +276,7 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
                               <Button
                                 size="sm"
                                 variant="default"
-                                onClick={handleSaveEdit}
+                                onClick={() => handleSaveEdit(editedContent)}
                               >
                                 <Save className="h-4 w-4 mr-1" />
                                 Save
