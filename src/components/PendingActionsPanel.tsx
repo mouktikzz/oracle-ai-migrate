@@ -123,7 +123,7 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
               name: f.file_name,
               content: f.original_code,
               convertedContent: f.converted_code,
-              aiGeneratedCode: f.ai_generated_code || '', // Always use the ai_generated_code column as the AI baseline
+              aiGeneratedCode: f.ai_generated_code || f.converted_code || '', // Use ai_generated_code if available, otherwise use converted_code as baseline
               conversionStatus: 'pending',
       errorMessage: undefined,
               type,
@@ -187,11 +187,11 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
 
   // Update handleSaveEdit to accept newMetrics and update local state
   const handleSaveEdit = async (file: UnreviewedFile, newCode: string, newMetrics?: any) => {
-    // Always use ai_generated_code as the AI baseline
-    // Remove ai_generated_code if not in UnreviewedFileUpdate type
+    // Preserve the original AI-generated code when updating
     const updateData: UnreviewedFileUpdate = {
       id: file.id,
       converted_code: newCode,
+      ai_generated_code: file.ai_generated_code || file.converted_code, // Preserve original AI output
       ...(newMetrics ? { performance_metrics: newMetrics } : {}),
     };
     const success = await updateUnreviewedFile(updateData);

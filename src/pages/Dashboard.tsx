@@ -225,7 +225,7 @@ const Dashboard = () => {
             ? {
                 ...result,
                 convertedCode: newContent,
-                // Optionally recalculate human edits or other metrics here
+                // Optionally recalculate manual edits or other metrics here
               }
             : result
         )

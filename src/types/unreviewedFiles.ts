@@ -29,5 +29,7 @@ export interface UnreviewedFileUpdate {
   id: string;
   converted_code?: string;
   original_code?: string;
+  ai_generated_code?: string;
   status?: 'unreviewed' | 'reviewed';
+  performance_metrics?: any;
 }

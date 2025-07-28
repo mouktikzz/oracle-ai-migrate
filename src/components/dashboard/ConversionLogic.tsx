@@ -14,6 +14,7 @@ interface FileItem {
   content: string;
   conversionStatus: 'pending' | 'success' | 'failed';
   convertedContent?: string;
+  aiGeneratedCode?: string; // Store original AI output
   errorMessage?: string;
   dataTypeMapping?: any[];
   issues?: any[];
@@ -78,6 +79,7 @@ export const useConversionLogic = (
               ...f, 
               conversionStatus: mapConversionStatus(result.status),
               convertedContent: result.convertedCode,
+              aiGeneratedCode: result.aiGeneratedCode || result.convertedCode, // Store original AI output
               dataTypeMapping: result.dataTypeMapping,
               issues: result.issues,
               performanceMetrics: result.performance
@@ -85,9 +87,9 @@ export const useConversionLogic = (
           : f
       ));
 
-      await supabase.from('migration_files').update({
-        conversion_status: mapConversionStatus(result.status),
-        converted_content: result.convertedCode,
+      await supabase.from('unreviewed_files').update({
+        converted_code: result.convertedCode,
+        ai_generated_code: result.aiGeneratedCode, // Store original AI output
         performance_metrics: result.performance || {
           score: 85,
           maintainability: 90,
@@ -149,6 +151,7 @@ export const useConversionLogic = (
                     ...f, 
                     conversionStatus: mapConversionStatus(result.status),
                     convertedContent: result.convertedCode,
+                    aiGeneratedCode: result.aiGeneratedCode || result.convertedCode, // Store original AI output
                     dataTypeMapping: result.dataTypeMapping,
                     issues: result.issues,
                     performanceMetrics: result.performance
@@ -156,9 +159,9 @@ export const useConversionLogic = (
                 : f
             ));
 
-            await supabase.from('migration_files').update({
-              conversion_status: mapConversionStatus(result.status),
-              converted_content: result.convertedCode,
+            await supabase.from('unreviewed_files').update({
+              converted_code: result.convertedCode,
+              ai_generated_code: result.aiGeneratedCode, // Store original AI output
               performance_metrics: result.performance || {
                 score: 85,
                 maintainability: 90,
@@ -231,6 +234,7 @@ export const useConversionLogic = (
                     ...f,
                     conversionStatus: mapConversionStatus(result.status),
                     convertedContent: result.convertedCode,
+                    aiGeneratedCode: result.aiGeneratedCode || result.convertedCode, // Store original AI output
                     dataTypeMapping: result.dataTypeMapping,
                     issues: result.issues,
                     performanceMetrics: result.performance
@@ -238,9 +242,9 @@ export const useConversionLogic = (
                 : f
             ));
 
-            await supabase.from('migration_files').update({
-              conversion_status: mapConversionStatus(result.status),
-              converted_content: result.convertedCode,
+            await supabase.from('unreviewed_files').update({
+              converted_code: result.convertedCode,
+              ai_generated_code: result.aiGeneratedCode, // Store original AI output
               performance_metrics: result.performance || {
                 score: 85,
                 maintainability: 90,
@@ -307,15 +311,16 @@ export const useConversionLogic = (
               ...f,
               conversionStatus: mapConversionStatus(result.status),
               convertedContent: result.convertedCode,
+              aiGeneratedCode: result.aiGeneratedCode || result.convertedCode, // Store original AI output
               dataTypeMapping: result.dataTypeMapping,
               issues: result.issues,
               performanceMetrics: result.performance
             }
           : f
       ));
-      await supabase.from('migration_files').update({
-        conversion_status: mapConversionStatus(result.status),
-        converted_content: result.convertedCode,
+      await supabase.from('unreviewed_files').update({
+        converted_code: result.convertedCode,
+        ai_generated_code: result.aiGeneratedCode, // Store original AI output
         performance_metrics: result.performance || {
           score: 85,
           maintainability: 90,

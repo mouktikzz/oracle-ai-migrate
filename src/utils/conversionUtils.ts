@@ -43,7 +43,7 @@ export const convertSybaseToOracle = async (
         id: backendCached.id,
         originalFile: file,
         convertedCode: backendCached.converted_code,
-        aiGeneratedCode: '',
+        aiGeneratedCode: backendCached.converted_code, // Use the same code as AI-generated for cached results
         issues: (backendCached.issues as unknown as ConversionIssue[]) || [],
         dataTypeMapping: (backendCached.data_type_mapping as unknown as DataTypeMapping[]) || [],
         performance: backendCached.metrics as any,
@@ -149,7 +149,7 @@ export const convertSybaseToOracle = async (
     id: uuidv4(),
     originalFile: file,
     convertedCode,
-    aiGeneratedCode: '',
+    aiGeneratedCode: convertedCode, // Store the original AI-generated code
     issues,
     dataTypeMapping,
     performance: performanceMetrics,

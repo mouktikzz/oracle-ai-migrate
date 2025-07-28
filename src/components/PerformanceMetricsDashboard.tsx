@@ -87,18 +87,30 @@ const PerformanceMetricsDashboard: React.FC<PerformanceMetricsDashboardProps> = 
     }
   };
 
-  // Helper to calculate human edit percentage (character-based)
+  // Helper to calculate manual edit percentage (token-based)
   function getEditPercentage(aiCode: string, finalCode: string): number {
     if (!aiCode || !finalCode) return 0;
-    const diff = diffChars(aiCode, finalCode);
-    let changed = 0;
-    let total = aiCode.length;
-    diff.forEach(part => {
-      if (part.added || part.removed) {
-        changed += part.count || part.value.length;
-      }
-    });
+    
+    // Tokenize both codes (ignore comments and whitespace)
+    const aiTokens = tokenizeCode(aiCode);
+    const finalTokens = tokenizeCode(finalCode);
+    
+    // Calculate token differences
+    const changed = Math.abs(aiTokens.length - finalTokens.length);
+    const total = aiTokens.length;
+    
     return total > 0 ? Math.min(100, Math.round((changed / total) * 100)) : 0;
+  }
+  
+  // Tokenize code for better edit analysis
+  function tokenizeCode(code: string): string[] {
+    return code
+      .replace(/\/\*[\s\S]*?\*\//g, '') // Remove block comments
+      .replace(/--.*$/gm, '')           // Remove line comments
+      .replace(/\s+/g, ' ')             // Normalize whitespace
+      .split(/\b/)                      // Split on word boundaries
+      .filter(token => token.trim())    // Remove empty tokens
+      .filter(token => !/^\s*$/.test(token)); // Remove whitespace-only
   }
 
   // Calculate line difference and percent change
@@ -489,7 +501,7 @@ const PerformanceMetricsDashboard: React.FC<PerformanceMetricsDashboardProps> = 
               <div className="flex-1 text-center">Time</div>
               <div className="flex-1 text-center">Status</div>
               <div className="flex-1 text-center">Scalability</div>
-              <div className="flex-1 text-center">Human Edits</div>
+                              <div className="flex-1 text-center">Manual Edits</div>
               <div className="flex-1 text-center">Bulk Ops</div>
               <div className="flex-1 text-center">Bulk Collect</div>
               <div className="flex-1 text-center">Modern Features</div>

@@ -74,7 +74,7 @@ interface FileItem {
   content: string;
   conversionStatus: 'pending' | 'success' | 'failed';
   convertedContent?: string;
-  aiGeneratedCode?: string; // Add this field for human edits
+  aiGeneratedCode?: string; // Add this field for manual edits
   errorMessage?: string;
   dataTypeMapping?: DataTypeMapping[];
   issues?: ConversionIssue[];
@@ -141,22 +141,39 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
     setEditedContent(file.convertedContent || '');
   }, [file.id, file.convertedContent]); // Add file.id to dependency array
 
-  // Helper to calculate human edit percentage (character-based)
+  // Helper to calculate manual edit percentage (token-based)
   function getEditPercentage(aiCode: string, finalCode: string): number {
     if (!aiCode || !finalCode) return 0;
-    const diff = diffChars(aiCode, finalCode);
-    let changed = 0;
-    let total = aiCode.length;
-    diff.forEach(part => {
-      if (part.added || part.removed) {
-        changed += part.count || part.value.length;
-      }
-    });
+    
+    // Tokenize both codes (ignore comments and whitespace)
+    const aiTokens = tokenizeCode(aiCode);
+    const finalTokens = tokenizeCode(finalCode);
+    
+    // Calculate token differences
+    const changed = Math.abs(aiTokens.length - finalTokens.length);
+    const total = aiTokens.length;
+    
     return total > 0 ? Math.min(100, Math.round((changed / total) * 100)) : 0;
   }
-  const aiCode = (file as any).aiGeneratedCode || file.convertedContent || '';
+  
+  // Tokenize code for better edit analysis
+  function tokenizeCode(code: string): string[] {
+    return code
+      .replace(/\/\*[\s\S]*?\*\//g, '') // Remove block comments
+      .replace(/--.*$/gm, '')           // Remove line comments
+      .replace(/\s+/g, ' ')             // Normalize whitespace
+      .split(/\b/)                      // Split on word boundaries
+      .filter(token => token.trim())    // Remove empty tokens
+      .filter(token => !/^\s*$/.test(token)); // Remove whitespace-only
+  }
+  
+  // If aiGeneratedCode is not available, use convertedContent as the AI baseline
+  // This assumes no manual edits have been made yet
+  const aiCode = file.aiGeneratedCode || file.convertedContent || '';
   const finalCode = file.convertedContent || '';
   const humanEditPercent = getEditPercentage(aiCode, finalCode);
+  
+
 
   const handleSaveEdit = async () => {
     const originalCode = file.content; // or file.original_code if available
@@ -185,6 +202,7 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
       .from('unreviewed_files')
       .update({
         converted_code: newCode,
+        ai_generated_code: file.aiGeneratedCode || file.convertedContent, // Preserve the original AI output
         performance_metrics: newMetrics,
       })
       .eq('id', file.id);
@@ -503,10 +521,10 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
                 </div>
               </Card>
 
-              {/* Human Edits Metric */}
+              {/* Manual Edits Metric */}
               <Card className="p-6">
                 <div className="text-center">
-                  <h4 className="text-sm font-medium text-gray-600 mb-2">Human Edits</h4>
+                  <h4 className="text-sm font-medium text-gray-600 mb-2">Manual Edits</h4>
                   <div className="text-4xl font-bold text-purple-600 mb-2">
                     {humanEditPercent}%
                   </div>
@@ -517,19 +535,19 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
                     ></div>
                   </div>
                   <p className="text-sm text-gray-600 mt-2">
-                    Percentage of code changed by a human after AI conversion
+                    Percentage of code changed manually after AI conversion
                   </p>
                 </div>
               </Card>
 
-              {/* Human Edits Diff Viewer */}
+              {/* Manual Edits Diff Viewer */}
               {humanEditPercent > 0 && (
                 <div className="p-0">
                   <CodeDiffViewer 
                     originalCode={aiCode}
                     convertedCode={finalCode}
                     originalFilename={`${file.name} (AI Generated)`}
-                    convertedFilename={`${file.name} (Human Edited)`}
+                    convertedFilename={`${file.name} (Manual Edited)`}
                   />
                 </div>
               )}
@@ -722,7 +740,7 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
 
       {/* Rewrite Dialog */}
       <Dialog open={showRewriteDialog} onOpenChange={setShowRewriteDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl" aria-describedby="rewrite-dialog-description">
           <DialogHeader>
             <DialogTitle>Rewrite Code with AI</DialogTitle>
           </DialogHeader>
@@ -822,7 +840,7 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
 
       {/* Explain Dialog */}
       <Dialog open={showExplainDialog} onOpenChange={setShowExplainDialog}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden" aria-describedby="explain-dialog-description">
           <DialogHeader>
             <DialogTitle>AI Code Analysis</DialogTitle>
           </DialogHeader>
