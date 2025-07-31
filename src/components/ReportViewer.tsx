@@ -38,24 +38,41 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ report, onBack }) => {
   
   useEffect(() => {
     fetchDeploymentLogs();
-    const channel = supabase
-      .channel('deployment-logs-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'deployment_logs',
-        },
-        () => {
-          fetchDeploymentLogs();
+    
+    // Only set up real-time subscription if we have a valid user and Supabase connection
+    if (!user) return;
+    
+    try {
+      const channel = supabase
+        .channel('deployment-logs-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'deployment_logs',
+          },
+          () => {
+            fetchDeploymentLogs();
+          }
+        )
+        .subscribe((status) => {
+          if (status === 'CHANNEL_ERROR') {
+            console.warn('Supabase real-time subscription failed, falling back to polling');
+          }
+        });
+      
+      return () => {
+        try {
+          supabase.removeChannel(channel);
+        } catch (error) {
+          console.warn('Error removing Supabase channel:', error);
         }
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
+      };
+    } catch (error) {
+      console.warn('Failed to set up Supabase real-time subscription:', error);
+    }
+  }, [user]);
 
   const fetchDeploymentLogs = async () => {
     if (!user) return;
@@ -222,9 +239,36 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ report, onBack }) => {
         .select()
         .single();
       if (!migrationError && migration) {
-        await supabase.from('migration_files').insert(
-          filesToInsert.map(f => ({ ...f, migration_id: migration.id }))
-        );
+        // Insert files into migration_files and get their new IDs
+        const { data: insertedFiles, error: insertError } = await supabase
+          .from('migration_files')
+          .insert(
+            filesToInsert.map(f => ({ ...f, migration_id: migration.id }))
+          )
+          .select('id, file_name');
+
+        if (insertError) {
+          console.error('Error inserting migration files:', insertError);
+          throw insertError;
+        }
+
+        // Update comments to point to the new migration file IDs
+        if (insertedFiles && insertedFiles.length > 0) {
+          for (const newFile of insertedFiles) {
+            // Find the corresponding unreviewed file to get its ID
+            const unreviewedFile = latestFiles.find(f => f.file_name === newFile.file_name);
+            if (unreviewedFile) {
+              // Update comments from the old unreviewed file ID to the new migration file ID
+              await supabase
+                .from('conversion_comments')
+                .update({ file_id: newFile.id })
+                .eq('file_name', newFile.file_name)
+                .eq('user_id', user.id);
+            }
+          }
+        }
+
+        // Delete the unreviewed files after comments are updated
         await supabase.from('unreviewed_files').delete().eq('user_id', user.id).eq('status', 'reviewed');
       }
       const logEntry = await saveDeploymentLog(

@@ -15,7 +15,7 @@ import ReportViewer from '@/components/ReportViewer';
 import Help from '@/components/Help';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import ConversionPanel from '@/components/dashboard/ConversionPanel';
-import DevReviewPanel from '@/components/PendingActionsPanel';
+import DevReviewPanel from '@/components/DevReviewPanel';
 import PerformanceMetricsDashboard from '@/components/PerformanceMetricsDashboard';
 import { useConversionLogic } from '@/components/dashboard/ConversionLogic';
 import { useMigrationManager } from '@/components/dashboard/MigrationManager';

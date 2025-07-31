@@ -75,7 +75,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signUp = async (email: string, password: string, fullName: string, onSuccess?: () => void) => {
-    const redirectUrl = `${window.location.origin}/`;
+    const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/` : '/';
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -115,8 +115,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const resetPassword = async (email: string) => {
+    const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/auth/reset` : '/auth/reset';
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset`,
+      redirectTo: redirectUrl,
     });
     return { error };
   };

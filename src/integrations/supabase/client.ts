@@ -2,10 +2,155 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+// Safely get environment variables with extensive validation
+const getSupabaseUrl = () => {
+  try {
+    const url = import.meta.env.VITE_SUPABASE_URL;
+    console.log('🔍 Supabase URL check:', {
+      hasUrl: !!url,
+      urlType: typeof url,
+      urlLength: url?.length,
+      startsWithHttps: url?.startsWith('https://'),
+      value: url ? url.substring(0, 30) + '...' : 'undefined'
+    });
+    
+    if (!url || url === 'undefined' || url === '' || typeof url !== 'string') {
+      console.warn('❌ Supabase URL is missing or invalid');
+      return null;
+    }
+    // Basic URL validation
+    if (!url.startsWith('https://') || url.length < 10) {
+      console.warn('❌ Supabase URL format is invalid:', url);
+      return null;
+    }
+    console.log('✅ Supabase URL is valid');
+    return url;
+  } catch (error) {
+    console.warn('❌ Error getting Supabase URL:', error);
+    return null;
+  }
+};
+
+const getSupabaseKey = () => {
+  try {
+    const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    console.log('🔍 Supabase Key check:', {
+      hasKey: !!key,
+      keyType: typeof key,
+      keyLength: key?.length,
+      startsWithEyJ: key?.startsWith('eyJ'),
+      value: key ? key.substring(0, 20) + '...' : 'undefined'
+    });
+    
+    if (!key || key === 'undefined' || key === '' || typeof key !== 'string') {
+      console.warn('❌ Supabase key is missing or invalid');
+      return null;
+    }
+    // Basic key validation (should start with eyJ)
+    if (!key.startsWith('eyJ') || key.length < 50) {
+      console.warn('❌ Supabase key format is invalid:', key.substring(0, 20) + '...');
+      return null;
+    }
+    console.log('✅ Supabase key is valid');
+    return key;
+  } catch (error) {
+    console.warn('❌ Error getting Supabase key:', error);
+    return null;
+  }
+};
+
+const SUPABASE_URL = getSupabaseUrl();
+const SUPABASE_PUBLISHABLE_KEY = getSupabaseKey();
+
+// Log configuration status
+if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+  console.error('❌ Supabase not configured properly!');
+  console.error('Missing or invalid environment variables:');
+  console.error('- VITE_SUPABASE_URL:', SUPABASE_URL ? '✅ Present' : '❌ Missing/Invalid');
+  console.error('- VITE_SUPABASE_ANON_KEY:', SUPABASE_PUBLISHABLE_KEY ? '✅ Present' : '❌ Missing/Invalid');
+  console.error('');
+  console.error('🔧 To fix this:');
+  console.error('1. Go to Netlify Dashboard → Site Settings → Environment Variables');
+  console.error('2. Add these variables as Key/Value pairs:');
+  console.error('   VITE_SUPABASE_URL = https://your-project.supabase.co');
+  console.error('   VITE_SUPABASE_ANON_KEY = your_supabase_anon_key');
+  console.error('3. Redeploy your site');
+} else {
+  console.log('✅ Supabase configured successfully');
+}
+
+// Create a comprehensive mock client
+const createMockClient = () => {
+  const mockResponse = (data: any = null, error: any = null) => Promise.resolve({ data, error });
+  
+  return {
+    auth: {
+      onAuthStateChange: () => ({ 
+        data: { 
+          subscription: { 
+            unsubscribe: () => {} 
+          } 
+        } 
+      }),
+      getSession: () => mockResponse({ session: null }),
+      signUp: () => mockResponse(null, { message: 'Supabase not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables in Netlify.' }),
+      signInWithPassword: () => mockResponse(null, { message: 'Supabase not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables in Netlify.' }),
+      signOut: () => mockResponse(),
+      resetPasswordForEmail: () => mockResponse(null, { message: 'Supabase not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables in Netlify.' }),
+      getUser: () => mockResponse({ user: null }),
+    },
+    from: (table: string) => ({
+      select: (columns?: string) => ({
+        eq: (column: string, value: any) => ({
+          single: () => mockResponse(null, { message: 'Supabase not configured' }),
+          order: () => ({
+            limit: () => mockResponse([])
+          })
+        }),
+        order: () => ({
+          limit: () => mockResponse([])
+        }),
+        limit: () => mockResponse([])
+      }),
+      insert: (data: any) => mockResponse(null, { message: 'Supabase not configured' }),
+      update: (data: any) => ({
+        eq: (column: string, value: any) => mockResponse(null, { message: 'Supabase not configured' })
+      }),
+      delete: () => ({
+        eq: (column: string, value: any) => mockResponse(null, { message: 'Supabase not configured' })
+      }),
+    }),
+    channel: (name: string) => ({
+      on: (event: string, filter: any, callback: any) => ({
+        subscribe: (callback?: any) => {
+          if (callback) callback('CHANNEL_ERROR');
+          return { unsubscribe: () => {} };
+        }
+      }),
+    }),
+    removeChannel: (channel: any) => {},
+  } as any;
+};
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+// Create the client with extensive error handling
+let supabaseClient: any;
+
+try {
+  if (SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY) {
+    console.log('🔧 Creating real Supabase client...');
+    supabaseClient = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+    console.log('✅ Real Supabase client created successfully');
+  } else {
+    console.log('⚠️ Creating mock Supabase client...');
+    supabaseClient = createMockClient();
+    console.log('⚠️ Using mock Supabase client - authentication will not work');
+  }
+} catch (error) {
+  console.error('❌ Error creating Supabase client:', error);
+  supabaseClient = createMockClient();
+}
+
+export const supabase = supabaseClient;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -102,7 +102,7 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
   const filteredReviewedFiles = reviewedFiles.filter(filterFile);
 
   // Map to FileItem for type property
-  const mapToFileItem = (f: UnreviewedFile): any => {
+  const mapToFileItem = (f: UnreviewedFile) => {
     let type: 'table' | 'procedure' | 'trigger' | 'other' = 'other';
             const lower = f.file_name.toLowerCase();
             if (lower.includes('trig')) type = 'trigger';
@@ -145,7 +145,7 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
   const reviewedProcedures = mappedReviewedFiles.filter(f => f.type === 'procedure');
   const reviewedTriggers = mappedReviewedFiles.filter(f => f.type === 'trigger');
   const reviewedOther = mappedReviewedFiles.filter(f => f.type === 'other');
-  const allFilteredFiles = [
+  const allFilteredFiles = useMemo(() => [
     ...filteredTables,
     ...filteredProcedures,
     ...filteredTriggers,
@@ -154,7 +154,7 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
     ...reviewedProcedures,
     ...reviewedTriggers,
     ...reviewedOther
-  ];
+  ], [filteredTables, filteredProcedures, filteredTriggers, filteredOther, reviewedTables, reviewedProcedures, reviewedTriggers, reviewedOther]);
   const currentIndex = allFilteredFiles.findIndex(f => f.id === selectedFileId);
   const hasPrev = currentIndex > 0;
   const hasNext = currentIndex >= 0 && currentIndex < allFilteredFiles.length - 1;
@@ -186,7 +186,7 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
   };
 
   // Update handleSaveEdit to accept newMetrics and update local state
-  const handleSaveEdit = async (file: UnreviewedFile, newCode: string, newMetrics?: any) => {
+  const handleSaveEdit = async (file: UnreviewedFile, newCode: string, newMetrics?: unknown) => {
     // Always use ai_generated_code as the AI baseline
     // Remove ai_generated_code if not in UnreviewedFileUpdate type
     const updateData: UnreviewedFileUpdate = {
@@ -638,19 +638,21 @@ const DevReviewPanel: React.FC<DevReviewPanelProps> = ({
                 </div>
               </CardHeader>
               <CardContent className="pt-2">
-                <ConversionViewer
-                  key={selectedFile.id} /* Add key to force re-render */
-                  file={mapToFileItem(selectedFile)}
-                  onManualEdit={(newContent) => handleSaveEdit(selectedFile, newContent)}
-                  onDismissIssue={() => {}}
-                  onSaveEdit={(newContent) => handleSaveEdit(selectedFile, newContent)}
-                  hideEdit={selectedFile.status === 'reviewed'}
-                  onPrevFile={hasPrev ? () => setSelectedFileId(allFilteredFiles[currentIndex - 1].id) : undefined}
-                  onNextFile={hasNext ? () => setSelectedFileId(allFilteredFiles[currentIndex + 1].id) : undefined}
-                  hasPrev={hasPrev}
-                  hasNext={hasNext}
-                  convertedFilename={mapToFileItem(selectedFile).convertedFilename}
-                />
+                {selectedFile && (
+                  <ConversionViewer
+                    key={selectedFile.id} /* Add key to force re-render */
+                    file={mapToFileItem(selectedFile)}
+                    onManualEdit={(newContent) => handleSaveEdit(selectedFile, newContent)}
+                    onDismissIssue={() => {}}
+                    onSaveEdit={(newContent) => handleSaveEdit(selectedFile, newContent)}
+                    hideEdit={selectedFile.status === 'reviewed'}
+                    onPrevFile={hasPrev ? () => setSelectedFileId(allFilteredFiles[currentIndex - 1].id) : undefined}
+                    onNextFile={hasNext ? () => setSelectedFileId(allFilteredFiles[currentIndex + 1].id) : undefined}
+                    hasPrev={hasPrev}
+                    hasNext={hasNext}
+                    convertedFilename={mapToFileItem(selectedFile).convertedFilename}
+                  />
+                )}
               </CardContent>
               <CardFooter className="flex justify-end gap-4">
                 {/* Action Buttons previously outside the card, now inside */}

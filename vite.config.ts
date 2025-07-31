@@ -15,4 +15,26 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    // Use esbuild for faster builds and less memory usage
+    minify: 'esbuild',
+    // Increase chunk size warning limit
+    chunkSizeWarningLimit: 2000,
+    // Disable source maps to reduce memory usage
+    sourcemap: false,
+    // Optimize rollup options
+    rollupOptions: {
+      output: {
+        // Split chunks to reduce memory usage
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          supabase: ['@supabase/supabase-js'],
+        },
+      },
+    },
+  },
+  // Optimize dependencies
+  optimizeDeps: {
+    include: ['react', 'react-dom'],
+  },
 });

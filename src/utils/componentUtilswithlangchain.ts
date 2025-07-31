@@ -12,15 +12,33 @@ import { z } from "zod";
 import { supabase } from '../integrations/supabase/client';
 import { isCacheEnabled } from '@/utils/conversionUtils';
 
-const _API_KEY = import.meta.env.VITE_API_KEY;
+const _API_KEY = (() => {
+  try {
+    return import.meta.env.VITE_GEMINI_API_KEY || '';
+  } catch (error) {
+    console.warn('Error getting API key:', error);
+    return '';
+  }
+})();
 // console.log('Gemini API KEY:', _API_KEY); // Removed for security
 
 // Use a balanced model configuration
-const model = new ChatGoogleGenerativeAI({
-    apiKey: _API_KEY,
-    model: "gemini-2.5-flash",
-    temperature: 0.1, // Lower temperature for more consistent output
-});
+const model = (() => {
+  try {
+    if (!_API_KEY) {
+      console.warn('Google GenerativeAI API key not found. AI features will be disabled.');
+      return null;
+    }
+    return new ChatGoogleGenerativeAI({
+        apiKey: _API_KEY,
+        model: "gemini-2.5-flash",
+        temperature: 0.1, // Lower temperature for more consistent output
+    });
+  } catch (error) {
+    console.warn('Error creating Google GenerativeAI model:', error);
+    return null;
+  }
+})();
 
 // Simplified but effective output schema
 const conversionOutputSchema = z.object({
@@ -211,6 +229,33 @@ const convertSybaseToOracle = async (file: CodeFile): Promise<ConversionResult> 
         console.log('[LOCAL CACHE MISS]', file.name);
       }
     }
+    // Check if model is available
+    if (!model) {
+        return {
+            id: crypto.randomUUID(),
+            originalFile: file,
+            convertedCode: '-- ERROR: AI model not configured. Please set GOOGLE_API_KEY environment variable.',
+            issues: [{
+                id: crypto.randomUUID(),
+                lineNumber: 1,
+                description: 'AI model not configured. Please set GOOGLE_API_KEY environment variable.',
+                severity: 'critical',
+                originalCode: file.content.substring(0, 100),
+                suggestedFix: 'Set GOOGLE_API_KEY environment variable to enable AI conversion.',
+                performanceImpact: 'high',
+                category: 'syntax'
+            }],
+            dataTypeMapping: [],
+            performance: { originalComplexity: 0, convertedComplexity: 0, improvementPercentage: 0, conversionTimeMs: Date.now() - startTime, performanceScore: 0, maintainabilityIndex: 0, codeQuality: { totalLines: 0, codeLines: 0, commentRatio: 0, complexityLevel: 'Low' }, recommendations: [], scalabilityMetrics: { bulkOperationsUsed: false, bulkCollectUsed: false, modernOracleFeaturesCount: 0, scalabilityScore: 1, maintainabilityScore: 1 } },
+            status: 'error',
+            explanations: ['AI conversion disabled. Please configure GOOGLE_API_KEY.'],
+            scalabilityScore: 1,
+            maintainabilityScore: 1,
+            performanceOptimizations: [],
+            oracleFeatures: []
+        };
+    }
+
     const chain = promptTemplate.pipe(model).pipe(parser);
     let aiOutput;
     try {

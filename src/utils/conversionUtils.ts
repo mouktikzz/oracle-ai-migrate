@@ -7,12 +7,17 @@ let cacheEnabled = true;
 
 // Get API key safely for browser environment
 const getApiKey = () => {
-  if (typeof window !== 'undefined') {
-    // Browser environment - try to get from window or use empty string
-    return (window as any).__NEXT_PUBLIC_GOOGLE_API_KEY || '';
+  try {
+    if (typeof window !== 'undefined') {
+      // Browser environment - try to get from Vite environment
+      return import.meta.env.VITE_GEMINI_API_KEY || '';
+    }
+    // Server environment
+    return process.env.VITE_GEMINI_API_KEY || '';
+  } catch (error) {
+    console.warn('Error getting API key:', error);
+    return '';
   }
-  // Server environment
-  return process.env.NEXT_PUBLIC_GOOGLE_API_KEY || '';
 };
 
 export function isCacheEnabled() {
@@ -87,7 +92,7 @@ export const convertSybaseToOracle = async (
   // Initialize Google Generative AI only when needed
   const apiKey = getApiKey();
   if (!apiKey) {
-    throw new Error('Google API key not found. Please set NEXT_PUBLIC_GOOGLE_API_KEY environment variable.');
+    throw new Error('Google API key not found. Please set VITE_GEMINI_API_KEY environment variable.');
   }
   
   const genAI = new GoogleGenerativeAI(apiKey);
