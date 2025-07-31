@@ -3,211 +3,176 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { DatabaseConnection, CodeFile, ConversionResult, ConversionStep, ConversionReport } from '@/types';
-import CodeUploader from '@/components/CodeUploader';
-import ConversionResults from '@/components/ConversionResults';
-import AIModelSelector from '@/components/AIModelSelector';
-import ReportViewer from '@/components/ReportViewer';
 import ConnectionForm from '@/components/ConnectionForm';
-import HomeButton from '@/components/HomeButton';
+import CodeUploader from '@/components/CodeUploader';
+import ConversionViewer from '@/components/ConversionViewer';
+import ReportViewer from '@/components/ReportViewer';
 import { convertSybaseToOracle, generateBalancedConversionReport } from '@/utils/componentUtilswithlangchain';
 import { Database as DatabaseIcon, Code, FileSearch, FileWarning, Check, RefreshCw, Play, Download, ChevronLeft } from 'lucide-react';
 import JSZip from 'jszip';
+import { useProductionRateLimit } from '@/hooks/useProductionRateLimit';
 
 const Index = () => {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState<ConversionStep>('connection');
+  const [sybaseConnection, setSybaseConnection] = useState<DatabaseConnection | null>(null);
+  const [oracleConnection, setOracleConnection] = useState<DatabaseConnection | null>(null);
   const [files, setFiles] = useState<CodeFile[]>([]);
   const [results, setResults] = useState<ConversionResult[]>([]);
-  const [isConverting, setIsConverting] = useState<boolean>(false);
+  const [isConverting, setIsConverting] = useState(false);
+  const [selectedAIModel, setSelectedAIModel] = useState('default');
   const [report, setReport] = useState<ConversionReport | null>(null);
-  const [selectedAIModel, setSelectedAIModel] = useState<string>('gemini');
-  const [sybaseConnection, setSybaseConnection] = useState<DatabaseConnection>({
-    type: 'sybase',
-    host: 'localhost',
-    port: '5000',
-    username: 'sa',
-    password: 'password',
-    database: 'master',
-    connectionString: '',
+
+  // Production rate limiting: 10 conversions per minute with 2-second throttling
+  const { checkRateLimit, isRateLimited, retryAfter, getRateLimitInfo } = useProductionRateLimit({
+    maxRequests: 10,
+    windowMs: 60 * 1000, // 1 minute
+    throttleMs: 2000 // 2 seconds between conversions
   });
-  
-  const [oracleConnection, setOracleConnection] = useState<DatabaseConnection>({
-    type: 'oracle',
-    host: 'localhost',
-    port: '1521',
-    username: 'system',
-    password: 'password',
-    database: 'ORCL',
-    connectionString: '',
-  });
-  
+
+  const getStepIndex = (step: ConversionStep): number => {
+    const steps: ConversionStep[] = ['connection', 'upload', 'review', 'report'];
+    return steps.indexOf(step);
+  };
+
   const handleConnectionComplete = (sybaseConn: DatabaseConnection, oracleConn: DatabaseConnection) => {
     setSybaseConnection(sybaseConn);
     setOracleConnection(oracleConn);
     setCurrentStep('upload');
   };
-  
+
   const handleUploadComplete = (uploadedFiles: CodeFile[]) => {
     setFiles(uploadedFiles);
-    startConversion(uploadedFiles);
-  };
-  
-  const handleConversionComplete = () => {
     setCurrentStep('review');
   };
-  
+
+  const handleConversionComplete = () => {
+    setCurrentStep('report');
+  };
+
   const handleReviewComplete = () => {
     setCurrentStep('report');
-    handleGenerateReport();
   };
-  
+
   const handleStartOver = () => {
     setCurrentStep('connection');
+    setSybaseConnection(null);
+    setOracleConnection(null);
     setFiles([]);
     setResults([]);
     setReport(null);
   };
 
   const handleGoHome = () => {
-    setCurrentStep('connection');
-    setFiles([]);
-    setResults([]);
-    setReport(null);
+    window.location.href = '/';
   };
 
   const handleGoBack = () => {
-    switch (currentStep) {
-      case 'upload':
-        setCurrentStep('connection');
-        break;
-      case 'review':
-        setCurrentStep('upload');
-        break;
-      case 'report':
-        setCurrentStep('review');
-        break;
-      default:
-        break;
+    const currentIndex = getStepIndex(currentStep);
+    if (currentIndex > 0) {
+      const steps: ConversionStep[] = ['connection', 'upload', 'review', 'report'];
+      setCurrentStep(steps[currentIndex - 1]);
     }
   };
-  
+
   const handleDownloadAllFiles = async () => {
     if (results.length === 0) {
       toast({
-        title: 'No Files to Download',
-        description: 'There are no converted files to download.',
+        title: 'No Files',
+        description: 'No converted files to download.',
         variant: 'destructive',
       });
       return;
     }
+
+    const zip = new JSZip();
     
-    try {
-      const zip = new JSZip();
-      
-      results.forEach(result => {
-        const fileExtension = result.originalFile.name.includes('.') 
-          ? result.originalFile.name.split('.').pop() 
-          : 'sql';
-        const baseName = result.originalFile.name.includes('.')
-          ? result.originalFile.name.substring(0, result.originalFile.name.lastIndexOf('.'))
-          : result.originalFile.name;
-        
-        zip.file(`${baseName}_oracle.${fileExtension}`, result.convertedCode);
-      });
-      
-      const content = await zip.generateAsync({ type: 'blob' });
-      
-      const url = URL.createObjectURL(content);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'oracle_converted_files.zip';
-      document.body.appendChild(a);
-      a.click();
-      
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
-      toast({
-        title: 'Files Downloaded',
-        description: `Successfully downloaded ${results.length} converted files.`,
-      });
-    } catch (error) {
-      toast({
-        title: 'Download Failed',
-        description: 'Failed to create the ZIP archive.',
-        variant: 'destructive',
-      });
-    }
-  };
-  
-  const handleAIReconversion = async (fileId: string, suggestion: string) => {
-    const fileToReconvert = results.find(r => r.id === fileId);
-    if (!fileToReconvert) {
-      toast({
-        title: 'Error',
-        description: 'File not found for reconversion',
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    toast({
-      title: 'AI Reconversion',
-      description: `Applying suggestion: ${suggestion}`,
+    results.forEach((result, index) => {
+      const fileName = result.originalFile.name.replace(/\.[^/.]+$/, '') + '_converted.sql';
+      zip.file(fileName, result.convertedCode);
     });
-    
+
+    const content = await zip.generateAsync({ type: 'blob' });
+    const url = window.URL.createObjectURL(content);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'converted_files.zip';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+
+    toast({
+      title: 'Download Complete',
+      description: `Downloaded ${results.length} converted files.`,
+    });
+  };
+
+  const handleAIReconversion = async (fileId: string, suggestion: string) => {
+    const originalFile = files.find(f => f.id === fileId);
+    if (!originalFile) return;
+
+    // Check rate limit before reconversion
+    if (!checkRateLimit()) {
+      toast({
+        title: 'Rate Limit Exceeded',
+        description: `You can only convert 10 files per minute. Please wait ${retryAfter} seconds before trying again.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsConverting(true);
-    
     try {
-      // Find the original file from the results
-      const originalFile = fileToReconvert.originalFile;
-      
       const newResult = await convertSybaseToOracle(originalFile, selectedAIModel);
       
-      setResults(prevResults => 
-        prevResults.map(result => 
-          result.id === fileId ? newResult : result
-        )
-      );
-      
+      setResults(prev => prev.map(result => 
+        result.originalFile.id === fileId ? newResult : result
+      ));
+
       toast({
-        title: 'Code Reconverted',
-        description: 'The AI has improved the code based on your suggestion.',
+        title: 'Reconversion Complete',
+        description: 'File has been reconverted with AI suggestions.',
       });
     } catch (error) {
       toast({
         title: 'Reconversion Failed',
-        description: 'Failed to reconvert the code with AI.',
+        description: 'Failed to reconvert the file.',
         variant: 'destructive',
       });
     } finally {
       setIsConverting(false);
     }
   };
-  
+
   const handleGenerateReport = () => {
-    const reportText = generateBalancedConversionReport(results);
-    
-    const report: ConversionReport = {
+    if (results.length === 0) {
+      toast({
+        title: 'No Results',
+        description: 'No conversion results to generate report from.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const reportSummary = generateBalancedConversionReport(results);
+    const newReport: ConversionReport = {
       timestamp: new Date().toISOString(),
       filesProcessed: results.length,
       successCount: results.filter(r => r.status === 'success').length,
       warningCount: results.filter(r => r.status === 'warning').length,
       errorCount: results.filter(r => r.status === 'error').length,
       results: results,
-      summary: reportText,
+      summary: reportSummary,
     };
-    
-    setReport(report);
-    
-    if (currentStep !== 'report') {
-      toast({
-        title: 'Report Generated',
-        description: 'The migration report has been generated successfully.',
-      });
-    }
+
+    setReport(newReport);
+    toast({
+      title: 'Report Generated',
+      description: 'Conversion report has been generated successfully.',
+    });
   };
-  
+
   const startConversion = async (filesToConvert: CodeFile[] = files) => {
     if (filesToConvert.length === 0) {
       toast({
@@ -225,6 +190,16 @@ const Index = () => {
       const newResults: ConversionResult[] = [];
       
       for (const file of filesToConvert) {
+        // Check rate limit before each conversion
+        if (!checkRateLimit()) {
+          toast({
+            title: 'Rate Limit Exceeded',
+            description: `You can only convert 10 files per minute. Please wait ${retryAfter} seconds before trying again.`,
+            variant: 'destructive',
+          });
+          break; // Stop conversion
+        }
+
         setFiles(prevFiles => 
           prevFiles.map(f => 
             f.id === file.id ? { ...f, status: 'converting' } : f
@@ -317,91 +292,54 @@ const Index = () => {
     );
   };
   
-  const getStepIndex = (step: ConversionStep): number => {
-    const steps: ConversionStep[] = ['connection', 'upload', 'review', 'report'];
-    return steps.indexOf(step);
-  };
-  
   const renderCurrentStep = () => {
     switch (currentStep) {
       case 'connection':
         return (
-          <div className="w-full max-w-4xl mx-auto">
-            <ConnectionForm onComplete={handleConnectionComplete} />
-          </div>
+          <ConnectionForm 
+            onComplete={handleConnectionComplete}
+            onGoHome={handleGoHome}
+          />
         );
-        
       case 'upload':
         return (
-          <div className="w-full max-w-4xl mx-auto">
-            <div className="mb-4 flex justify-between items-center">
-              <Button 
-                variant="outline" 
-                onClick={handleGoBack}
-                className="flex items-center gap-2"
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Back to Connection
-              </Button>
-              <HomeButton onClick={handleGoHome} />
-            </div>
-            <div>
-              <CodeUploader onComplete={handleUploadComplete} />
-            </div>
-          </div>
+          <CodeUploader 
+            onComplete={handleUploadComplete}
+            onGoBack={handleGoBack}
+            onGoHome={handleGoHome}
+          />
         );
-        
       case 'review':
         return (
-          <div className="w-full">
-            <div className="mb-4 flex justify-between items-center">
-              <Button 
-                variant="outline" 
-                onClick={handleGoBack}
-                className="flex items-center gap-2"
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Back to Upload
-              </Button>
-              <HomeButton onClick={handleGoHome} />
-            </div>
-            <ConversionResults 
-              results={results}
-              oracleConnection={oracleConnection}
-              onRequestReconversion={handleAIReconversion}
-              onGenerateReport={handleGenerateReport}
-              onComplete={handleReviewComplete}
-              selectedAIModel={selectedAIModel}
-            />
-          </div>
+          <ConversionViewer 
+            files={files}
+            results={results}
+            isConverting={isConverting}
+            selectedAIModel={selectedAIModel}
+            onStartConversion={startConversion}
+            onAIReconversion={handleAIReconversion}
+            onAIModelChange={handleAIModelChange}
+            onGoBack={handleGoBack}
+            onGoHome={handleGoHome}
+            onDownloadAll={handleDownloadAllFiles}
+          />
         );
-        
       case 'report':
         return (
-          <div className="w-full">
-            <div className="mb-4 flex justify-end">
-              <HomeButton onClick={handleGoHome} />
-            </div>
-            {report ? (
-              <ReportViewer 
-                report={report}
-                onBack={() => setCurrentStep('review')}
-              />
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">
-                  Generating report...
-                </p>
-              </div>
-            )}
-          </div>
+          <ReportViewer 
+            report={report}
+            results={results}
+            onGenerateReport={handleGenerateReport}
+            onStartOver={handleStartOver}
+            onGoHome={handleGoHome}
+            onGoBack={handleGoBack}
+          />
         );
-        
       default:
         return null;
     }
   };
-  
+
   return (
     <div className="min-h-screen bg-background">
       <header className="bg-primary text-white py-6">

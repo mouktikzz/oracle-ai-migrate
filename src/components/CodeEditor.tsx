@@ -81,8 +81,8 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
   }, [isFullScreen, isDarkMode, toggleDarkMode]);
 
   // Create unique data attributes for this editor instance
-  const editorDataAttr = `data-editor-id="${editorId}"`;
-  const darkModeDataAttr = `data-dark-mode="${isDarkMode}"`;
+  const editorDataAttr = `data-editor-instance-${editorId}`;
+  const darkModeDataAttr = `data-dark-mode-${isDarkMode}`;
 
   useEffect(() => {
     if (value !== undefined && value !== code) setCode(value);

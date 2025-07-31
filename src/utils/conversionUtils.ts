@@ -34,46 +34,49 @@ export const convertSybaseToOracle = async (
   const normalizedContent = file.content.replace(/\r\n/g, '\n').trim();
   const hash = getConversionCacheKey(normalizedContent, aiModel);
 
-  // 1. Check backend (DB) cache
-  if (cacheEnabled) {
-    const backendCached = await getBackendCachedConversion(hash, aiModel);
-    if (backendCached) {
-      console.log('[DB CACHE HIT]', file.name);
-      const result = {
-        id: backendCached.id,
-        originalFile: file,
-        convertedCode: backendCached.converted_code,
-        aiGeneratedCode: '',
-        issues: (backendCached.issues as unknown as ConversionIssue[]) || [],
-        dataTypeMapping: (backendCached.data_type_mapping as unknown as DataTypeMapping[]) || [],
-        performance: backendCached.metrics as any,
-        status: 'success' as const,
-        explanations: [],
-      };
-      if (result.performance && typeof result.performance === 'object') {
-        (result.performance as any).conversionTimeMs = 1;
-      }
-      return result;
-    } else {
-      console.log('[DB CACHE MISS]', file.name);
-    }
-  }
+  // TEMPORARILY DISABLE CACHE FOR RATE LIMITING TESTING
+  console.log('[CACHE COMPLETELY DISABLED FOR TESTING]', file.name);
+  
+  // CACHE DISABLED - SKIP ALL CACHE CHECKS
+  // if (cacheEnabled) {
+  //   const backendCached = await getBackendCachedConversion(hash, aiModel);
+  //   if (backendCached) {
+  //     console.log('[DB CACHE HIT]', file.name);
+  //     const result = {
+  //       id: backendCached.id,
+  //       originalFile: file,
+  //       convertedCode: backendCached.converted_code,
+  //       aiGeneratedCode: '',
+  //       issues: (backendCached.issues as unknown as ConversionIssue[]) || [],
+  //       dataTypeMapping: (backendCached.data_type_mapping as unknown as DataTypeMapping[]) || [],
+  //       performance: backendCached.metrics as any,
+  //       status: 'success' as const,
+  //       explanations: [],
+  //     };
+  //     if (result.performance && typeof result.performance === 'object') {
+  //       (result.performance as any).conversionTimeMs = 1;
+  //     }
+  //     return result;
+  //   } else {
+  //     console.log('[DB CACHE MISS]', file.name);
+  //   }
+  // }
 
   // 2. Check local cache
-  let cached = null;
-  if (cacheEnabled) {
-    cached = getCachedConversion(normalizedContent, aiModel);
-  }
-  if (cached) {
-    console.log('[LOCAL CACHE HIT]', file.name);
-    const result = { ...cached };
-    if (result.performance) {
-      result.performance.conversionTimeMs = 1;
-    }
-    return result;
-  } else {
-    if (cacheEnabled) console.log('[LOCAL CACHE MISS]', file.name);
-  }
+  // let cached = null;
+  // if (cacheEnabled) {
+  //   cached = getCachedConversion(normalizedContent, aiModel);
+  // }
+  // if (cached) {
+  //   console.log('[LOCAL CACHE HIT]', file.name);
+  //   const result = { ...cached };
+  //   if (result.performance) {
+  //     result.performance.conversionTimeMs = 1;
+  //   }
+  //   return result;
+  // } else {
+  //   if (cacheEnabled) console.log('[LOCAL CACHE MISS]', file.name);
+  // }
 
   console.log(`[CONVERT] Starting conversion for file: ${file.name} with model: ${aiModel}`);
   const startTime = Date.now();

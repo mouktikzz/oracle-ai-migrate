@@ -189,28 +189,32 @@ const convertSybaseToOracle = async (file: CodeFile): Promise<ConversionResult> 
     const aiModel = "gemini-2.5-flash";
     const hash = await getConversionCacheKey(normalizedContent, aiModel);
 
-    if (isCacheEnabled()) {
-      // 1. Check backend (DB) cache
-      const backendCached = await getBackendCachedConversion(hash, aiModel);
-      if (backendCached && backendCached.converted_code) {
-        console.log('[DB CACHE HIT]', file.name);
-        let result = JSON.parse(backendCached.converted_code);
-        if (result && result.performance) result.performance.conversionTimeMs = 1;
-        return result;
-      } else {
-        console.log('[DB CACHE MISS]', file.name);
-      }
+    // TEMPORARILY DISABLE CACHE FOR RATE LIMITING TESTING
+    console.log('[CACHE COMPLETELY DISABLED FOR TESTING]', file.name);
+    
+    // CACHE DISABLED - SKIP ALL CACHE CHECKS
+    // if (isCacheEnabled()) {
+    //   // 1. Check backend (DB) cache
+    //   const backendCached = await getBackendCachedConversion(hash, aiModel);
+    //   if (backendCached && backendCached.converted_code) {
+    //     console.log('[DB CACHE HIT]', file.name);
+    //     let result = JSON.parse(backendCached.converted_code);
+    //     if (result && result.performance) result.performance.conversionTimeMs = 1;
+    //     return result;
+    //   } else {
+    //     console.log('[DB CACHE MISS]', file.name);
+    //   }
 
-      // 2. Check local cache
-      const cached = await getCachedConversion(normalizedContent, aiModel);
-      if (cached) {
-        console.log('[LOCAL CACHE HIT]', file.name);
-        if (cached.performance) cached.performance.conversionTimeMs = 1;
-        return cached;
-      } else {
-        console.log('[LOCAL CACHE MISS]', file.name);
-      }
-    }
+    //   // 2. Check local cache
+    //   const cached = await getCachedConversion(normalizedContent, aiModel);
+    //   if (cached) {
+    //     console.log('[LOCAL CACHE HIT]', file.name);
+    //     if (cached.performance) cached.performance.conversionTimeMs = 1;
+    //     return cached;
+    //   } else {
+    //     console.log('[LOCAL CACHE MISS]', file.name);
+    //   }
+    // }
     const chain = promptTemplate.pipe(model).pipe(parser);
     let aiOutput;
     try {
