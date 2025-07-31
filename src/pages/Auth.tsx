@@ -8,6 +8,8 @@ import { Database, Loader2, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { validateEmail, validatePassword, sanitizeInput } from '@/utils/validationUtils';
+import { securityMiddleware } from '@/utils/securityMiddleware';
 
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -33,9 +35,35 @@ const Auth = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate email
+    if (!validateEmail(loginData.email)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Sanitize inputs
+    const sanitizedEmail = sanitizeInput(loginData.email);
+    const sanitizedPassword = sanitizeInput(loginData.password);
+    
+    // Check rate limiting
+    const clientId = 'login-' + sanitizedEmail;
+    if (securityMiddleware.isRateLimited(clientId, 'api')) {
+      toast({
+        title: "Too Many Attempts",
+        description: "Please wait before trying to login again.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsLoading(true);
     
-    const { error } = await signIn(loginData.email, loginData.password);
+    const { error } = await signIn(sanitizedEmail, sanitizedPassword);
     
     if (error) {
       toast({
@@ -43,6 +71,7 @@ const Auth = () => {
         description: error.message,
         variant: "destructive",
       });
+      securityMiddleware.logSecurityEvent('Login failed', { email: sanitizedEmail, error: error.message });
     } else {
       toast({
         title: "Welcome back!",
@@ -55,9 +84,57 @@ const Auth = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate email
+    if (!validateEmail(signupData.email)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Validate password
+    const passwordValidation = validatePassword(signupData.password);
+    if (!passwordValidation.isValid) {
+      toast({
+        title: "Invalid Password",
+        description: passwordValidation.errors.join(', '),
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Validate full name
+    if (!signupData.fullName.trim() || signupData.fullName.length > 100) {
+      toast({
+        title: "Invalid Name",
+        description: "Please enter a valid full name (max 100 characters).",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Sanitize inputs
+    const sanitizedEmail = sanitizeInput(signupData.email);
+    const sanitizedPassword = sanitizeInput(signupData.password);
+    const sanitizedFullName = sanitizeInput(signupData.fullName);
+    
+    // Check rate limiting
+    const clientId = 'signup-' + sanitizedEmail;
+    if (securityMiddleware.isRateLimited(clientId, 'api')) {
+      toast({
+        title: "Too Many Attempts",
+        description: "Please wait before trying to sign up again.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsLoading(true);
     
-    const { error } = await signUp(signupData.email, signupData.password, signupData.fullName);
+    const { error } = await signUp(sanitizedEmail, sanitizedPassword, sanitizedFullName);
     
     if (error) {
       toast({
@@ -65,6 +142,7 @@ const Auth = () => {
         description: error.message,
         variant: "destructive",
       });
+      securityMiddleware.logSecurityEvent('Signup failed', { email: sanitizedEmail, error: error.message });
     } else {
       toast({
         title: "Account Created!",
@@ -84,15 +162,41 @@ const Auth = () => {
       });
       return;
     }
+    
+    // Validate email
+    if (!validateEmail(loginData.email)) {
+      toast({
+        title: 'Invalid Email',
+        description: 'Please enter a valid email address.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    // Sanitize email
+    const sanitizedEmail = sanitizeInput(loginData.email);
+    
+    // Check rate limiting
+    const clientId = 'reset-' + sanitizedEmail;
+    if (securityMiddleware.isRateLimited(clientId, 'api')) {
+      toast({
+        title: "Too Many Attempts",
+        description: "Please wait before requesting another password reset.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsLoading(true);
     try {
-      const { error } = await resetPassword(loginData.email);
+      const { error } = await resetPassword(sanitizedEmail);
       if (error) {
         toast({
           title: 'Reset Failed',
           description: error.message,
           variant: 'destructive',
         });
+        securityMiddleware.logSecurityEvent('Password reset failed', { email: sanitizedEmail, error: error.message });
       } else {
         toast({
           title: 'Reset Email Sent',

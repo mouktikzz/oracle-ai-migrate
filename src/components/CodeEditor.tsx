@@ -81,8 +81,8 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
   }, [isFullScreen, isDarkMode, toggleDarkMode]);
 
   // Create unique data attributes for this editor instance
-  const editorDataAttr = `data-editor-id="${editorId}"`;
-  const darkModeDataAttr = `data-dark-mode="${isDarkMode}"`;
+  const editorDataAttr = { 'data-editor-id': editorId };
+  const darkModeDataAttr = { 'data-dark-mode': isDarkMode.toString() };
 
   useEffect(() => {
     if (value !== undefined && value !== code) setCode(value);
@@ -92,7 +92,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Only handle F11 if this editor is focused or in fullscreen
-      const isThisEditorFocused = document.activeElement?.closest(`[${editorDataAttr}]`);
+      const isThisEditorFocused = document.activeElement?.closest(`[data-editor-id="${editorId}"]`);
       if (e.key === 'F11' && (isThisEditorFocused || isFullScreen)) {
         e.preventDefault();
         setIsFullScreen(!isFullScreen);
@@ -107,7 +107,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Only handle shortcuts if this editor is focused
-      const isThisEditorFocused = document.activeElement?.closest(`[${editorDataAttr}]`);
+      const isThisEditorFocused = document.activeElement?.closest(`[data-editor-id="${editorId}"]`);
       if (!isThisEditorFocused && !isFullScreen) return;
 
       if (e.ctrlKey && e.key === 'f') {
@@ -365,7 +365,8 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
         className={`fixed inset-0 z-50 flex flex-col ${isDarkMode ? 'bg-[#1e1e1e]' : 'bg-white'}`} 
         data-code-editor
         style={{ height: '100vh' }}
-        {...{ [editorDataAttr]: true, [darkModeDataAttr]: true }}
+        {...editorDataAttr}
+        {...darkModeDataAttr}
       >
         {/* Minimal Top Bar with filename on left and full-screen button on right */}
         <div className={`flex items-center justify-between px-4 py-2 border-b ${isDarkMode ? 'bg-[#1e1e1e] border-gray-700' : 'bg-white'}`}
@@ -573,7 +574,8 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
     <div 
       className="w-full relative h-full overflow-hidden" 
       data-code-editor
-      {...{ [editorDataAttr]: true, [darkModeDataAttr]: true }}
+             {...editorDataAttr}
+       {...darkModeDataAttr}
     >
       <div className={`rounded-md border h-full flex flex-col overflow-hidden ${isDarkMode ? 'bg-[#1e1e1e] border-gray-700' : 'bg-white border-gray-200'}`}>
         {/* Header with filename and controls */}

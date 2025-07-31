@@ -13,6 +13,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { v4 as uuidv4 } from 'uuid';
+import { validateFile, validateFileContent, sanitizeInput, sanitizeFilename } from '@/utils/validationUtils';
+import { securityMiddleware } from '@/utils/securityMiddleware';
 
 interface CodeUploaderProps {
   onComplete: (files: CodeFile[]) => void;
@@ -32,36 +34,68 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
   const processFiles = useCallback((uploadedFiles: FileList | null) => {
     if (!uploadedFiles) return;
     
+    // Check rate limiting
+    const clientId = 'file-upload-' + Date.now();
+    if (securityMiddleware.isRateLimited(clientId, 'upload')) {
+      toast({
+        title: 'Upload Rate Limited',
+        description: 'Too many upload attempts. Please wait before trying again.',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
     Array.from(uploadedFiles).forEach(file => {
-      // Skip if file is too large (10MB limit)
-      if (file.size > 10 * 1024 * 1024) {
+      // Validate file using security middleware
+      const fileValidation = validateFile(file);
+      if (!fileValidation.isValid) {
         toast({
-          title: 'File Too Large',
-          description: `${file.name} is too large. Please select files under 10MB.`,
+          title: 'File Validation Failed',
+          description: fileValidation.errors.join(', '),
           variant: 'destructive'
         });
+        securityMiddleware.logSecurityEvent('File validation failed', { filename: file.name, errors: fileValidation.errors });
         return;
       }
+      
+      // Sanitize filename
+      const sanitizedFilename = sanitizeFilename(file.name);
       
       const reader = new FileReader();
       
       reader.onload = (e) => {
         if (e.target && e.target.result) {
-          const content = e.target.result as string;
+          const rawContent = e.target.result as string;
+          
+          // Validate file content
+          const contentValidation = validateFileContent(rawContent);
+          if (!contentValidation.isValid) {
+            toast({
+              title: 'Content Validation Failed',
+              description: contentValidation.errors.join(', '),
+              variant: 'destructive'
+            });
+            securityMiddleware.logSecurityEvent('Content validation failed', { filename: sanitizedFilename, errors: contentValidation.errors });
+            return;
+          }
+          
+          // Sanitize content
+          const sanitizedContent = sanitizeInput(rawContent);
+          
           const newFile: CodeFile = {
             id: uuidv4(),
-            name: file.name,
-            content: content,
-            type: determineFileType(file.name, content),
+            name: sanitizedFilename,
+            content: sanitizedContent,
+            type: determineFileType(sanitizedFilename, sanitizedContent),
             status: 'pending'
           };
           
           setFiles(prevFiles => {
             // Check if file already exists
-            if (prevFiles.some(f => f.name === file.name)) {
+            if (prevFiles.some(f => f.name === sanitizedFilename)) {
               toast({
                 title: 'Duplicate File',
-                description: `${file.name} is already uploaded.`,
+                description: `${sanitizedFilename} is already uploaded.`,
                 variant: 'destructive'
               });
               return prevFiles;
@@ -71,7 +105,7 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
           
           toast({
             title: 'File Uploaded',
-            description: `${file.name} has been uploaded successfully.`
+            description: `${sanitizedFilename} has been uploaded successfully.`
           });
         }
       };
@@ -79,7 +113,7 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
       reader.onerror = () => {
         toast({
           title: 'Upload Failed',
-          description: `Failed to read ${file.name}.`,
+          description: `Failed to read ${sanitizedFilename}.`,
           variant: 'destructive'
         });
       };
@@ -244,6 +278,18 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
   };
   
   const handleManualSubmit = () => {
+    // Validate filename
+    const sanitizedFilename = sanitizeFilename(manualFileName);
+    if (!sanitizedFilename.trim()) {
+      toast({
+        title: 'Invalid Filename',
+        description: 'Please enter a valid filename for the code content.',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    // Validate content
     if (!manualContent.trim()) {
       toast({
         title: 'Empty Content',
@@ -253,31 +299,48 @@ const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
       return;
     }
     
-    if (!manualFileName.trim()) {
+    // Validate file content
+    const contentValidation = validateFileContent(manualContent);
+    if (!contentValidation.isValid) {
       toast({
-        title: 'Missing Filename',
-        description: 'Please enter a filename for the code content.',
+        title: 'Content Validation Failed',
+        description: contentValidation.errors.join(', '),
         variant: 'destructive'
       });
+      securityMiddleware.logSecurityEvent('Manual content validation failed', { filename: sanitizedFilename, errors: contentValidation.errors });
       return;
     }
     
+    // Sanitize content
+    const sanitizedContent = sanitizeInput(manualContent);
+    
     const newFile: CodeFile = {
       id: uuidv4(),
-      name: manualFileName,
-      content: manualContent,
+      name: sanitizedFilename,
+      content: sanitizedContent,
       type: templateType,
       status: 'pending'
     };
     
-    setFiles(prevFiles => [...prevFiles, newFile]);
+    setFiles(prevFiles => {
+      // Check for duplicates
+      if (prevFiles.some(f => f.name === sanitizedFilename)) {
+        toast({
+          title: 'Duplicate File',
+          description: `${sanitizedFilename} is already in the list.`,
+          variant: 'destructive'
+        });
+        return prevFiles;
+      }
+      return [...prevFiles, newFile];
+    });
     
     setManualContent('');
     setManualFileName('');
     
     toast({
       title: 'File Added',
-      description: `${manualFileName} has been added to the list.`
+      description: `${sanitizedFilename} has been added to the list.`
     });
   };
   

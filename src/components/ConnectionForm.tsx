@@ -9,6 +9,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Database, Server, Key, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { validateInput, databaseConnectionSchema, sanitizeInput } from '@/utils/validationUtils';
+import { securityMiddleware } from '@/utils/securityMiddleware';
 
 interface ConnectionFormProps {
   onComplete: (sybaseConn: DatabaseConnection, oracleConn: DatabaseConnection) => void;
@@ -60,16 +62,42 @@ const ConnectionForm: React.FC<ConnectionFormProps> = ({ onComplete }) => {
   ) => {
     const { name, value } = e.target;
     
+    // Sanitize input
+    const sanitizedValue = sanitizeInput(value);
+    
     if (type === 'sybase') {
-      setSybaseConnection(prev => ({ ...prev, [name]: value }));
+      setSybaseConnection(prev => ({ ...prev, [name]: sanitizedValue }));
     } else {
-      setOracleConnection(prev => ({ ...prev, [name]: value }));
+      setOracleConnection(prev => ({ ...prev, [name]: sanitizedValue }));
     }
   };
   
   const handleTestConnection = async (type: DatabaseType) => {
-    setIsLoading(true);
     const connection = type === 'sybase' ? sybaseConnection : oracleConnection;
+    
+    // Validate connection data
+    const validation = validateInput(databaseConnectionSchema, connection);
+    if (!validation.success) {
+      toast({
+        title: 'Invalid Connection Data',
+        description: validation.errors?.join(', '),
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    // Check rate limiting
+    const clientId = 'test-connection-' + type;
+    if (securityMiddleware.isRateLimited(clientId, 'api')) {
+      toast({
+        title: "Too Many Attempts",
+        description: "Please wait before testing the connection again.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsLoading(true);
     
     try {
       const result = await testConnection(connection);
@@ -79,18 +107,45 @@ const ConnectionForm: React.FC<ConnectionFormProps> = ({ onComplete }) => {
         description: result.message,
         variant: result.success ? 'default' : 'destructive',
       });
+      
+      if (!result.success) {
+        securityMiddleware.logSecurityEvent('Connection test failed', { type, host: connection.host, error: result.message });
+      }
     } catch (error) {
       toast({
         title: 'Connection Error',
         description: 'An unexpected error occurred while testing the connection.',
         variant: 'destructive',
       });
+      securityMiddleware.logSecurityEvent('Connection test error', { type, host: connection.host, error: error });
     } finally {
       setIsLoading(false);
     }
   };
   
   const handleSaveConnections = async () => {
+    // Validate both connections
+    const sybaseValidation = validateInput(databaseConnectionSchema, sybaseConnection);
+    const oracleValidation = validateInput(databaseConnectionSchema, oracleConnection);
+    
+    if (!sybaseValidation.success) {
+      toast({
+        title: 'Invalid Sybase Connection',
+        description: sybaseValidation.errors?.join(', '),
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    if (!oracleValidation.success) {
+      toast({
+        title: 'Invalid Oracle Connection',
+        description: oracleValidation.errors?.join(', '),
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
