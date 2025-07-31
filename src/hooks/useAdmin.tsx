@@ -70,6 +70,51 @@ export const useAdmin = () => {
   };
 
   const updateUserRole = async (userId: string, role: 'user' | 'admin' | 'moderator') => {
+    // Get current user's profile to check their role
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "User not authenticated",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    const { data: currentUserProfile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    // Prevent users from changing their own role
+    if (userId === user.id) {
+      toast({
+        title: "Error",
+        description: "You cannot change your own role",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    // Prevent moderators from changing admin roles
+    if (currentUserProfile?.role === 'moderator') {
+      const { data: targetUserProfile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .single();
+
+      if (targetUserProfile?.role === 'admin') {
+        toast({
+          title: "Error",
+          description: "Moderators cannot change admin roles",
+          variant: "destructive",
+        });
+        return false;
+      }
+    }
+
     const { error } = await supabase
       .from('profiles')
       .update({ role })

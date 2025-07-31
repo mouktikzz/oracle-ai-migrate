@@ -353,7 +353,14 @@ const AdminPanel = () => {
                               <SelectContent>
                                 <SelectItem value="user">User</SelectItem>
                                 <SelectItem value="moderator">Moderator</SelectItem>
-                                <SelectItem value="admin">Admin</SelectItem>
+                                {/* Only show admin option if current user is admin and target user is not admin */}
+                                {profile?.role === 'admin' && user.role !== 'admin' && (
+                                  <SelectItem value="admin">Admin</SelectItem>
+                                )}
+                                {/* Show admin option if current user is admin and target user is admin (for demotion) */}
+                                {profile?.role === 'admin' && user.role === 'admin' && (
+                                  <SelectItem value="admin">Admin</SelectItem>
+                                )}
                               </SelectContent>
                             </Select>
                             <Button
@@ -366,16 +373,19 @@ const AdminPanel = () => {
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedUser(user);
-                                setShowDeleteDialog(true);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            {/* Only show delete button for admins */}
+                            {profile?.role === 'admin' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedUser(user);
+                                  setShowDeleteDialog(true);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
