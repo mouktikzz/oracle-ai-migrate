@@ -98,6 +98,68 @@
   @apply relative pl-10 pb-8 border-l border-muted last:border-0 last:pb-0;
 }
 
+/* Chatbot message formatting */
+.chatbot-message {
+  @apply whitespace-pre-wrap break-words;
+  line-height: 1.6;
+}
+
+.chatbot-message table {
+  @apply w-full border-collapse border border-gray-300 my-4 text-sm;
+  border-spacing: 0;
+}
+
+.chatbot-message th {
+  @apply bg-gray-100 border border-gray-300 px-3 py-2 text-left font-semibold text-gray-800;
+}
+
+.chatbot-message td {
+  @apply border border-gray-300 px-3 py-2 text-gray-700;
+}
+
+/* Ensure table borders are visible */
+.chatbot-message table,
+.chatbot-message th,
+.chatbot-message td {
+  border: 1px solid #d1d5db !important;
+}
+
+/* Table header styling */
+.chatbot-message thead th {
+  @apply bg-blue-50 text-blue-900 font-bold;
+}
+
+.chatbot-message ul {
+  @apply list-disc list-inside space-y-1 my-2;
+}
+
+.chatbot-message ol {
+  @apply list-decimal list-inside space-y-1 my-2;
+}
+
+.chatbot-message p {
+  @apply mb-3;
+}
+
+.chatbot-message h1,
+.chatbot-message h2,
+.chatbot-message h3,
+.chatbot-message h4 {
+  @apply font-bold mb-2 mt-4;
+}
+
+.chatbot-message code {
+  @apply bg-gray-100 px-1 py-0.5 rounded text-sm font-mono;
+}
+
+.chatbot-message pre {
+  @apply bg-gray-100 p-3 rounded overflow-x-auto my-3;
+}
+
+.chatbot-message blockquote {
+  @apply border-l-4 border-blue-500 pl-4 italic my-3;
+}
+
 .conversion-step::before {
   content: '';
   @apply absolute w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center -left-3 top-0;
@@ -194,4 +256,43 @@
 
 [data-code-editor] .bg-\[#23232a\] {
   background-color: #23232a !important;
+}
+
+/* Custom animations for CosmoChatbot */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Responsive utilities for chatbot */
+@media (min-width: 640px) {
+  .sm\:inline {
+    display: inline;
+  }
+}
+
+@media (min-width: 768px) {
+  .md\:inline {
+    display: inline;
+  }
+}
+
+@media (min-width: 1024px) {
+  .lg\:inline {
+    display: inline;
+  }
+}
+
+@media (min-width: 1280px) {
+  .xl\:inline {
+    display: inline;
+  }
 }

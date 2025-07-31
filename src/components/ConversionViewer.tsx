@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Edit, Save, X, ArrowLeft, ArrowRight, Sparkles } from 'lucide-react';
+import { Edit, Save, X, ArrowLeft, ArrowRight, Sparkles, MessageSquare } from 'lucide-react';
 import ConversionIssuesPanel from './ConversionIssuesPanel';
 import FileDownloader from './FileDownloader';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,6 +17,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import CodeEditor from './CodeEditor'; // Added import for CodeEditor
+import { commentUtils } from '@/utils/commentUtils'; // Import commentUtils
+import CommentsSection from './CommentsSection';
 
 interface DataTypeMapping {
   sybaseType: string;
@@ -146,7 +148,7 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
     if (!aiCode || !finalCode) return 0;
     const diff = diffChars(aiCode, finalCode);
     let changed = 0;
-    let total = aiCode.length;
+    const total = aiCode.length;
     diff.forEach(part => {
       if (part.added || part.removed) {
         changed += part.count || part.value.length;
@@ -154,7 +156,7 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
     });
     return total > 0 ? Math.min(100, Math.round((changed / total) * 100)) : 0;
   }
-  const aiCode = (file as any).aiGeneratedCode || file.convertedContent || '';
+  const aiCode = (file as FileItem & { aiGeneratedCode?: string }).aiGeneratedCode || file.convertedContent || '';
   const finalCode = file.convertedContent || '';
   const humanEditPercent = getEditPercentage(aiCode, finalCode);
 
@@ -198,17 +200,19 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
     }
   };
 
+
+
   // Add color helpers:
-  const getScalabilityColor = (score) => {
+  const getScalabilityColor = (score: number): string => {
     if (score >= 8) return 'text-green-700 font-semibold';
     if (score >= 5) return 'text-orange-600 font-semibold';
     return 'text-red-700 font-semibold';
   };
-  const getModernFeaturesColor = (count) => count > 0 ? 'text-blue-700 font-semibold' : 'text-gray-700 font-semibold';
-  const getBulkColor = (used) => used ? 'text-green-700 font-semibold' : 'text-red-700 font-semibold';
-  const getLinesColor = (v) => v < 0 ? 'text-green-700 font-semibold' : v > 0 ? 'text-red-700 font-semibold' : 'text-gray-700 font-semibold';
-  const getLoopsColor = (v) => v < 0 ? 'text-green-700 font-semibold' : v > 0 ? 'text-red-700 font-semibold' : 'text-gray-700 font-semibold';
-  const getComplexityColor = (orig, conv) => conv < orig ? 'text-green-700 font-semibold' : conv > orig ? 'text-red-700 font-semibold' : 'text-gray-700 font-semibold';
+  const getModernFeaturesColor = (count: number): string => count > 0 ? 'text-blue-700 font-semibold' : 'text-gray-700 font-semibold';
+  const getBulkColor = (used: boolean): string => used ? 'text-green-700 font-semibold' : 'text-red-700 font-semibold';
+  const getLinesColor = (v: number): string => v < 0 ? 'text-green-700 font-semibold' : v > 0 ? 'text-red-700 font-semibold' : 'text-gray-700 font-semibold';
+  const getLoopsColor = (v: number): string => v < 0 ? 'text-green-700 font-semibold' : v > 0 ? 'text-red-700 font-semibold' : 'text-gray-700 font-semibold';
+  const getComplexityColor = (orig: number, conv: number): string => conv < orig ? 'text-green-700 font-semibold' : conv > orig ? 'text-red-700 font-semibold' : 'text-gray-700 font-semibold';
 
   return (
     <>
@@ -393,10 +397,34 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
                                               headers: { 'Content-Type': 'application/json' },
                                               body: JSON.stringify({ code: file.convertedContent, language: 'oracle sql' }),
                                             });
+                                            
+                                            if (!res.ok) {
+                                              const errorData = await res.json();
+                                              throw new Error(errorData.error || `HTTP ${res.status}`);
+                                            }
+                                            
                                             const data = await res.json();
                                             setExplanation(data.explanation || 'No explanation returned.');
                                           } catch (err) {
-                                            setExplanation('Failed to get explanation.');
+                                            console.error('AI Explain error:', err);
+                                            // Provide a helpful fallback explanation
+                                            const fallbackExplanation = `**Code Analysis for: ${file.name}**
+
+This appears to be Oracle PL/SQL code that has been converted from Sybase. 
+
+**Key Features:**
+- Uses Oracle-specific syntax and functions
+- Implements database procedures and logic
+- Contains SQL operations and data manipulation
+
+**Common Oracle Features:**
+- PL/SQL blocks with BEGIN/END
+- Oracle-specific data types
+- Built-in Oracle functions
+- Exception handling
+
+**Note:** This is a fallback analysis. For detailed AI-powered analysis, please ensure your OpenRouter API key is configured in Netlify environment variables.`;
+                                            setExplanation(fallbackExplanation);
                                           } finally {
                                             setIsExplaining(false);
                                           }
@@ -726,7 +754,21 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
             </div>
           )}
         </TabsContent>
+        
       </Tabs>
+
+      {/* Comments Section - Only show in dev review mode */}
+      {!hideEdit && (
+        <div className="mt-6">
+          <React.Suspense fallback={<div>Loading comments...</div>}>
+            <CommentsSection 
+              fileId={file.id}
+              fileName={file.name}
+              isDevReview={true}
+            />
+          </React.Suspense>
+        </div>
+      )}
 
       {/* Rewrite Dialog */}
       <Dialog open={showRewriteDialog} onOpenChange={setShowRewriteDialog}>
@@ -794,8 +836,16 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
                       language: 'oracle sql'
                     }),
                   });
+                  
+                  if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.error || `HTTP ${res.status}`);
+                  }
+                  
                   const data = await res.json();
-                  if (!res.ok) throw new Error(data.error || 'Rewrite failed');
+                  if (!data.rewrittenCode) {
+                    throw new Error('No rewritten code returned');
+                  }
 
                   if (isPartial) {
                     // Replace only the selected part
@@ -844,7 +894,19 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
               </div>
             ) : (
               <div className="w-full">
-                <pre className="whitespace-pre-wrap text-sm bg-gray-50 p-4 rounded overflow-x-auto max-w-full break-words">{explanation}</pre>
+                <div className="bg-gray-50 p-6 rounded-lg border">
+                  <div className="prose prose-sm max-w-none">
+                    <div 
+                      className="whitespace-pre-wrap text-sm overflow-x-auto max-w-full break-words"
+                      style={{
+                        fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',
+                        lineHeight: '1.6'
+                      }}
+                    >
+                      {explanation}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>

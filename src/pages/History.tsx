@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useUnreviewedFiles } from '@/hooks/useUnreviewedFiles';
 import ReportViewer from '@/components/ReportViewer';
+import CommentIndicator from '@/components/CommentIndicator';
 
 interface Migration {
   id: string;
@@ -347,21 +348,53 @@ const History = () => {
     e.stopPropagation();
     setUndoingFileId(file.id);
     try {
-      await addUnreviewedFile({
-        file_name: file.file_name,
-        converted_code: file.converted_content || '',
-        ai_generated_code: file.converted_content || '',
-        original_code: file.original_content,
-        data_type_mapping: [], // If you have mapping info, add here
-        issues: [], // If you have issues info, add here
-        performance_metrics: file.performance_metrics || {}, // If you have metrics, add here
-        user_id: user?.id || '',
-      });
+      // First, get the comments for this file to preserve them
+      const { data: comments } = await supabase
+        .from('conversion_comments')
+        .select('*')
+        .eq('file_id', file.id);
+
+      // Add the file to unreviewed_files
+      const { data: newUnreviewedFile, error: addError } = await supabase
+        .from('unreviewed_files')
+        .insert({
+          file_name: file.file_name,
+          converted_code: file.converted_content || '',
+          ai_generated_code: file.converted_content || '',
+          original_code: file.original_content,
+          data_type_mapping: [], // If you have mapping info, add here
+          issues: [], // If you have issues info, add here
+          performance_metrics: file.performance_metrics || {}, // If you have metrics, add here
+          user_id: user?.id || '',
+        })
+        .select()
+        .single();
+
+      if (addError) throw addError;
+
+      // If there were comments, update them to point to the new unreviewed file
+      if (comments && comments.length > 0 && newUnreviewedFile) {
+        await supabase
+          .from('conversion_comments')
+          .update({ file_id: newUnreviewedFile.id })
+          .eq('file_id', file.id);
+      }
+
+      // Remove the file from migration_files
+      await supabase
+        .from('migration_files')
+        .delete()
+        .eq('id', file.id);
+
+      // Update local state
+      setMigrationFiles(prev => prev.filter(f => f.id !== file.id));
+
       toast({
         title: 'Undo Successful',
-        description: `${file.file_name} moved to Unreviewed Files.`,
+        description: `${file.file_name} moved to Unreviewed Files with comments preserved.`,
       });
     } catch (err) {
+      console.error('Error undoing to dev review:', err);
       toast({
         title: 'Undo Failed',
         description: 'Could not move file to Dev Review.',
@@ -759,6 +792,7 @@ const History = () => {
                                   >
                                     <Eye className="h-4 w-4" />
                                   </Button>
+                                  <CommentIndicator fileId={file.id} fileName={file.file_name} />
                                   <Button 
                                     size="sm" 
                                     variant="ghost"
