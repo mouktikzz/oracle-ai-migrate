@@ -21,6 +21,7 @@ import { useConversionLogic } from '@/components/dashboard/ConversionLogic';
 import { useMigrationManager } from '@/components/dashboard/MigrationManager';
 import { useUnreviewedFiles } from '@/hooks/useUnreviewedFiles';
 import { isCacheEnabled, setCacheEnabled } from '@/utils/conversionUtils';
+import StorageFilesPanel from '@/components/StorageFilesPanel';
 
 interface FileItem {
   id: string;
@@ -42,9 +43,9 @@ const Dashboard = () => {
   const location = useLocation();
   const { toast } = useToast();
   
-  const initialTab = (location.state?.activeTab as 'upload' | 'conversion' | 'devReview' | 'metrics') || 'upload';
+  const initialTab = (location.state?.activeTab as 'upload' | 'conversion' | 'devReview' | 'metrics' | 'storage') || 'upload';
   
-  const [activeTab, setActiveTab] = useState<'upload' | 'conversion' | 'devReview' | 'metrics'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'upload' | 'conversion' | 'devReview' | 'metrics' | 'storage'>(initialTab);
   const [files, setFiles] = useState<FileItem[]>([]);
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
   const [conversionResults, setConversionResults] = useState<ConversionResult[]>([]);
@@ -61,7 +62,7 @@ const Dashboard = () => {
     setCacheEnabledState(!cacheEnabled);
   };
 
-  const { handleCodeUpload } = useMigrationManager();
+  const { handleCodeUpload, currentMigrationId } = useMigrationManager();
   const {
     unreviewedFiles,
     addUnreviewedFile,
@@ -395,11 +396,15 @@ const Dashboard = () => {
         />
       )}
       <main className={isFullscreen ? '' : 'container mx-auto px-4 py-8'}>
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'upload' | 'conversion' | 'devReview' | 'metrics')}>
-          <TabsList className="grid w-full grid-cols-4 max-w-2xl mx-auto mb-8">
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'upload' | 'conversion' | 'devReview' | 'metrics' | 'storage')}>
+          <TabsList className="grid w-full grid-cols-5 max-w-3xl mx-auto mb-8">
             <TabsTrigger value="upload" className="flex items-center gap-2">
               <Upload className="h-4 w-4" />
               Upload Code
+            </TabsTrigger>
+            <TabsTrigger value="storage" className="flex items-center gap-2">
+              <Database className="h-4 w-4" />
+              Storage
             </TabsTrigger>
             <TabsTrigger value="conversion" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
@@ -422,6 +427,10 @@ const Dashboard = () => {
 
           <TabsContent value="upload">
             <CodeUploader onComplete={handleCodeUploadWrapper} />
+          </TabsContent>
+
+          <TabsContent value="storage">
+            <StorageFilesPanel migrationId={currentMigrationId} />
           </TabsContent>
 
           <TabsContent value="conversion">

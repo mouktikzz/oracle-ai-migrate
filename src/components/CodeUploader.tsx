@@ -13,6 +13,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { v4 as uuidv4 } from 'uuid';
+import SupabaseStorageSelector from './SupabaseStorageSelector';
 
 interface CodeUploaderProps {
   onComplete: (files: CodeFile[]) => void;
@@ -21,7 +22,7 @@ interface CodeUploaderProps {
 const CodeUploader: React.FC<CodeUploaderProps> = ({ onComplete }) => {
   const { toast } = useToast();
   const [files, setFiles] = useState<CodeFile[]>([]);
-  const [activeTab, setActiveTab] = useState<'upload' | 'manual' | 'mapping' | 'syntax'>('upload');
+  const [activeTab, setActiveTab] = useState<'upload' | 'manual' | 'mapping' | 'syntax' | 'storage'>('upload');
   const [manualContent, setManualContent] = useState<string>('');
   const [manualFileName, setManualFileName] = useState<string>('');
   const [templateType, setTemplateType] = useState<'table' | 'procedure' | 'trigger'>('table');
@@ -401,8 +402,9 @@ END`;
         
         <CardContent>
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="upload">Upload Files</TabsTrigger>
+              <TabsTrigger value="storage">Storage</TabsTrigger>
               <TabsTrigger value="manual">Manual Input</TabsTrigger>
               <TabsTrigger value="mapping">Data Type Mapping</TabsTrigger>
               <TabsTrigger value="syntax">Syntax Differences</TabsTrigger>
@@ -463,6 +465,21 @@ END`;
                   Supported formats: .sql, .txt, .prc, .trg, .tab, .proc, .sp
                 </p>
               </div>
+            </TabsContent>
+
+            <TabsContent value="storage" className="space-y-6">
+              <SupabaseStorageSelector onComplete={(storageFiles) => {
+                setFiles(prevFiles => {
+                  const newFiles = [...prevFiles];
+                  storageFiles.forEach(storageFile => {
+                    // Check if file already exists
+                    if (!newFiles.some(f => f.id === storageFile.id)) {
+                      newFiles.push(storageFile);
+                    }
+                  });
+                  return newFiles;
+                });
+              }} />
             </TabsContent>
 
             <TabsContent value="manual" className="space-y-6">

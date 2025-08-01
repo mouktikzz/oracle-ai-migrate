@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useStorageFiles } from '@/hooks/useStorageFiles';
+import { CodeFile } from '@/types';
 
 interface FileItem {
   id: string;
@@ -15,11 +17,14 @@ interface FileItem {
   dataTypeMapping?: any[];
   issues?: any[];
   performanceMetrics?: any;
+  source?: 'upload' | 'storage';
+  bucket?: string;
 }
 
 export const useMigrationManager = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { saveCodeFileToStorage } = useStorageFiles();
   const [currentMigrationId, setCurrentMigrationId] = useState<string | null>(null);
 
   const startNewMigration = useCallback(async () => {
@@ -50,24 +55,46 @@ export const useMigrationManager = () => {
     }
   }, [user, toast]);
 
-  const handleCodeUpload = useCallback(async (uploadedFiles: any[]): Promise<FileItem[]> => {
+  const handleCodeUpload = useCallback(async (uploadedFiles: CodeFile[]): Promise<FileItem[]> => {
     // Ensure a migration exists before uploading files
-    const convertedFiles: FileItem[] = uploadedFiles.map(file => ({
-      id: file.id,
-      name: file.name,
-      path: file.name,
-      type: file.type,
-      content: file.content,
-      conversionStatus: 'pending' as const,
-      dataTypeMapping: [],
-      issues: [],
-      performanceMetrics: undefined,
-      convertedContent: undefined,
-      errorMessage: undefined,
-    }));
-    // No longer insert files into migration_files or migrations here. This is now done after deployment to Oracle.
+    const convertedFiles: FileItem[] = [];
+    
+    for (const file of uploadedFiles) {
+      const fileItem: FileItem = {
+        id: file.id,
+        name: file.name,
+        path: file.path || file.name,
+        type: file.type,
+        content: file.content,
+        conversionStatus: 'pending' as const,
+        dataTypeMapping: [],
+        issues: [],
+        performanceMetrics: undefined,
+        convertedContent: undefined,
+        errorMessage: undefined,
+        source: file.source,
+        bucket: file.bucket,
+      };
+      
+      // If it's a storage file, save it to the database
+      if (file.source === 'storage' && currentMigrationId) {
+        try {
+          await saveCodeFileToStorage(file, currentMigrationId);
+        } catch (error) {
+          console.error('Error saving storage file to database:', error);
+          toast({
+            title: "Warning",
+            description: `Failed to save ${file.name} to database, but it will still be processed`,
+            variant: "destructive",
+          });
+        }
+      }
+      
+      convertedFiles.push(fileItem);
+    }
+    
     return convertedFiles;
-  }, [user, toast, currentMigrationId, startNewMigration]);
+  }, [user, toast, currentMigrationId, startNewMigration, saveCodeFileToStorage]);
 
   return {
     currentMigrationId,

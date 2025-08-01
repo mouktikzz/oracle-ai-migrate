@@ -253,6 +253,77 @@ export type Database = {
         };
         Relationships: [];
       },
+      storage_files: {
+        Row: {
+          id: string;
+          created_at: string;
+          updated_at: string;
+          user_id: string;
+          bucket_name: string;
+          file_path: string;
+          file_name: string;
+          file_size: number | null;
+          file_type: string | null;
+          conversion_status: string;
+          original_content: string | null;
+          converted_content: string | null;
+          error_message: string | null;
+          migration_id: string | null;
+          performance_metrics: Json | null;
+          issues: Json | null;
+          data_type_mapping: Json | null;
+          syntax_differences: Json | null;
+        };
+        Insert: {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+          user_id: string;
+          bucket_name: string;
+          file_path: string;
+          file_name: string;
+          file_size?: number | null;
+          file_type?: string | null;
+          conversion_status?: string;
+          original_content?: string | null;
+          converted_content?: string | null;
+          error_message?: string | null;
+          migration_id?: string | null;
+          performance_metrics?: Json | null;
+          issues?: Json | null;
+          data_type_mapping?: Json | null;
+          syntax_differences?: Json | null;
+        };
+        Update: {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+          user_id?: string;
+          bucket_name?: string;
+          file_path?: string;
+          file_name?: string;
+          file_size?: number | null;
+          file_type?: string | null;
+          conversion_status?: string;
+          original_content?: string | null;
+          converted_content?: string | null;
+          error_message?: string | null;
+          migration_id?: string | null;
+          performance_metrics?: Json | null;
+          issues?: Json | null;
+          data_type_mapping?: Json | null;
+          syntax_differences?: Json | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "storage_files_migration_id_fkey"
+            columns: ["migration_id"]
+            isOneToOne: false
+            referencedRelation: "migrations"
+            referencedColumns: ["id"]
+          },
+        ];
+      },
     }
     Views: {
       [_ in never]: never

@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ConversionResult, ConversionReport } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '@/hooks/useAuth';
+import { useStorageFiles } from '@/hooks/useStorageFiles';
 
 interface FileItem {
   id: string;
@@ -18,6 +19,8 @@ interface FileItem {
   dataTypeMapping?: any[];
   issues?: any[];
   performanceMetrics?: any;
+  source?: 'upload' | 'storage';
+  bucket?: string;
 }
 
 export const useConversionLogic = (
@@ -28,6 +31,7 @@ export const useConversionLogic = (
 ) => {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { updateStorageFileStatus } = useStorageFiles();
   const [isConverting, setIsConverting] = useState(false);
   const [convertingFileIds, setConvertingFileIds] = useState<string[]>([]);
 
@@ -85,20 +89,44 @@ export const useConversionLogic = (
           : f
       ));
 
-      await supabase.from('migration_files').update({
-        conversion_status: mapConversionStatus(result.status),
-        converted_content: result.convertedCode,
-        performance_metrics: result.performance || {
-          score: 85,
-          maintainability: 90,
-          orig_complexity: 10,
-          conv_complexity: 7,
-          improvement: 30,
-          lines_reduced: 15,
-          loops_reduced: 2,
-          time_ms: 120
-        }
-      }).eq('file_name', file.name);
+      // Update database based on file source
+      if (file.source === 'storage' && file.bucket) {
+        // Update storage_files table
+        await updateStorageFileStatus(
+          file.id,
+          mapConversionStatus(result.status),
+          result.convertedCode,
+          undefined,
+          result.performance || {
+            score: 85,
+            maintainability: 90,
+            orig_complexity: 10,
+            conv_complexity: 7,
+            improvement: 30,
+            lines_reduced: 15,
+            loops_reduced: 2,
+            time_ms: 120
+          },
+          result.issues,
+          result.dataTypeMapping
+        );
+      } else {
+        // Update migration_files table for uploaded files
+        await supabase.from('migration_files').update({
+          conversion_status: mapConversionStatus(result.status),
+          converted_content: result.convertedCode,
+          performance_metrics: result.performance || {
+            score: 85,
+            maintainability: 90,
+            orig_complexity: 10,
+            conv_complexity: 7,
+            improvement: 30,
+            lines_reduced: 15,
+            loops_reduced: 2,
+            time_ms: 120
+          }
+        }).eq('file_name', file.name);
+      }
     } catch (error) {
       console.error('Conversion failed:', error);
       setFiles(prev => prev.map(f => 
@@ -156,20 +184,44 @@ export const useConversionLogic = (
                 : f
             ));
 
-            await supabase.from('migration_files').update({
-              conversion_status: mapConversionStatus(result.status),
-              converted_content: result.convertedCode,
-              performance_metrics: result.performance || {
-                score: 85,
-                maintainability: 90,
-                orig_complexity: 10,
-                conv_complexity: 7,
-                improvement: 30,
-                lines_reduced: 15,
-                loops_reduced: 2,
-                time_ms: 120
-              }
-            }).eq('file_name', file.name);
+            // Update database based on file source
+            if (file.source === 'storage' && file.bucket) {
+              // Update storage_files table
+              await updateStorageFileStatus(
+                file.id,
+                mapConversionStatus(result.status),
+                result.convertedCode,
+                undefined,
+                result.performance || {
+                  score: 85,
+                  maintainability: 90,
+                  orig_complexity: 10,
+                  conv_complexity: 7,
+                  improvement: 30,
+                  lines_reduced: 15,
+                  loops_reduced: 2,
+                  time_ms: 120
+                },
+                result.issues,
+                result.dataTypeMapping
+              );
+            } else {
+              // Update migration_files table for uploaded files
+              await supabase.from('migration_files').update({
+                conversion_status: mapConversionStatus(result.status),
+                converted_content: result.convertedCode,
+                performance_metrics: result.performance || {
+                  score: 85,
+                  maintainability: 90,
+                  orig_complexity: 10,
+                  conv_complexity: 7,
+                  improvement: 30,
+                  lines_reduced: 15,
+                  loops_reduced: 2,
+                  time_ms: 120
+                }
+              }).eq('file_name', file.name);
+            }
           } catch (error) {
             console.error(`Conversion failed for ${file.name}:`, error);
             setFiles(prev => prev.map(f => 

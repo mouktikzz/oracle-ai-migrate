@@ -16,6 +16,9 @@ export interface CodeFile {
   content: string;
   type: 'table' | 'procedure' | 'trigger' | 'other';
   status?: 'pending' | 'converting' | 'success' | 'error';
+  source?: 'upload' | 'storage';
+  bucket?: string;
+  path?: string;
 }
 
 export interface ConversionResult {
