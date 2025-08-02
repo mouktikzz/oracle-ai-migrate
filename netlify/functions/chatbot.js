@@ -118,43 +118,291 @@ async function searchDocs(query) {
   const results = [];
   const searchTerms = query.toLowerCase().split(' ').filter(term => term.length > 2);
   
-  try {
-    // Search through main documentation files
-    for (const [filePath, description] of Object.entries(DOCS_STRUCTURE)) {
-      try {
-        const fullPath = path.join(DOCS_PATH, filePath);
-        const content = await fs.readFile(fullPath, 'utf-8');
-        
-        // Check if any search terms match the content
-        const matches = searchTerms.filter(term => 
-          content.toLowerCase().includes(term) || 
-          description.toLowerCase().includes(term)
-        );
-        
-        if (matches.length > 0) {
-          // Extract relevant sections
-          const relevantSections = extractRelevantSections(content, searchTerms);
-          results.push({
-            file: filePath,
-            description: description,
-            relevance: matches.length,
-            sections: relevantSections
-          });
-        }
-      } catch (err) {
-        // Skip files that can't be read
-        continue;
-      }
-    }
-    
-    // Sort by relevance
-    results.sort((a, b) => b.relevance - a.relevance);
-    
-    return results.slice(0, 3); // Return top 3 most relevant results
-  } catch (error) {
-    console.error('Error searching docs:', error);
-    return [];
+  // Embedded documentation content for performance metrics and code quality analysis
+  const performanceMetricsContent = `
+# Performance Metrics and Code Quality Analysis
+
+## Overview
+The Sybase to Oracle Migration Tool includes comprehensive performance monitoring, metrics collection, and code quality analysis to ensure optimal system performance and maintainable code.
+
+## Code Quality Metrics
+
+### 1. Cyclomatic Complexity
+- **Definition**: Measures code complexity based on decision points
+- **Calculation**: Count of conditional statements, loops, and logical operators
+- **Thresholds**: 
+  - Low: 1-10 (Good)
+  - Medium: 11-20 (Moderate)
+  - High: 21-50 (Complex)
+  - Very High: 50+ (Refactor needed)
+
+### 2. Lines of Code Analysis
+- **Total Lines**: Raw line count including comments and whitespace
+- **Effective Lines**: Code lines excluding comments and empty lines
+- **Comment Ratio**: Percentage of comment lines vs code lines
+- **Change Impact**: Lines added/removed during conversion
+
+### 3. Loop Analysis
+- **Loop Types**: FOR, WHILE, CURSOR loops identified
+- **Nested Loops**: Depth of loop nesting
+- **Performance Impact**: Loop complexity and iteration count
+- **Optimization Opportunities**: Bulk operations vs row-by-row processing
+
+### 4. Comment Ratio and Quality
+- **Comment Density**: Comments per function/procedure
+- **Documentation Quality**: Meaningful vs redundant comments
+- **Oracle-Specific Comments**: Migration notes and explanations
+- **Maintenance Notes**: Areas requiring manual review
+
+### 5. Maintainability Index
+- **Formula**: Based on cyclomatic complexity, lines of code, and comment ratio
+- **Scoring**: 0-100 scale (higher = more maintainable)
+- **Categories**:
+  - Excellent: 85-100
+  - Good: 65-84
+  - Fair: 45-64
+  - Poor: 0-44
+
+### 6. Bulk Operations Analysis
+- **BULK COLLECT Usage**: Oracle bulk collection patterns
+- **BULK INSERT/UPDATE**: Batch processing opportunities
+- **Performance Gains**: Estimated performance improvements
+- **Memory Considerations**: Batch size optimization
+
+### 7. Scalability Assessment
+- **Resource Usage**: CPU, memory, and I/O patterns
+- **Concurrent Access**: Multi-user performance impact
+- **Growth Projections**: Scalability under increased load
+- **Bottleneck Identification**: Performance limiting factors
+
+### 8. Modern Features Detection
+- **Oracle 12c+ Features**: JSON, LISTAGG, LATERAL joins
+- **Performance Features**: Result caching, adaptive plans
+- **Security Features**: VPD, encryption, audit trails
+- **Maintenance Features**: Online DDL, partitioning
+
+### 9. Overall Performance Score
+- **Composite Score**: Weighted average of all metrics
+- **Scoring Factors**:
+  - Code Complexity: 25%
+  - Performance Patterns: 25%
+  - Modern Features: 20%
+  - Maintainability: 15%
+  - Documentation: 15%
+
+### 10. Manual Edit Requirements
+- **Critical Issues**: Must-fix problems
+- **Performance Optimizations**: Recommended improvements
+- **Oracle-Specific Changes**: Platform-specific modifications
+- **Testing Requirements**: Areas needing validation
+
+## Implementation Details
+
+### Database Schema for Code Quality Metrics
+\`\`\`sql
+-- Code quality metrics table
+CREATE TABLE code_quality_metrics (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  file_id UUID REFERENCES migration_files(id),
+  cyclomatic_complexity INTEGER,
+  total_lines INTEGER,
+  effective_lines INTEGER,
+  comment_ratio DECIMAL(5,2),
+  maintainability_index INTEGER,
+  bulk_operations_count INTEGER,
+  modern_features_count INTEGER,
+  scalability_score INTEGER,
+  performance_score INTEGER,
+  manual_edits_required TEXT[],
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Loop analysis table
+CREATE TABLE loop_analysis (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  file_id UUID REFERENCES migration_files(id),
+  loop_type VARCHAR(20),
+  nesting_level INTEGER,
+  iteration_estimate INTEGER,
+  optimization_potential TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Performance recommendations table
+CREATE TABLE performance_recommendations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  file_id UUID REFERENCES migration_files(id),
+  recommendation_type VARCHAR(50),
+  priority VARCHAR(20),
+  description TEXT,
+  estimated_impact VARCHAR(50),
+  implementation_effort VARCHAR(20),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+\`\`\`
+
+### Code Analysis Implementation
+\`\`\`typescript
+// Code quality analyzer
+interface CodeQualityMetrics {
+  cyclomaticComplexity: number;
+  totalLines: number;
+  effectiveLines: number;
+  commentRatio: number;
+  maintainabilityIndex: number;
+  bulkOperationsCount: number;
+  modernFeaturesCount: number;
+  scalabilityScore: number;
+  performanceScore: number;
+  manualEditsRequired: string[];
+}
+
+async function analyzeCodeQuality(sqlContent: string): Promise<CodeQualityMetrics> {
+  const lines = sqlContent.split('\\n');
+  const effectiveLines = lines.filter(line => 
+    line.trim().length > 0 && !line.trim().startsWith('--')
+  );
+  
+  // Calculate cyclomatic complexity
+  const complexity = calculateCyclomaticComplexity(sqlContent);
+  
+  // Analyze loops and bulk operations
+  const loopAnalysis = analyzeLoops(sqlContent);
+  const bulkOps = countBulkOperations(sqlContent);
+  
+  // Detect modern Oracle features
+  const modernFeatures = detectModernFeatures(sqlContent);
+  
+  // Calculate maintainability index
+  const maintainabilityIndex = calculateMaintainabilityIndex(
+    complexity, effectiveLines.length, commentRatio
+  );
+  
+  // Generate performance score
+  const performanceScore = calculatePerformanceScore({
+    complexity,
+    bulkOps,
+    modernFeatures,
+    maintainabilityIndex
+  });
+  
+  return {
+    cyclomaticComplexity: complexity,
+    totalLines: lines.length,
+    effectiveLines: effectiveLines.length,
+    commentRatio: calculateCommentRatio(lines),
+    maintainabilityIndex,
+    bulkOperationsCount: bulkOps,
+    modernFeaturesCount: modernFeatures.length,
+    scalabilityScore: calculateScalabilityScore(sqlContent),
+    performanceScore,
+    manualEditsRequired: generateManualEditRecommendations(sqlContent)
+  };
+}
+\`\`\`
+
+## Reporting and Visualization
+
+### 1. Code Quality Dashboard
+- **Metrics Overview**: All quality metrics in one view
+- **Trend Analysis**: Quality improvements over time
+- **Comparison Charts**: Before/after conversion metrics
+- **Risk Assessment**: High-complexity code identification
+
+### 2. Performance Recommendations
+- **Priority Ranking**: Critical to nice-to-have improvements
+- **Implementation Guide**: Step-by-step optimization steps
+- **Impact Estimation**: Expected performance gains
+- **Effort Assessment**: Implementation complexity
+
+### 3. Manual Review Checklist
+- **Critical Issues**: Must-review items
+- **Performance Optimizations**: Recommended changes
+- **Oracle-Specific Modifications**: Platform requirements
+- **Testing Requirements**: Validation needs
+
+## Integration with Conversion Process
+
+### 1. Pre-Conversion Analysis
+- **Baseline Metrics**: Original code quality assessment
+- **Risk Identification**: Potential conversion challenges
+- **Resource Planning**: Estimated conversion effort
+
+### 2. Post-Conversion Analysis
+- **Quality Comparison**: Before/after metrics
+- **Improvement Tracking**: Quality enhancement measurement
+- **Validation Requirements**: Areas needing manual review
+
+### 3. Continuous Monitoring
+- **Quality Trends**: Long-term quality tracking
+- **Performance Impact**: Quality vs performance correlation
+- **Optimization Opportunities**: Ongoing improvement identification
+`;
+
+  // Check if query is related to performance metrics or code quality analysis
+  const performanceKeywords = [
+    'performance', 'metrics', 'monitoring', 'reporting', 'analytics', 'dashboard', 'tracking',
+    'cyclomatic', 'complexity', 'lines of code', 'loops', 'comment ratio', 'maintainability',
+    'bulk operations', 'bulk collect', 'scalability', 'modern features', 'performance score',
+    'manual edits', 'code quality', 'analysis', 'assessment', 'optimization'
+  ];
+  const isPerformanceQuery = performanceKeywords.some(keyword => 
+    query.toLowerCase().includes(keyword)
+  );
+
+  if (isPerformanceQuery) {
+    const relevantSections = extractRelevantSections(performanceMetricsContent, searchTerms);
+    results.push({
+      file: 'performance-metrics.md',
+      description: 'Performance metrics collection and reporting system',
+      relevance: searchTerms.length,
+      sections: relevantSections
+    });
   }
+
+  // Add more embedded documentation as needed
+  const architectureContent = `
+# System Architecture
+
+## Frontend Layer
+- React 18 with TypeScript
+- Vite build tool
+- shadcn/ui components with Tailwind CSS
+- React Query for server state management
+
+## Backend Layer
+- Netlify Functions for serverless API calls
+- Supabase for database and authentication
+- Google Gemini AI for code conversion
+- OpenRouter as fallback AI service
+
+## Data Flow
+1. User uploads SQL files
+2. Files are processed by AI conversion engine
+3. Results are stored in Supabase database
+4. User can view and download converted code
+5. Performance metrics are collected throughout the process
+`;
+
+  const architectureKeywords = ['architecture', 'system', 'components', 'frontend', 'backend', 'data flow'];
+  const isArchitectureQuery = architectureKeywords.some(keyword => 
+    query.toLowerCase().includes(keyword)
+  );
+
+  if (isArchitectureQuery) {
+    const relevantSections = extractRelevantSections(architectureContent, searchTerms);
+    results.push({
+      file: 'architecture.md',
+      description: 'System architecture and component overview',
+      relevance: searchTerms.length,
+      sections: relevantSections
+    });
+  }
+
+  // Sort by relevance
+  results.sort((a, b) => b.relevance - a.relevance);
+  
+  return results.slice(0, 3); // Return top 3 most relevant results
 }
 
 // Extract relevant sections from documentation
