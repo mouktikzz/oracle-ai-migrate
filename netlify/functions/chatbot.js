@@ -86,11 +86,18 @@ async function retrieveRelevantKnowledge(query) {
   try {
     // Determine the base URL for the RAG API
     const isLocalhost = process.env.NODE_ENV === 'development' || process.env.NETLIFY_DEV;
-    const baseUrl = isLocalhost 
-      ? 'http://localhost:8888' 
-      : `https://${process.env.URL || 'your-site.netlify.app'}`;
+    let baseUrl;
+    
+    if (isLocalhost) {
+      baseUrl = 'http://localhost:8888';
+    } else {
+      // On Netlify, use the request headers to determine the site URL
+      const host = event.headers?.host || process.env.URL || 'your-site.netlify.app';
+      baseUrl = `https://${host}`;
+    }
     
     const ragApiUrl = `${baseUrl}/.netlify/functions/external-rag`;
+    console.log('🌐 RAG API URL:', ragApiUrl);
     
     const response = await fetch(ragApiUrl, {
       method: 'POST',
@@ -235,7 +242,10 @@ exports.handler = async function(event, context) {
     const intent = extractIntent(message);
     
     // RAG: Retrieve relevant project knowledge from RAG API
+    console.log('🔍 Retrieving RAG knowledge for query:', message);
     const relevantKnowledge = await retrieveRelevantKnowledge(message);
+    console.log('📄 RAG knowledge length:', relevantKnowledge.length);
+    console.log('📝 RAG knowledge preview:', relevantKnowledge.substring(0, 200) + '...');
     
     // Prepare conversation history for API with RAG context
     const messages = [

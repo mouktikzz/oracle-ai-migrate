@@ -58,10 +58,16 @@ exports.handler = async (event, context) => {
     }
 
     // Search Pinecone
+    console.log('🔍 Searching Pinecone with query:', query);
     const results = await index.query({
       vector: queryEmbedding,
       topK: 5,
       includeMetadata: true
+    });
+
+    console.log('📊 Pinecone results:', {
+      totalMatches: results.matches.length,
+      matches: results.matches.map(m => ({ id: m.id, score: m.score, hasContent: !!m.metadata?.content }))
     });
 
     // Extract context from results
@@ -69,6 +75,11 @@ exports.handler = async (event, context) => {
       .map(match => match.metadata?.content || '')
       .filter(content => content.length > 0)
       .join('\n\n');
+
+    console.log('📄 Context length:', context.length);
+    if (context.length === 0) {
+      console.log('⚠️ No context found - this might indicate an issue with the RAG system');
+    }
 
     return {
       statusCode: 200,
@@ -79,7 +90,12 @@ exports.handler = async (event, context) => {
       body: JSON.stringify({ 
         context,
         matches: results.matches.length,
-        query: query
+        query: query,
+        debug: {
+          totalMatches: results.matches.length,
+          contextLength: context.length,
+          hasResults: results.matches.length > 0
+        }
       })
     };
 
