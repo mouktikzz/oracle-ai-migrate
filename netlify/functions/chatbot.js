@@ -33,20 +33,14 @@ PROJECT CONTEXT:
 - Migration tools: Custom conversion utilities for stored procedures
 - File handling: Supports SQL file uploads and conversions
 
-DOCUMENTATION INTEGRATION:
-- You have access to comprehensive project documentation
-- When users ask about project features, architecture, or implementation details, search the docs first
-- Reference specific documentation sections when providing answers
-- Include relevant code examples and configuration details from the docs
-- If documentation search doesn't yield relevant results, provide general guidance
-
 RESPONSE GUIDELINES:
-- Provide natural, conversational responses without robotic phrases like "Okay, based on the project context..."
-- Prioritize project-specific answers when questions relate to this codebase
-- Use generic Oracle migration guidance only when questions aren't project-related
-- Be concise, practical, and direct
-- Start responses naturally without repetitive introductions
-- When referencing documentation, mention the specific file or section.`;
+- Provide natural, conversational responses without robotic phrases
+- Use the project context information to give specific, relevant answers
+- Focus on practical, actionable advice for Sybase to Oracle migration
+- Be concise and direct in your responses
+- Don't mention documentation files or sections - just provide the information naturally
+- If the project context doesn't have specific information, provide general Oracle migration guidance
+- Always relate answers back to the migration context when possible`;
 
 async function callOpenRouterAPI(messages, model = 'qwen/qwen3-coder:free') {
   const body = {
@@ -951,24 +945,24 @@ exports.handler = async function(event, context) {
     // Extract intent from user message
     const intent = extractIntent(message);
     
-    // Search documentation for relevant information
-    let docsContext = '';
-    let docsResults = [];
-    try {
-      docsResults = await searchDocs(message);
-      if (docsResults.length > 0) {
-        docsContext = '\n\nRELEVANT DOCUMENTATION:\n';
-        docsResults.forEach((result, index) => {
-          docsContext += `\n${index + 1}. ${result.file} - ${result.description}\n`;
-          result.sections.forEach(section => {
-            docsContext += `   Section: ${section.section}\n   Content: ${section.content}\n`;
-          });
-        });
-      }
-    } catch (docsError) {
-      console.log('Documentation search failed:', docsError);
-      // Continue without docs context
-    }
+         // Search documentation for relevant information
+     let docsContext = '';
+     let docsResults = [];
+     try {
+       docsResults = await searchDocs(message);
+       if (docsResults.length > 0) {
+         docsContext = '\n\nPROJECT CONTEXT:\n';
+         docsResults.forEach((result, index) => {
+           docsContext += `\n${result.description}:\n`;
+           result.sections.forEach(section => {
+             docsContext += `${section.content}\n`;
+           });
+         });
+       }
+     } catch (docsError) {
+       console.log('Documentation search failed:', docsError);
+       // Continue without docs context
+     }
     
     // Prepare conversation history for API
     const messages = [
