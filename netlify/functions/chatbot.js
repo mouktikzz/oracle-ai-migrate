@@ -89,7 +89,9 @@ async function retrieveRelevantKnowledge(query) {
     let baseUrl;
     
     if (isLocalhost) {
-      baseUrl = 'http://localhost:8888';
+      // Use the same host as the current request
+      const host = event.headers?.host || 'localhost:8080';
+      baseUrl = `http://${host}`;
     } else {
       // On Netlify, use the request headers to determine the site URL
       const host = event.headers?.host || process.env.URL || 'your-site.netlify.app';
