@@ -3,16 +3,15 @@ const fetch = require('node-fetch');
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const GEMINI_API_KEY = process.env.VITE_GEMINI_API_KEY;
 
-const SYSTEM_PROMPT = `You are an expert Oracle database migration assistant for a specific Sybase to Oracle migration project.
+const SYSTEM_PROMPT = `You are an AI assistant for a Sybase to Oracle migration project.
 
-IMPORTANT: You can ONLY use the provided project knowledge to answer questions. Do not use any external knowledge or general Oracle migration information. If the question is not covered in the provided knowledge, say you don't have information about that specific aspect of the project.
+IMPORTANT: You can ONLY use the provided project knowledge to answer questions. If no relevant knowledge is provided, say "I don't have information about that specific aspect of the project."
 
 RESPONSE GUIDELINES:
-- Use ONLY the provided project knowledge to answer questions
-- Provide natural, conversational responses without robotic phrases
-- Be concise and direct in your responses
-- If the question is not covered in the project knowledge, clearly state that
-- Do not reference documentation files or sections - just provide the information naturally`;
+- Use ONLY the provided project knowledge
+- If no knowledge is provided, clearly state you don't have information
+- Be concise and direct
+- Do not use any external knowledge or general information`;
 
 async function callOpenRouterAPI(messages, model = 'qwen/qwen3-coder:free') {
   const body = {
@@ -129,62 +128,17 @@ async function retrieveRelevantKnowledge(query, event) {
 }
 
 function extractIntent(userMessage) {
-  const message = userMessage.toLowerCase();
-   
-  if (message.includes('explain') || message.includes('what does') || message.includes('how does')) {
-    return 'code_explanation';
-  }
-  if (message.includes('migrate') || message.includes('convert') || message.includes('oracle')) {
-    return 'migration_help';
-  }
-  if (message.includes('data type') || message.includes('varchar') || message.includes('int')) {
-    return 'data_type_mapping';
-  }
-  if (message.includes('syntax') || message.includes('error') || message.includes('fix')) {
-    return 'syntax_help';
-  }
-  if (message.includes('performance') || message.includes('optimize') || message.includes('fast')) {
-    return 'best_practices';
-  }
-   
+  // Simple intent extraction without hardcoded knowledge
   return 'general_question';
 }
 
 function generateSuggestions(intent) {
-  const suggestions = {
-    code_explanation: [
-      "Can you show me the converted Oracle version?",
-      "What are the key differences between Sybase and Oracle?",
-      "How can I optimize this code for Oracle?"
-    ],
-    migration_help: [
-      "What are the main challenges in Sybase to Oracle migration?",
-      "How do I handle stored procedures?",
-      "What about triggers and functions?"
-    ],
-    data_type_mapping: [
-      "Show me the complete data type mapping table",
-      "How do I handle TEXT and IMAGE types?",
-      "What about custom data types?"
-    ],
-    syntax_help: [
-      "How do I convert Sybase date functions?",
-      "What's the Oracle equivalent of @@IDENTITY?",
-      "How do I handle temporary tables?"
-    ],
-    best_practices: [
-      "What are Oracle performance best practices?",
-      "How do I use bulk operations?",
-      "What about indexing strategies?"
-    ],
-    general_question: [
-      "How do I start a migration project?",
-      "What tools do you recommend?",
-      "Can you explain the migration process?"
-    ]
-  };
-   
-  return suggestions[intent] || suggestions.general_question;
+  // Return generic suggestions that don't contain specific knowledge
+  return [
+    "Can you help me with this?",
+    "What should I know about this?",
+    "Tell me more about this topic"
+  ];
 }
 
 exports.handler = async function(event, context) {
