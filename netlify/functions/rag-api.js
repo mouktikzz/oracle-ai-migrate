@@ -1,79 +1,406 @@
 const fetch = require('node-fetch');
 
-// Comprehensive project knowledge base embedded in the function
+// Comprehensive project knowledge base with complete line-by-line documentation
 const PROJECT_KNOWLEDGE_BASE = {
   documents: [
     {
-      id: "getting-started",
-      title: "Getting Started Guide",
-      content: `Getting Started with Oracle AI Migration Tool:
+      id: "main-readme",
+      title: "Main README - Complete Project Overview",
+      content: `# Sybase to Oracle Migration Tool
 
-Account Setup:
-1. Create an account using email or social login
-2. Verify your email address
-3. Complete profile with organization details
+🚀 Sybase to Oracle Migration Tool
+AI-Powered Database Migration Made Simple
 
-Initial Configuration:
-1. Choose AI model (Default or Gemini)
-2. Set preferences for file size limits and notifications
-3. Test Oracle database connection
+🌟 Overview
+Transform your Sybase database code to Oracle-compatible syntax with our intelligent AI-powered migration tool. Built for enterprise-scale migrations, this tool combines the power of Google Gemini AI with advanced conversion algorithms to ensure accurate, efficient, and reliable database migrations.
 
-First Login:
-- Access the migration dashboard to start your first migration
+🤖 AI Chatbot Assistant
+The application includes an intelligent AI chatbot to help with your migration:
+- Access: Click the chat icon in the bottom-right corner
+- Ask Questions: Get help with migration strategies, code explanations, and best practices
+- Code Analysis: Upload code snippets for detailed analysis and conversion guidance
+- Quick Suggestions: Use pre-built questions for common migration scenarios
 
-Migration Workflow:
-Step 1: Upload Files
-- Single File Upload: Click "Upload Files" button, select .sql/.sp/.ddl files, choose AI model, click "Start Upload"
-- Batch Upload: Click "Upload Folder" button, select directory with Sybase files, review file list, configure batch options
-- Supported Types: Stored Procedures (.sp, .proc), SQL Scripts (.sql), DDL Scripts (.ddl), Functions (.func), Triggers (.trg)
+🎯 Key Benefits
+- 🤖 AI-Powered: Leverage Google Gemini AI for superior conversion accuracy
+- ⚡ Fast & Efficient: Process multiple files simultaneously with batch operations
+- 🔍 Quality Assurance: Advanced diff viewer and comprehensive validation
+- 📊 Detailed Reporting: Generate professional migration reports for stakeholders
+- 🚀 Direct Deployment: Deploy converted code directly to Oracle databases
+- 👥 Team Collaboration: Multi-user support with role-based access control
 
-Step 2: Review Conversions
-- Conversion Results: Successful (converted without issues), With Warnings (minor issues), Failed (couldn't convert), Pending (waiting)
-- Code Review: Select file from results, review side-by-side comparison, check differences, review notes and warnings
-- Understanding Issues: Syntax differences, function mappings, data type changes, performance optimizations
+✨ Features
+Core Functionality:
+- 📁 Multi-Format Support: SQL, Stored Procedures, Functions, Triggers, DDL
+- 🔄 Batch Processing: Upload and convert entire directories
+- 🎨 Visual Diff Viewer: Side-by-side code comparison with syntax highlighting
+- 📈 Progress Tracking: Real-time conversion progress and status updates
+- 💾 Export Options: Download individual files or complete migration packages
+- 🤖 AI Chatbot Assistant: Get help with migration questions, code explanations, and best practices
 
-Step 3: Generate Reports
-- Detailed analytics and performance metrics
-- Code quality analysis and recommendations
-- Manual review requirements and optimization suggestions
+Advanced Features:
+- 🧠 Multiple AI Models: Choose between Gemini AI, Default, or Custom models
+- ⚙️ Custom Rules: Define organization-specific conversion rules
+- 🔗 API Integration: RESTful API for programmatic access
+- 📋 Migration History: Complete audit trail of all conversions
+- 🛡️ Enterprise Security: Role-based access, encryption, and audit logging
 
-User Interface:
-- Main Dashboard: File upload area, conversion status, recent activity, settings
-- Navigation: Home, History, Reports, Profile, Admin
-- Code Editor: Source panel (original Sybase), conversion panel (Oracle), diff viewer, issues panel
+Administrative Capabilities:
+- 👤 User Management: Comprehensive user and role administration
+- 📊 System Monitoring: Real-time performance metrics and health checks
+- 🗂️ File Management: Centralized file organization and lifecycle management
+- 📈 Analytics Dashboard: Conversion success rates and usage statistics
 
-Best Practices:
-- Test conversions on small files first
-- Review all warnings and conversion notes
-- Use appropriate AI model for complexity level
-- Validate converted code in Oracle environment`,
-      keywords: ["start", "begin", "first", "initial", "setup", "getting started", "workflow", "how to", "beginner", "account", "configuration", "upload", "migration"]
+🛠️ Technology Stack
+Frontend: React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui
+Backend: Supabase, PostgreSQL, Supabase Auth, Supabase Storage, Edge Functions
+AI/ML: Gemini AI, LangChain, OpenAI (Optional), Custom Models
+Infrastructure: Docker, Nginx, Cloud Deploy, CI/CD, Monitoring
+
+🚀 Quick Start
+1. Prerequisites: Node.js 18+ or Bun, Modern web browser, Supabase account, Gemini AI API key
+2. Installation: Clone repository, install dependencies, set up environment variables
+3. Configuration: Set VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_GEMINI_API_KEY
+4. Development: Start development server with npm run dev
+5. First Migration: Sign up, upload files, choose AI model, review results, generate report, download
+
+🐳 Docker Deployment
+Quick Deploy: docker build -t sybase-oracle-migration . && docker run -p 8080:80 sybase-oracle-migration
+
+📖 Documentation
+Our comprehensive documentation covers every aspect of the migration tool:
+- 📋 User Guide: Complete user manual and tutorials
+- 🏗️ Architecture: System design and component overview
+- 👩‍💻 Developer Guide: Setup, contributing, and customization
+- 🚀 Deployment Guide: Production deployment instructions
+- ⚙️ Configuration: Environment and feature configuration
+- 📡 API Reference: Complete API documentation
+- 🔧 Troubleshooting: Common issues and solutions
+
+🔧 Configuration Examples
+Basic Setup:
+export const basicConfig = {
+  aiModel: 'gemini',
+  fileTypes: ['.sql', '.sp', '.proc'],
+  maxFileSize: '10MB',
+  batchSize: 20
+};
+
+Enterprise Setup:
+export const enterpriseConfig = {
+  aiModel: 'gemini',
+  customRules: true,
+  batchProcessing: true,
+  directDeployment: true,
+  auditLogging: true,
+  roleBasedAccess: true
+};
+
+🤝 Contributing
+Quick Contribution Steps:
+1. Fork the repository
+2. Create a feature branch: git checkout -b feature/amazing-feature
+3. Make your changes and add tests
+4. Commit with conventional commits: git commit -m "feat: add amazing feature"
+5. Push to your fork: git push origin feature/amazing-feature
+6. Open a Pull Request
+
+📊 Project Stats
+Conversion Accuracy: 95%+ for standard procedures
+Processing Speed: < 30 seconds per file
+Supported File Types: 6+ SQL file formats
+AI Models: Multiple options available
+Max File Size: 10MB per file
+Batch Processing: Up to 50 files
+
+🛟 Support
+Getting Help:
+- 📚 Documentation: Check our comprehensive docs
+- 🐛 Issues: GitHub Issues for bug reports
+- 💬 Discussions: GitHub Discussions for questions
+- 📧 Email: support@migration-tool.com
+
+Community:
+- 🌟 Star us on GitHub if this project helps you!
+- 🐦 Follow updates on our social channels
+- 🤝 Contribute to make the tool even better
+
+📄 License
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+🙏 Acknowledgments
+- Google Gemini AI for powering our conversion engine
+- Supabase for providing the backend infrastructure
+- Open Source Community for the amazing libraries and tools
+- Contributors who help make this tool better every day
+
+Made with ❤️ for the database migration community`,
+      keywords: ["overview", "introduction", "features", "benefits", "technology", "quick start", "installation", "configuration", "deployment", "documentation", "contributing", "support", "license"]
     },
     {
       id: "admin-panel",
-      title: "Admin Panel Documentation",
-      content: `Admin Panel Setup and Usage:
+      title: "Admin Panel Setup and Usage - Complete Documentation",
+      content: `# Admin Panel Setup and Usage
+
+## Overview
 
 The admin panel provides comprehensive system administration capabilities for the Oracle AI Migration application. It includes user management, system monitoring, activity logging, and configuration management.
 
-Features:
-1. Overview Dashboard: Real-time system statistics, user activity metrics, migration success rates, system health indicators
-2. User Management: View all registered users, update user roles (user, moderator, admin), delete user accounts, monitor user activity
-3. System Settings: Configure AI models, set file size limits, toggle cache settings, enable/disable maintenance mode
-4. Activity Logs: Track all administrative actions, monitor system events, audit trail for compliance
-5. System Monitoring: Real-time performance metrics, CPU, memory, and disk usage, application-specific metrics, queue monitoring
+## Features
 
-User Roles:
-- Admin: Full system access, user management, system configuration, activity monitoring
-- Moderator: Limited admin access, user management (no deletion), view activity logs, basic system monitoring
-- User: Standard application access, no admin capabilities
+### 1. Overview Dashboard
+- Real-time system statistics
+- User activity metrics
+- Migration success rates
+- System health indicators
 
-Security Features: Role-based access control (RBAC), Row-level security (RLS) policies, activity logging for all admin actions, secure API endpoints
+### 2. User Management
+- View all registered users
+- Update user roles (user, moderator, admin)
+- Delete user accounts
+- Monitor user activity
 
-API Endpoints: The admin panel uses Supabase tables including profiles (user information and roles), admin_logs (activity logging), system_settings (configuration management), migrations (migration tracking), migration_files (file conversion tracking)
+### 3. System Settings
+- Configure AI models
+- Set file size limits
+- Toggle cache settings
+- Enable/disable maintenance mode
 
-Monitoring and Alerts: Real-time monitoring for system resource usage, active conversions, queue lengths, cache performance, response times`,
-      keywords: ["admin", "administrator", "management", "user management", "system", "dashboard", "admin panel", "roles", "security", "monitoring"]
+### 4. Activity Logs
+- Track all administrative actions
+- Monitor system events
+- Audit trail for compliance
+
+### 5. System Monitoring
+- Real-time performance metrics
+- CPU, memory, and disk usage
+- Application-specific metrics
+- Queue monitoring
+
+## User Roles
+
+### Admin
+- Full system access
+- User management
+- System configuration
+- Activity monitoring
+
+### Moderator
+- Limited admin access
+- User management (no deletion)
+- View activity logs
+- Basic system monitoring
+
+### User
+- Standard application access
+- No admin capabilities
+
+## Security Features
+
+- Role-based access control (RBAC)
+- Row-level security (RLS) policies
+- Activity logging for all admin actions
+- Secure API endpoints
+
+## API Endpoints
+
+The admin panel uses the following Supabase tables:
+- \`profiles\` - User information and roles
+- \`admin_logs\` - Activity logging
+- \`system_settings\` - Configuration management
+- \`migrations\` - Migration tracking
+- \`migration_files\` - File conversion tracking
+
+## Monitoring and Alerts
+
+The admin panel provides real-time monitoring for:
+- System resource usage
+- Active conversions
+- Queue lengths
+- Cache performance
+- Response times
+
+## Database Schema for Admin Panel
+
+The admin panel relies on several key database tables:
+
+### profiles Table
+- id: UUID (Primary Key)
+- email: String (Unique)
+- full_name: String
+- organization: String
+- role: Enum ('user', 'moderator', 'admin')
+- avatar_url: String (Optional)
+- metadata: JSONB (Additional user data)
+- created_at: Timestamp
+- updated_at: Timestamp
+
+### admin_logs Table
+- id: UUID (Primary Key)
+- user_id: UUID (Foreign Key to profiles)
+- action: String (Action performed)
+- details: JSONB (Action details)
+- ip_address: String
+- user_agent: String
+- created_at: Timestamp
+
+### system_settings Table
+- id: UUID (Primary Key)
+- key: String (Unique setting key)
+- value: JSONB (Setting value)
+- description: String
+- updated_by: UUID (Foreign Key to profiles)
+- updated_at: Timestamp
+
+## Admin Panel Interface
+
+### Dashboard Components
+1. **System Overview Card**
+   - Total users count
+   - Active migrations
+   - System health status
+   - Recent activity summary
+
+2. **User Management Section**
+   - User list with search and filter
+   - Role assignment interface
+   - User activity timeline
+   - Bulk user operations
+
+3. **System Monitoring**
+   - Real-time metrics display
+   - Performance charts
+   - Resource usage graphs
+   - Alert notifications
+
+4. **Activity Logs**
+   - Filterable log entries
+   - Export functionality
+   - Audit trail viewer
+   - Security event highlights
+
+## Security Implementation
+
+### Row Level Security (RLS) Policies
+
+```sql
+-- Admin users can view all profiles
+CREATE POLICY "Admin can view all profiles" ON profiles
+FOR SELECT USING (
+  auth.jwt() ->> 'role' = 'admin'
+);
+
+-- Users can only view their own profile
+CREATE POLICY "Users can view own profile" ON profiles
+FOR SELECT USING (
+  auth.uid() = id
+);
+
+-- Only admins can update user roles
+CREATE POLICY "Only admins can update roles" ON profiles
+FOR UPDATE USING (
+  auth.jwt() ->> 'role' = 'admin'
+);
+```
+
+### API Security
+- JWT token validation
+- Role-based endpoint access
+- Rate limiting on admin endpoints
+- Input validation and sanitization
+
+## Monitoring and Alerting
+
+### Key Metrics Tracked
+1. **User Activity**
+   - Login frequency
+   - Feature usage patterns
+   - Session duration
+   - Error rates
+
+2. **System Performance**
+   - API response times
+   - Database query performance
+   - Memory usage
+   - CPU utilization
+
+3. **Migration Processing**
+   - Queue length
+   - Processing times
+   - Success/failure rates
+   - AI model performance
+
+### Alert Configuration
+- High error rate notifications
+- System resource warnings
+- Unusual activity detection
+- Security event alerts
+
+## Best Practices for Admin Panel Usage
+
+### User Management
+1. **Regular Role Reviews**
+   - Audit user roles quarterly
+   - Remove unnecessary admin access
+   - Document role assignments
+
+2. **Activity Monitoring**
+   - Review admin logs regularly
+   - Investigate unusual activity
+   - Maintain audit trail
+
+3. **Security Maintenance**
+   - Update security policies
+   - Monitor for security events
+   - Regular security assessments
+
+### System Configuration
+1. **Performance Tuning**
+   - Monitor system metrics
+   - Adjust settings based on usage
+   - Optimize for peak loads
+
+2. **Backup and Recovery**
+   - Regular data backups
+   - Test recovery procedures
+   - Document disaster recovery plans
+
+## Troubleshooting Common Admin Issues
+
+### User Access Problems
+- Verify user role assignments
+- Check RLS policies
+- Review authentication logs
+- Validate JWT tokens
+
+### System Performance Issues
+- Monitor resource usage
+- Check database performance
+- Review API response times
+- Analyze error logs
+
+### Security Concerns
+- Review admin activity logs
+- Check for unauthorized access
+- Validate security policies
+- Update security configurations
+
+## Integration with Main Application
+
+### Data Flow
+1. **User Authentication** → Admin panel access control
+2. **Role Verification** → Feature access determination
+3. **Action Logging** → Admin logs recording
+4. **System Updates** → Real-time dashboard updates
+
+### API Integration
+- RESTful endpoints for admin operations
+- Real-time WebSocket connections
+- Secure authentication middleware
+- Comprehensive error handling
+
+This comprehensive admin panel provides enterprise-grade administration capabilities for the Oracle AI Migration Tool, ensuring secure, efficient, and maintainable system management.`,
+      keywords: ["admin", "administrator", "management", "user management", "system", "dashboard", "admin panel", "roles", "security", "monitoring", "profiles", "admin_logs", "system_settings", "RLS", "RBAC"]
     },
     {
       id: "history-section",
