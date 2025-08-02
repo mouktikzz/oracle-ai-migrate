@@ -66,6 +66,43 @@ const PROJECT_KNOWLEDGE = {
     - Flag issues requiring attention
   `,
   
+  // Migration workflow and getting started
+  migration: `
+    Migration Workflow and Getting Started:
+    
+    Getting Started:
+    1. Account Setup: Create an account using email or social login, verify your email, complete profile with organization details
+    2. Initial Configuration: Choose AI model (Default or Gemini), set preferences for file size limits and notifications, test Oracle database connection
+    3. First Login: Access the migration dashboard to start your first migration
+    
+    Migration Workflow:
+    Step 1: Upload Files
+    - Single File Upload: Click "Upload Files" button, select .sql/.sp/.ddl files, choose AI model, click "Start Upload"
+    - Batch Upload: Click "Upload Folder" button, select directory with Sybase files, review file list, configure batch options
+    - Supported Types: Stored Procedures (.sp, .proc), SQL Scripts (.sql), DDL Scripts (.ddl), Functions (.func), Triggers (.trg)
+    
+    Step 2: Review Conversions
+    - Conversion Results: Successful (converted without issues), With Warnings (minor issues), Failed (couldn't convert), Pending (waiting)
+    - Code Review: Select file from results, review side-by-side comparison, check differences, review notes and warnings
+    - Understanding Issues: Syntax differences, function mappings, data type changes, performance optimizations
+    
+    Step 3: Generate Reports
+    - Detailed analytics and performance metrics
+    - Code quality analysis and recommendations
+    - Manual review requirements and optimization suggestions
+    
+    User Interface:
+    - Main Dashboard: File upload area, conversion status, recent activity, settings
+    - Navigation: Home, History, Reports, Profile, Admin
+    - Code Editor: Source panel (original Sybase), conversion panel (Oracle), diff viewer, issues panel
+    
+    Best Practices:
+    - Test conversions on small files first
+    - Review all warnings and conversion notes
+    - Use appropriate AI model for complexity level
+    - Validate converted code in Oracle environment
+  `,
+  
   // Performance metrics and code quality analysis
   performance: `
     Performance Metrics and Code Quality Analysis:
@@ -299,71 +336,101 @@ async function callGeminiAPI(messages) {
   }
 }
 
+// Advanced semantic search with fuzzy matching
+function semanticSearch(query, knowledgeBase) {
+  const queryLower = query.toLowerCase();
+  const queryWords = queryLower.split(/\s+/).filter(word => word.length > 2);
+  
+  const results = [];
+  
+  for (const [key, content] of Object.entries(knowledgeBase)) {
+    const contentLower = content.toLowerCase();
+    let score = 0;
+    let matches = [];
+    
+    // Exact phrase matching (highest priority)
+    if (contentLower.includes(queryLower)) {
+      score += 100;
+      matches.push('exact_phrase');
+    }
+    
+    // Word matching with context
+    for (const word of queryWords) {
+      if (contentLower.includes(word)) {
+        score += 10;
+        matches.push(word);
+      }
+    }
+    
+    // Semantic similarity matching
+    const semanticMatches = {
+      'start': ['begin', 'start', 'first', 'initial', 'setup', 'getting started', 'workflow'],
+      'migration': ['migrate', 'convert', 'conversion', 'oracle', 'sybase', 'workflow', 'process'],
+      'admin': ['administrator', 'management', 'user management', 'system', 'dashboard'],
+      'history': ['history', 'comment', 'tracking', 'log', 'previous', 'past'],
+      'performance': ['metrics', 'quality', 'analysis', 'optimization', 'speed'],
+      'upload': ['file', 'upload', 'import', 'add', 'submit'],
+      'convert': ['migration', 'conversion', 'transform', 'change', 'oracle'],
+      'report': ['report', 'analytics', 'metrics', 'results', 'summary'],
+      'settings': ['config', 'configuration', 'setup', 'preferences', 'options'],
+      'help': ['guide', 'documentation', 'support', 'troubleshooting', 'how to']
+    };
+    
+    for (const [semanticKey, synonyms] of Object.entries(semanticMatches)) {
+      if (queryWords.some(word => synonyms.includes(word))) {
+        if (contentLower.includes(semanticKey) || synonyms.some(syn => contentLower.includes(syn))) {
+          score += 5;
+          matches.push(`semantic_${semanticKey}`);
+        }
+      }
+    }
+    
+    // Context-based matching
+    const contextMatches = {
+      'how do i': ['getting started', 'workflow', 'step', 'process', 'guide'],
+      'what is': ['overview', 'description', 'features', 'capabilities'],
+      'where can i': ['interface', 'dashboard', 'navigation', 'menu'],
+      'can i': ['features', 'capabilities', 'permissions', 'access'],
+      'why': ['explanation', 'reason', 'purpose', 'benefit']
+    };
+    
+    for (const [contextKey, contexts] of Object.entries(contextMatches)) {
+      if (queryLower.includes(contextKey)) {
+        if (contexts.some(ctx => contentLower.includes(ctx))) {
+          score += 3;
+          matches.push(`context_${contextKey}`);
+        }
+      }
+    }
+    
+    if (score > 0) {
+      results.push({
+        key,
+        content,
+        score,
+        matches
+      });
+    }
+  }
+  
+  // Sort by score and return top results
+  results.sort((a, b) => b.score - a.score);
+  return results.slice(0, 3); // Return top 3 most relevant
+}
+
 // RAG: Retrieve relevant knowledge based on user query
 function retrieveRelevantKnowledge(query) {
-  const queryLower = query.toLowerCase();
+  const searchResults = semanticSearch(query, PROJECT_KNOWLEDGE);
+  
+  if (searchResults.length === 0) {
+    return '';
+  }
+  
   let relevantKnowledge = '';
   
-  // Check each knowledge area and add relevant content
-  if (queryLower.includes('admin') || queryLower.includes('administrator') || queryLower.includes('management')) {
-    relevantKnowledge += PROJECT_KNOWLEDGE.admin + '\n\n';
-  }
-  
-  if (queryLower.includes('history') || queryLower.includes('comment') || queryLower.includes('tracking') || 
-      queryLower.includes('migration history') || queryLower.includes('conversion history')) {
-    relevantKnowledge += PROJECT_KNOWLEDGE.history + '\n\n';
-  }
-  
-  if (queryLower.includes('performance') || queryLower.includes('metrics') || queryLower.includes('quality') || 
-      queryLower.includes('cyclomatic') || queryLower.includes('complexity') || queryLower.includes('bulk') ||
-      queryLower.includes('maintainability') || queryLower.includes('analysis')) {
-    relevantKnowledge += PROJECT_KNOWLEDGE.performance + '\n\n';
-  }
-  
-  if (queryLower.includes('architecture') || queryLower.includes('system') || queryLower.includes('frontend') || 
-      queryLower.includes('backend') || queryLower.includes('data flow') || queryLower.includes('structure')) {
-    relevantKnowledge += PROJECT_KNOWLEDGE.architecture + '\n\n';
-  }
-  
-  if (queryLower.includes('ai model') || queryLower.includes('gemini') || queryLower.includes('openrouter') || 
-      queryLower.includes('model configuration') || queryLower.includes('prompt')) {
-    relevantKnowledge += PROJECT_KNOWLEDGE.aiModels + '\n\n';
-  }
-  
-  if (queryLower.includes('database') || queryLower.includes('schema') || queryLower.includes('tables') || 
-      queryLower.includes('supabase') || queryLower.includes('profiles') || queryLower.includes('migrations')) {
-    relevantKnowledge += PROJECT_KNOWLEDGE.database + '\n\n';
-  }
-  
-  if (queryLower.includes('user guide') || queryLower.includes('getting started') || queryLower.includes('workflow') || 
-      queryLower.includes('upload') || queryLower.includes('conversion') || queryLower.includes('interface')) {
-    relevantKnowledge += PROJECT_KNOWLEDGE.userGuide + '\n\n';
-  }
-  
-  if (queryLower.includes('developer') || queryLower.includes('development') || queryLower.includes('setup') || 
-      queryLower.includes('contributing') || queryLower.includes('testing') || queryLower.includes('deployment')) {
-    relevantKnowledge += PROJECT_KNOWLEDGE.developer + '\n\n';
-  }
-  
-  if (queryLower.includes('api') || queryLower.includes('endpoints') || queryLower.includes('functions') || 
-      queryLower.includes('integration') || queryLower.includes('supabase client')) {
-    relevantKnowledge += PROJECT_KNOWLEDGE.api + '\n\n';
-  }
-  
-  if (queryLower.includes('configuration') || queryLower.includes('environment variables') || 
-      queryLower.includes('settings') || queryLower.includes('setup') || queryLower.includes('config')) {
-    relevantKnowledge += PROJECT_KNOWLEDGE.configuration + '\n\n';
-  }
-  
-  if (queryLower.includes('deployment') || queryLower.includes('netlify') || queryLower.includes('production') || 
-      queryLower.includes('ci/cd') || queryLower.includes('monitoring')) {
-    relevantKnowledge += PROJECT_KNOWLEDGE.deployment + '\n\n';
-  }
-  
-  if (queryLower.includes('troubleshooting') || queryLower.includes('debug') || queryLower.includes('issues') || 
-      queryLower.includes('problems') || queryLower.includes('errors') || queryLower.includes('support')) {
-    relevantKnowledge += PROJECT_KNOWLEDGE.troubleshooting + '\n\n';
-  }
+  searchResults.forEach((result, index) => {
+    relevantKnowledge += `${result.content}\n\n`;
+  });
   
   return relevantKnowledge.trim();
 }
@@ -489,7 +556,7 @@ exports.handler = async function(event, context) {
     // Extract intent from user message
     const intent = extractIntent(message);
     
-    // RAG: Retrieve relevant project knowledge
+    // Advanced RAG: Retrieve relevant project knowledge using semantic search
     const relevantKnowledge = retrieveRelevantKnowledge(message);
     
     // Prepare conversation history for API with RAG context
