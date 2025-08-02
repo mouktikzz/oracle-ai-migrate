@@ -59,6 +59,10 @@ async function callGeminiAPI(messages) {
     }]
   };
 
+  console.log('🤖 Calling Gemini API...');
+  console.log('🔑 Gemini API Key available:', !!GEMINI_API_KEY);
+  console.log('📝 Request body length:', JSON.stringify(body).length);
+
   try {
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
@@ -68,14 +72,20 @@ async function callGeminiAPI(messages) {
       body: JSON.stringify(body)
     });
 
+    console.log('📡 Gemini response status:', response.status);
+    console.log('📡 Gemini response headers:', Object.fromEntries(response.headers.entries()));
+
     if (!response.ok) {
-      throw new Error(`Gemini API error: ${response.status}`);
+      const errorText = await response.text();
+      console.error('❌ Gemini API error response:', errorText);
+      throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
+    console.log('✅ Gemini API success, response length:', JSON.stringify(data).length);
     return data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I couldn\'t generate a response.';
   } catch (error) {
-    console.error('Gemini API error:', error);
+    console.error('❌ Gemini API error:', error.message);
     throw error;
   }
 }
