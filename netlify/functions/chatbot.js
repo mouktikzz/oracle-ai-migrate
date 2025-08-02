@@ -3,6 +3,42 @@ const fetch = require('node-fetch');
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
 
+// Hybrid Knowledge System
+const FAQ_DATA = {
+  "admin panel": {
+    answer: "The admin panel provides comprehensive management capabilities for the Oracle migration tool. It includes user management, migration monitoring, performance analytics, and system configuration. Administrators can view all user activities, manage migration projects, and access detailed reports. The panel features a dashboard with real-time metrics, user activity logs, and system health monitoring.",
+    category: "administration"
+  },
+  "history page": {
+    answer: "The history page tracks migration history, conversion results, and user activities. It shows completed migrations, conversion statistics, and detailed reports. Users can review past migrations, download conversion results, and analyze performance metrics. The page includes filtering options and export capabilities for comprehensive migration tracking.",
+    category: "tracking"
+  },
+  "dev review": {
+    answer: "The dev review tab allows developers to review and approve migration changes. It shows pending conversions that need review, code quality metrics, and suggested improvements. Developers can approve, reject, or request changes to converted code. The review process ensures code quality and maintains standards across the migration project.",
+    category: "development"
+  },
+  "code quality metrics": {
+    answer: "Code quality metrics include cyclomatic complexity, lines of code (LOC), comment ratio, maintainability index, performance score, modern features usage, bulk operations, scalability indicators, and overall performance score. These metrics help evaluate the quality of converted Oracle code and ensure it meets high standards.",
+    category: "quality"
+  },
+  "migration process": {
+    answer: "The migration process involves uploading Sybase code, converting it to Oracle syntax, analyzing code quality, and generating reports. The system supports stored procedures, functions, triggers, and data type conversions. Users can review conversions, download results, and track migration progress through the dashboard.",
+    category: "process"
+  },
+  "conversion process": {
+    answer: "The conversion process automatically transforms Sybase code to Oracle-compatible syntax. It handles data type mappings, function conversions, and syntax adjustments. The system provides real-time conversion status, quality metrics, and detailed reports. Users can review and approve conversions before deployment.",
+    category: "process"
+  }
+};
+
+const DOC_LINKS = {
+  "admin": "/docs/admin-panel.md",
+  "history": "/docs/history-page.md",
+  "migration": "/docs/migration-process.md",
+  "quality": "/docs/code-quality.md",
+  "conversion": "/docs/conversion-guide.md"
+};
+
 const SYSTEM_PROMPT = `You are an AI assistant for a Sybase to Oracle migration project.
 
 IMPORTANT: You can ONLY use the provided project knowledge to answer questions. If no relevant knowledge is provided, say "I don't have information about that specific aspect of the project."
@@ -47,7 +83,7 @@ async function callOpenRouterAPI(messages, model = 'qwen/qwen3-coder:free') {
 }
 
 async function callGeminiAPI(messages) {
-  // Build the full conversation context including RAG knowledge
+  // Build the full conversation context
   const systemMessage = messages.find(m => m.role === 'system')?.content || SYSTEM_PROMPT;
   const conversationMessages = messages.filter(m => m.role !== 'system');
   
@@ -90,52 +126,7 @@ async function callGeminiAPI(messages) {
   }
 }
 
-// RAG: Retrieve relevant knowledge from external RAG API
-async function retrieveRelevantKnowledge(query, event) {
-  try {
-    // Determine the base URL for the RAG API
-    const isLocalhost = process.env.NODE_ENV === 'development' || process.env.NETLIFY_DEV;
-    let baseUrl;
-    
-    if (isLocalhost) {
-      // Use the same host as the current request
-      const host = event.headers?.host || 'localhost:8080';
-      baseUrl = `http://${host}`;
-    } else {
-      // On Netlify, use the request headers to determine the site URL
-      const host = event.headers?.host || process.env.URL || 'your-site.netlify.app';
-      baseUrl = `https://${host}`;
-    }
-    
-    const ragApiUrl = `${baseUrl}/.netlify/functions/external-rag`;
-    console.log('🌐 RAG API URL:', ragApiUrl);
-    
-    const response = await fetch(ragApiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ query })
-    });
 
-    console.log('🔍 RAG API response status:', response.status);
-    console.log('🔍 RAG API response headers:', Object.fromEntries(response.headers.entries()));
-
-    if (!response.ok) {
-      console.error('External RAG API error:', response.status);
-      const errorText = await response.text();
-      console.error('External RAG API error body:', errorText);
-      return '';
-    }
-
-    const data = await response.json();
-    console.log('🔍 RAG API response data:', data);
-    return data.context || '';
-  } catch (error) {
-    console.error('Error calling external RAG API:', error);
-    return '';
-  }
-}
 
 function extractIntent(userMessage) {
   // Simple intent extraction without hardcoded knowledge
@@ -149,6 +140,38 @@ function generateSuggestions(intent) {
     "What should I know about this?",
     "Tell me more about this topic"
   ];
+}
+
+// Hybrid Knowledge Function
+function getHybridResponse(userMessage) {
+  const message = userMessage.toLowerCase();
+  
+  // Check FAQ first
+  for (const [key, data] of Object.entries(FAQ_DATA)) {
+    if (message.includes(key) || key.split(' ').some(word => message.includes(word))) {
+      const category = data.category;
+      const docLink = DOC_LINKS[category];
+      
+      return {
+        type: 'faq',
+        answer: data.answer,
+        docLink: docLink ? `For more details, check: ${docLink}` : null,
+        confidence: 'high'
+      };
+    }
+  }
+  
+  // Check for documentation requests
+  if (message.includes('documentation') || message.includes('docs') || message.includes('guide')) {
+    return {
+      type: 'docs',
+      answer: "Here are the available documentation links:\n" + 
+              Object.entries(DOC_LINKS).map(([key, link]) => `- ${key}: ${link}`).join('\n'),
+      confidence: 'medium'
+    };
+  }
+  
+  return null; // Let AI handle it
 }
 
 exports.handler = async function(event, context) {
@@ -213,39 +236,36 @@ exports.handler = async function(event, context) {
     // Extract intent from user message
     const intent = extractIntent(message);
     
-    // RAG: Retrieve relevant project knowledge from RAG API
-    console.log('🔍 Retrieving RAG knowledge for query:', message);
-    console.log('🔍 Event headers:', event.headers);
-    console.log('🔍 Event host:', event.headers?.host);
-    console.log('🔍 Starting RAG API call...');
-    console.log('🔍 About to call retrieveRelevantKnowledge function...');
+    // Hybrid Knowledge System: Check FAQ and docs first
+    console.log('🔍 Checking hybrid knowledge system for query:', message);
+    const hybridResponse = getHybridResponse(message);
     
-    let relevantKnowledge = '';
-    try {
-      // Add timeout to RAG call to prevent 504 errors
-      const ragPromise = retrieveRelevantKnowledge(message, event);
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('RAG timeout')), 7000); // 7 second timeout
-      });
+    if (hybridResponse) {
+      console.log('✅ Found hybrid response:', hybridResponse.type);
       
-      relevantKnowledge = await Promise.race([ragPromise, timeoutPromise]);
-      console.log('📄 RAG knowledge length:', relevantKnowledge.length);
-      if (relevantKnowledge.length > 0) {
-        console.log('📝 RAG knowledge preview:', relevantKnowledge.substring(0, 200) + '...');
-      } else {
-        console.log('⚠️ No RAG knowledge retrieved - this might indicate an issue');
+      let finalAnswer = hybridResponse.answer;
+      if (hybridResponse.docLink) {
+        finalAnswer += '\n\n' + hybridResponse.docLink;
       }
-    } catch (error) {
-      console.error('❌ Error in retrieveRelevantKnowledge:', error);
-      // Continue without RAG knowledge if it times out
-      relevantKnowledge = '';
+      
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          message: finalAnswer,
+          intent: intent,
+          suggestions: generateSuggestions(intent),
+          timestamp: new Date().toISOString(),
+          source: 'hybrid'
+        })
+      };
     }
     
-    console.log('🔍 RAG API call completed');
+    console.log('🤖 No hybrid response found, using AI...');
     
-    // Prepare conversation history for API with RAG context
+    // Prepare conversation history for API
     const messages = [
-      { role: 'system', content: SYSTEM_PROMPT + (relevantKnowledge ? '\n\nPROJECT KNOWLEDGE:\n' + relevantKnowledge : '') },
+      { role: 'system', content: SYSTEM_PROMPT },
       ...conversationHistory.map(msg => ({
         role: msg.role,
         content: msg.content
