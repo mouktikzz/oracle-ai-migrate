@@ -8,9 +8,25 @@ exports.handler = async (event, context) => {
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS'
+        'Access-Control-Allow-Methods': 'POST, OPTIONS, GET'
       },
       body: ''
+    };
+  }
+
+  // Add a simple GET endpoint for testing
+  if (event.httpMethod === 'GET') {
+    return {
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message: 'RAG API is running!',
+        hasPineconeKey: !!process.env.PINECONE_API_KEY,
+        timestamp: new Date().toISOString()
+      })
     };
   }
 

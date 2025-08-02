@@ -251,9 +251,16 @@ exports.handler = async function(event, context) {
     
     // RAG: Retrieve relevant project knowledge from RAG API
     console.log('🔍 Retrieving RAG knowledge for query:', message);
+    console.log('🔍 Event headers:', event.headers);
+    console.log('🔍 Event host:', event.headers?.host);
+    
     const relevantKnowledge = await retrieveRelevantKnowledge(message, event);
     console.log('📄 RAG knowledge length:', relevantKnowledge.length);
-    console.log('📝 RAG knowledge preview:', relevantKnowledge.substring(0, 200) + '...');
+    if (relevantKnowledge.length > 0) {
+      console.log('📝 RAG knowledge preview:', relevantKnowledge.substring(0, 200) + '...');
+    } else {
+      console.log('⚠️ No RAG knowledge retrieved - this might indicate an issue');
+    }
     
     // Prepare conversation history for API with RAG context
     const messages = [
