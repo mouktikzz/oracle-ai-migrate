@@ -109,12 +109,18 @@ async function retrieveRelevantKnowledge(query, event) {
       body: JSON.stringify({ query })
     });
 
+    console.log('🔍 RAG API response status:', response.status);
+    console.log('🔍 RAG API response headers:', Object.fromEntries(response.headers.entries()));
+
     if (!response.ok) {
       console.error('External RAG API error:', response.status);
+      const errorText = await response.text();
+      console.error('External RAG API error body:', errorText);
       return '';
     }
 
     const data = await response.json();
+    console.log('🔍 RAG API response data:', data);
     return data.context || '';
   } catch (error) {
     console.error('Error calling external RAG API:', error);
