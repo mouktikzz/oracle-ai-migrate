@@ -102,37 +102,37 @@ const Landing = () => {
       {/* Help Modal */}
       {showHelp && <Help onClose={() => setShowHelp(false)} />}
 
-      {/* Hero Section */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto text-center">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-5xl font-bold text-gray-900 mb-6 leading-tight">
-              Migrate Your Sybase Database to Oracle with{' '}
-              <span className="text-primary">AI-Powered Precision</span>
-            </h2>
-            <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-              Transform your legacy Sybase applications to modern Oracle infrastructure 
-              with intelligent code conversion, automated testing, performance optimization, and seamless deployment.
-            </p>
-            <div className="flex justify-center">
-              <Button 
-                onClick={handleGetStarted}
-                size="lg" 
-                className="text-lg px-8 py-4"
-              >
-                Start Migration
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
+             {/* Hero Section */}
+       <section className="h-screen flex items-center justify-center px-4">
+         <div className="container mx-auto text-center">
+           <div className="max-w-4xl mx-auto">
+             <h2 className="text-5xl font-bold text-gray-900 mb-6 leading-tight">
+               Migrate Your Sybase Database to Oracle with{' '}
+               <span className="text-primary">AI-Powered Precision</span>
+             </h2>
+             <p className="text-xl text-gray-600 mb-8 leading-relaxed">
+               Transform your legacy Sybase applications to modern Oracle infrastructure 
+               with intelligent code conversion, automated testing, performance optimization, and seamless deployment.
+             </p>
+             <div className="flex justify-center">
+               <Button 
+                 onClick={handleGetStarted}
+                 size="lg" 
+                 className="text-lg px-8 py-4"
+               >
+                 Start Migration
+                 <ArrowRight className="ml-2 h-5 w-5" />
+               </Button>
+             </div>
+           </div>
+         </div>
+       </section>
 
       {/* Features Section */}
-      <section className="py-16 px-4 bg-white">
+      <section className="py-8 px-4 bg-white">
         <div className="container mx-auto">
-          <div className="text-center mb-12">
-            <h3 className="text-3xl font-bold text-gray-900 mb-4">
+          <div className="text-center mb-8">
+            <h3 className="text-3xl font-bold text-gray-900 mb-3">
               Advanced Migration Platform Features
             </h3>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
