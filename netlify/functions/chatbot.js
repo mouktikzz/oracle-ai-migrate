@@ -258,7 +258,13 @@ exports.handler = async function(event, context) {
     
     let relevantKnowledge = '';
     try {
-      relevantKnowledge = await retrieveRelevantKnowledge(message, event);
+      // Add timeout to RAG call to prevent 504 errors
+      const ragPromise = retrieveRelevantKnowledge(message, event);
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('RAG timeout')), 7000); // 7 second timeout
+      });
+      
+      relevantKnowledge = await Promise.race([ragPromise, timeoutPromise]);
       console.log('📄 RAG knowledge length:', relevantKnowledge.length);
       if (relevantKnowledge.length > 0) {
         console.log('📝 RAG knowledge preview:', relevantKnowledge.substring(0, 200) + '...');
@@ -267,6 +273,8 @@ exports.handler = async function(event, context) {
       }
     } catch (error) {
       console.error('❌ Error in retrieveRelevantKnowledge:', error);
+      // Continue without RAG knowledge if it times out
+      relevantKnowledge = '';
     }
     
     console.log('🔍 RAG API call completed');

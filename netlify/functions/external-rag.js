@@ -88,13 +88,20 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // Search Pinecone
+    // Search Pinecone with timeout
     console.log('🔍 Searching Pinecone with query:', query);
-    const results = await index.query({
+    const searchPromise = index.query({
       vector: queryEmbedding,
-      topK: 5,
+      topK: 3, // Reduced from 5 to 3 for faster response
       includeMetadata: true
     });
+    
+    // Add timeout to prevent 504 errors
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Pinecone search timeout')), 8000); // 8 second timeout
+    });
+    
+    const results = await Promise.race([searchPromise, timeoutPromise]);
 
     console.log('📊 Pinecone results:', {
       totalMatches: results.matches.length,
