@@ -146,9 +146,9 @@ function generateSuggestions(intent) {
 function getHybridResponse(userMessage) {
   const message = userMessage.toLowerCase();
   
-  // Check FAQ first
+  // First, try exact matches
   for (const [key, data] of Object.entries(FAQ_DATA)) {
-    if (message.includes(key) || key.split(' ').some(word => message.includes(word))) {
+    if (message.includes(key.toLowerCase())) {
       const category = data.category;
       const docLink = DOC_LINKS[category];
       
@@ -157,6 +157,29 @@ function getHybridResponse(userMessage) {
         answer: data.answer,
         docLink: docLink ? `For more details, check: ${docLink}` : null,
         confidence: 'high'
+      };
+    }
+  }
+  
+  // Then, try word-based matching for more specific queries
+  for (const [key, data] of Object.entries(FAQ_DATA)) {
+    const keyWords = key.toLowerCase().split(' ');
+    const messageWords = message.split(' ');
+    
+    // Check if all key words are present in the message
+    const allKeyWordsPresent = keyWords.every(keyWord => 
+      messageWords.some(msgWord => msgWord.includes(keyWord) || keyWord.includes(msgWord))
+    );
+    
+    if (allKeyWordsPresent) {
+      const category = data.category;
+      const docLink = DOC_LINKS[category];
+      
+      return {
+        type: 'faq',
+        answer: data.answer,
+        docLink: docLink ? `For more details, check: ${docLink}` : null,
+        confidence: 'medium'
       };
     }
   }
