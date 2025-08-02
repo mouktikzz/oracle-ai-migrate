@@ -319,8 +319,9 @@ exports.handler = async function(event, context) {
     
     // Search documentation for relevant information
     let docsContext = '';
+    let docsResults = [];
     try {
-      const docsResults = await searchDocs(message);
+      docsResults = await searchDocs(message);
       if (docsResults.length > 0) {
         docsContext = '\n\nRELEVANT DOCUMENTATION:\n';
         docsResults.forEach((result, index) => {
