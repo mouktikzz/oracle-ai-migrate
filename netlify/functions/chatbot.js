@@ -1,7 +1,26 @@
 const fetch = require('node-fetch');
+const fs = require('fs').promises;
+const path = require('path');
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const GEMINI_API_KEY = process.env.VITE_GEMINI_API_KEY;
+
+// Documentation paths
+const DOCS_PATH = path.join(__dirname, '../../docs');
+
+// Documentation structure
+const DOCS_STRUCTURE = {
+  'architecture.md': 'System architecture and component overview',
+  'ai-models.md': 'AI model configuration and usage guidelines',
+  'database-schema.md': 'Database schema and table structures',
+  'user-guide/quick-start.md': 'Quick start guide for users',
+  'user-guide/README.md': 'Complete user guide',
+  'developer-guide/README.md': 'Developer documentation and setup',
+  'api/README.md': 'API documentation and endpoints',
+  'troubleshooting/': 'Troubleshooting guides and solutions',
+  'deployment/': 'Deployment instructions and configuration',
+  'configuration/': 'System configuration options'
+};
 
 const SYSTEM_PROMPT = `You are an expert Oracle database migration assistant for a specific Sybase to Oracle migration project.
 
@@ -14,12 +33,20 @@ PROJECT CONTEXT:
 - Migration tools: Custom conversion utilities for stored procedures
 - File handling: Supports SQL file uploads and conversions
 
+DOCUMENTATION INTEGRATION:
+- You have access to comprehensive project documentation
+- When users ask about project features, architecture, or implementation details, search the docs first
+- Reference specific documentation sections when providing answers
+- Include relevant code examples and configuration details from the docs
+- If documentation search doesn't yield relevant results, provide general guidance
+
 RESPONSE GUIDELINES:
 - Provide natural, conversational responses without robotic phrases like "Okay, based on the project context..."
 - Prioritize project-specific answers when questions relate to this codebase
 - Use generic Oracle migration guidance only when questions aren't project-related
 - Be concise, practical, and direct
-- Start responses naturally without repetitive introductions`;
+- Start responses naturally without repetitive introductions
+- When referencing documentation, mention the specific file or section.`;
 
 async function callOpenRouterAPI(messages, model = 'qwen/qwen3-coder:free') {
   const body = {
@@ -84,6 +111,89 @@ async function callGeminiAPI(messages) {
     console.error('Gemini API error:', error);
     throw error;
   }
+}
+
+// Search through documentation files
+async function searchDocs(query) {
+  const results = [];
+  const searchTerms = query.toLowerCase().split(' ').filter(term => term.length > 2);
+  
+  try {
+    // Search through main documentation files
+    for (const [filePath, description] of Object.entries(DOCS_STRUCTURE)) {
+      try {
+        const fullPath = path.join(DOCS_PATH, filePath);
+        const content = await fs.readFile(fullPath, 'utf-8');
+        
+        // Check if any search terms match the content
+        const matches = searchTerms.filter(term => 
+          content.toLowerCase().includes(term) || 
+          description.toLowerCase().includes(term)
+        );
+        
+        if (matches.length > 0) {
+          // Extract relevant sections
+          const relevantSections = extractRelevantSections(content, searchTerms);
+          results.push({
+            file: filePath,
+            description: description,
+            relevance: matches.length,
+            sections: relevantSections
+          });
+        }
+      } catch (err) {
+        // Skip files that can't be read
+        continue;
+      }
+    }
+    
+    // Sort by relevance
+    results.sort((a, b) => b.relevance - a.relevance);
+    
+    return results.slice(0, 3); // Return top 3 most relevant results
+  } catch (error) {
+    console.error('Error searching docs:', error);
+    return [];
+  }
+}
+
+// Extract relevant sections from documentation
+function extractRelevantSections(content, searchTerms) {
+  const sections = [];
+  const lines = content.split('\n');
+  let currentSection = '';
+  let inCodeBlock = false;
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    // Check for code blocks
+    if (line.startsWith('```')) {
+      inCodeBlock = !inCodeBlock;
+      continue;
+    }
+    
+    // Skip code blocks for now
+    if (inCodeBlock) continue;
+    
+    // Check for headers
+    if (line.startsWith('#')) {
+      currentSection = line.replace(/^#+\s*/, '');
+      continue;
+    }
+    
+    // Check if line contains search terms
+    const hasMatch = searchTerms.some(term => line.toLowerCase().includes(term));
+    if (hasMatch && line.trim().length > 10) {
+      sections.push({
+        section: currentSection,
+        content: line.trim(),
+        lineNumber: i + 1
+      });
+    }
+  }
+  
+  return sections.slice(0, 5); // Return top 5 relevant sections
 }
 
 function extractIntent(userMessage) {
@@ -207,9 +317,27 @@ exports.handler = async function(event, context) {
     // Extract intent from user message
     const intent = extractIntent(message);
     
+    // Search documentation for relevant information
+    let docsContext = '';
+    try {
+      const docsResults = await searchDocs(message);
+      if (docsResults.length > 0) {
+        docsContext = '\n\nRELEVANT DOCUMENTATION:\n';
+        docsResults.forEach((result, index) => {
+          docsContext += `\n${index + 1}. ${result.file} - ${result.description}\n`;
+          result.sections.forEach(section => {
+            docsContext += `   Section: ${section.section}\n   Content: ${section.content}\n`;
+          });
+        });
+      }
+    } catch (docsError) {
+      console.log('Documentation search failed:', docsError);
+      // Continue without docs context
+    }
+    
     // Prepare conversation history for API
     const messages = [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: SYSTEM_PROMPT + docsContext },
       ...conversationHistory.map(msg => ({
         role: msg.role,
         content: msg.content
@@ -249,7 +377,8 @@ exports.handler = async function(event, context) {
         message: response,
         intent: intent,
         suggestions: suggestions,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        docsContext: docsResults || null
       })
     };
 
