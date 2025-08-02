@@ -30,7 +30,7 @@ exports.handler = async (event, context) => {
 
     // Initialize Pinecone
     const pinecone = new Pinecone({
-      apiKey: process.env.PINECONE_API_KEY || 'pcsk_78yTUT_KFDPJ5ptM7vnJRZ2bSxo3i6ve7ugE96VSXecy7MjkPJCZn9eUHtMoVniHSofttc'
+      apiKey: 'pcsk_78yTUT_KFDPJ5ptM7vnJRZ2bSxo3i6ve7ugE96VSXecy7MjkPJCZn9eUHtMoVniHSofttc'
     });
 
     // Generate query embedding using simple text similarity
