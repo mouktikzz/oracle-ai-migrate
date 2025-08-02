@@ -1,262 +1,38 @@
 const fetch = require('node-fetch');
+const fs = require('fs');
+const path = require('path');
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const GEMINI_API_KEY = process.env.VITE_GEMINI_API_KEY;
 
-// Comprehensive embedded documentation knowledge base
-const PROJECT_KNOWLEDGE = {
-  // Admin Panel - Complete information from README-ADMIN.md
-  admin: `
-    Admin Panel Setup and Usage:
-    
-    The admin panel provides comprehensive system administration capabilities for the Oracle AI Migration application. It includes user management, system monitoring, activity logging, and configuration management.
-    
-    Features:
-    1. Overview Dashboard: Real-time system statistics, user activity metrics, migration success rates, system health indicators
-    2. User Management: View all registered users, update user roles (user, moderator, admin), delete user accounts, monitor user activity
-    3. System Settings: Configure AI models, set file size limits, toggle cache settings, enable/disable maintenance mode
-    4. Activity Logs: Track all administrative actions, monitor system events, audit trail for compliance
-    5. System Monitoring: Real-time performance metrics, CPU, memory, and disk usage, application-specific metrics, queue monitoring
-    
-    User Roles:
-    - Admin: Full system access, user management, system configuration, activity monitoring
-    - Moderator: Limited admin access, user management (no deletion), view activity logs, basic system monitoring
-    - User: Standard application access, no admin capabilities
-    
-    Security Features: Role-based access control (RBAC), Row-level security (RLS) policies, activity logging for all admin actions, secure API endpoints
-    
-    API Endpoints: The admin panel uses Supabase tables including profiles (user information and roles), admin_logs (activity logging), system_settings (configuration management), migrations (migration tracking), migration_files (file conversion tracking)
-    
-    Monitoring and Alerts: Real-time monitoring for system resource usage, active conversions, queue lengths, cache performance, response times
-  `,
-  
-  // History Section - From user guide documentation
-  history: `
-    History Section and Comments:
-    
-    The History section provides comprehensive tracking of all migration activities and user interactions. Users can view their complete migration history with detailed information about each conversion.
-    
-    History Features:
-    - Complete migration history with timestamps and status
-    - File conversion tracking with before/after comparisons
-    - Conversion status indicators (success, warning, failed, pending)
-    - Detailed conversion reports and analytics
-    - Performance metrics for each conversion
-    - Download links for converted files
-    
-    Comments and Notes:
-    - Users can add comments to specific conversions
-    - Conversion notes and warnings are displayed
-    - Manual review requirements are tracked
-    - Performance recommendations and optimization suggestions
-    - Oracle-specific migration notes and explanations
-    
-    History Interface:
-    - Chronological list of all migrations
-    - Filtering by status, date range, and file type
-    - Search functionality for finding specific conversions
-    - Export capabilities for migration reports
-    - Integration with the code editor for detailed review
-    
-    Comments System:
-    - Add comments to individual file conversions
-    - Track manual review requirements
-    - Note Oracle-specific changes needed
-    - Document performance optimizations
-    - Flag issues requiring attention
-  `,
-  
-  // Migration workflow and getting started
-  migration: `
-    Migration Workflow and Getting Started:
-    
-    Getting Started:
-    1. Account Setup: Create an account using email or social login, verify your email, complete profile with organization details
-    2. Initial Configuration: Choose AI model (Default or Gemini), set preferences for file size limits and notifications, test Oracle database connection
-    3. First Login: Access the migration dashboard to start your first migration
-    
-    Migration Workflow:
-    Step 1: Upload Files
-    - Single File Upload: Click "Upload Files" button, select .sql/.sp/.ddl files, choose AI model, click "Start Upload"
-    - Batch Upload: Click "Upload Folder" button, select directory with Sybase files, review file list, configure batch options
-    - Supported Types: Stored Procedures (.sp, .proc), SQL Scripts (.sql), DDL Scripts (.ddl), Functions (.func), Triggers (.trg)
-    
-    Step 2: Review Conversions
-    - Conversion Results: Successful (converted without issues), With Warnings (minor issues), Failed (couldn't convert), Pending (waiting)
-    - Code Review: Select file from results, review side-by-side comparison, check differences, review notes and warnings
-    - Understanding Issues: Syntax differences, function mappings, data type changes, performance optimizations
-    
-    Step 3: Generate Reports
-    - Detailed analytics and performance metrics
-    - Code quality analysis and recommendations
-    - Manual review requirements and optimization suggestions
-    
-    User Interface:
-    - Main Dashboard: File upload area, conversion status, recent activity, settings
-    - Navigation: Home, History, Reports, Profile, Admin
-    - Code Editor: Source panel (original Sybase), conversion panel (Oracle), diff viewer, issues panel
-    
-    Best Practices:
-    - Test conversions on small files first
-    - Review all warnings and conversion notes
-    - Use appropriate AI model for complexity level
-    - Validate converted code in Oracle environment
-  `,
-  
-  // Performance metrics and code quality analysis
-  performance: `
-    Performance Metrics and Code Quality Analysis:
-    
-    The Sybase to Oracle Migration Tool includes comprehensive performance monitoring, metrics collection, and code quality analysis to ensure optimal system performance and maintainable code.
-    
-    Code Quality Metrics:
-    - Cyclomatic Complexity: Measures code complexity based on decision points (1-10=Good, 11-20=Moderate, 21-50=Complex, 50+=Refactor needed)
-    - Lines of Code Analysis: Total lines, effective lines, comment ratio, change impact
-    - Loop Analysis: FOR, WHILE, CURSOR loops, nested loops, performance impact
-    - Comment Ratio: Comments per function, documentation quality, Oracle-specific notes
-    - Maintainability Index: 0-100 scale based on complexity, lines, and comments
-    - Bulk Operations Analysis: BULK COLLECT usage, BULK INSERT/UPDATE, performance gains
-    - Scalability Assessment: Resource usage, concurrent access, growth projections
-    - Modern Features Detection: Oracle 12c+ features, JSON, LISTAGG, LATERAL joins
-    - Overall Performance Score: Weighted average of all metrics
-    - Manual Edit Requirements: Critical issues, optimizations, Oracle-specific changes
-    
-    Database Schema includes: code_quality_metrics, loop_analysis, performance_recommendations tables.
-    Implementation uses TypeScript interfaces and analysis functions for SQL content evaluation.
-  `,
-  
-  // System architecture
-  architecture: `
-    System Architecture:
-    - Frontend: React 18 with TypeScript, Vite build tool, shadcn/ui components with Tailwind CSS
-    - Backend: Netlify Functions for serverless API calls
-    - Database: Supabase (PostgreSQL-based) for authentication and data storage
-    - AI Integration: Google Gemini (primary) and OpenRouter (fallback) APIs
-    - Migration Tools: Custom conversion utilities for stored procedures
-    - File Handling: Supports SQL file uploads (.sql, .sp, .ddl, .func, .trg) and conversions
-    
-    Data Flow: User uploads SQL files → AI conversion engine processes → Results stored in Supabase → User views/downloads converted code → Performance metrics collected throughout
-  `,
-  
-  // AI model configuration
-  aiModels: `
-    AI Model Configuration:
-    - Gemini Pro: 95%+ accuracy, Fast, Medium cost - Complex procedures, production use
-    - Default: 85%+ accuracy, Very Fast, Free - Simple conversions, testing
-    - Custom: Variable accuracy/speed/cost - Specialized requirements
-    
-    Google Gemini Configuration:
-    - API Key: VITE_GEMINI_API_KEY environment variable
-    - Model: gemini-pro for production, gemini-2.0-flash-exp for speed
-    - Temperature: 0.1 for consistent code generation
-    - Max Output Tokens: 8192 for comprehensive responses
-    - Safety Settings: Configured for code generation tasks
-    
-    Prompt Engineering: Base template for Sybase to Oracle conversion, conversion rules for parameter syntax, data types, functions, result sets, error handling, comment preservation, Oracle-specific optimizations.
-    
-    Model Selection: Use Gemini Pro for complex stored procedures, Default for simple scripts, Custom for specialized requirements, optimize based on file size and complexity.
-  `,
-  
-  // Database schema
-  database: `
-    Database Schema (PostgreSQL via Supabase):
-    - Authentication: auth.users, auth.sessions
-    - Core Tables: profiles, migrations, migration_files, migration_reports, deployment_logs
-    - Admin: admin_logs, system_settings
-    
-    Core Tables:
-    - profiles: Extends user info with application data (id, email, full_name, organization, role, avatar_url, metadata), roles: user, moderator, admin
-    - migrations: Stores migration session info, status: pending/processing/completed/failed/cancelled, AI model tracking, file processing statistics
-    - migration_files: Individual file conversion tracking, original and converted content storage, conversion status and error tracking
-    - migration_reports: Generated reports and analytics, performance metrics, quality scores, manual review requirements
-    
-    Security: Row Level Security (RLS) policies, user-based access control, admin role restrictions, audit logging
-  `,
-  
-  // User guide
-  userGuide: `
-    User Guide:
-    Getting Started: Account setup (registration, email verification, profile setup), initial configuration (AI model selection, preferences, test connection), first login access to migration dashboard.
-    
-    User Interface: Main dashboard (file upload, conversion status, recent activity, settings), navigation (Home, History, Reports, Profile, Admin), code editor (source panel, conversion panel, diff viewer, issues panel).
-    
-    Migration Workflow: Upload files (single or batch, supported types .sql/.sp/.ddl/.func/.trg), review conversions (success/warning/failed status, side-by-side comparison), generate reports (detailed analytics, performance metrics, recommendations).
-    
-    Advanced Features: Batch processing for multiple files, real-time conversion progress tracking, code quality analysis and optimization suggestions, integration with Oracle deployment tools.
-    
-    Best Practices: Test conversions on small files first, review all warnings and conversion notes, use appropriate AI model for complexity level, validate converted code in Oracle environment.
-    
-    History Section: Complete migration history with timestamps, conversion status tracking, file comparison tools, performance metrics, download capabilities, comment system for tracking manual review requirements and Oracle-specific notes.
-  `,
-  
-  // Developer guide
-  developer: `
-    Developer Guide:
-    Development Setup: Prerequisites (Node.js v18+, npm/bun, Git, Docker optional, VS Code), environment setup (clone repo, install dependencies, configure .env.local), IDE configuration.
-    
-    Project Structure: src/components/ (reusable UI components), src/pages/ (application pages and routing), src/api/ (API integration), src/contexts/ (React context providers), src/hooks/ (custom React hooks), src/utils/ (utility functions).
-    
-    Contributing: Code style (TypeScript, ESLint, Prettier), component development (shadcn/ui patterns), testing (unit tests, integration tests), documentation (JSDoc comments, README updates).
-    
-    API Reference: Netlify Functions (serverless endpoints), Supabase Client (database operations, authentication), AI Integration (Gemini and OpenRouter API calls), File Processing (upload, conversion, download).
-    
-    Testing: Unit tests with Vitest, component testing with React Testing Library, E2E testing with Playwright, API testing with Postman/Thunder Client.
-    
-    Deployment: Netlify for frontend and functions, Supabase for database and authentication, environment variable configuration, CI/CD pipeline setup.
-  `,
-  
-  // API documentation
-  api: `
-    API Documentation:
-    Netlify Functions: /api/ai-convert (main conversion endpoint), /api/ai-explain (code explanation endpoint), /api/chatbot (AI assistant endpoint), /api/upload (file upload handling), /api/reports (report generation).
-    
-    Supabase Integration: Authentication (sign up, sign in, session management), Database (CRUD operations for migrations, files, reports), Storage (file upload and download), Real-time (live updates for conversion progress).
-    
-    AI Services Integration: Google Gemini (primary conversion engine), OpenRouter (fallback AI service), model selection and configuration, error handling and retry logic.
-    
-    File Processing: Upload validation and processing, conversion pipeline management, result storage and retrieval, download and export functionality.
-  `,
-  
-  // Configuration
-  configuration: `
-    Configuration Guide:
-    Environment Variables: VITE_SUPABASE_URL (Supabase project URL), VITE_SUPABASE_ANON_KEY (Supabase anonymous key), VITE_GEMINI_API_KEY (Google Gemini API key), OPENROUTER_API_KEY (OpenRouter API key fallback), ORACLE_CONNECTION_STRING (Oracle database connection).
-    
-    AI Model Configuration: Model selection (Gemini Pro, Default, Custom), temperature and token limits, safety settings and prompt templates, performance optimization settings.
-    
-    Database Configuration: Supabase project setup, table creation and schema management, Row Level Security policies, backup and recovery procedures.
-    
-    Application Settings: File size limits and upload restrictions, conversion timeout settings, notification preferences, user interface customization.
-  `,
-  
-  // Deployment
-  deployment: `
-    Deployment Guide:
-    Netlify Deployment: Frontend build and deployment, Netlify Functions configuration, environment variable setup, custom domain configuration.
-    
-    Supabase Setup: Project creation and configuration, database schema deployment, authentication setup, storage bucket configuration.
-    
-    Production Configuration: SSL certificate setup, CDN configuration, monitoring and logging, performance optimization.
-    
-    CI/CD Pipeline: GitHub Actions workflow, automated testing, deployment automation, rollback procedures.
-    
-    Monitoring and Maintenance: Error tracking and alerting, performance monitoring, database maintenance, security updates.
-  `,
-  
-  // Troubleshooting
-  troubleshooting: `
-    Troubleshooting Guide:
-    Common Issues:
-    - Conversion Failures: Check file format and syntax, verify AI model availability, review error logs, test with smaller files first
-    - Authentication Problems: Verify Supabase configuration, check environment variables, clear browser cache, review user permissions
-    - Performance Issues: Monitor API response times, check database query performance, review file size limits, optimize AI model settings
-    - Deployment Issues: Verify environment variables, check Netlify function logs, review build configuration, test local development setup
-    
-    Debug Tools: Browser developer tools, Netlify function logs, Supabase dashboard, AI service monitoring.
-    
-    Support Resources: Documentation and guides, community forums, issue tracking system, direct support channels.
-  `
-};
+// Path to master documentation file
+const MASTER_DOCS_PATH = path.join(__dirname, '../docs/master-documentation.json');
+
+// Load master documentation
+function loadMasterDocumentation() {
+  try {
+    const docsPath = path.join(__dirname, '../docs/master-documentation.json');
+    const docsContent = fs.readFileSync(docsPath, 'utf8');
+    return JSON.parse(docsContent);
+  } catch (error) {
+    console.error('Error loading master documentation:', error);
+    // Fallback to minimal documentation if file can't be read
+    return {
+      sections: {
+        'getting-started': {
+          title: 'Getting Started',
+          keywords: ['start', 'begin', 'first', 'initial', 'setup'],
+          content: {
+            'account-setup': {
+              title: 'Account Setup',
+              content: 'Create an account using email or social login, verify your email, complete profile with organization details'
+            }
+          }
+        }
+      }
+    };
+  }
+}
 
 const SYSTEM_PROMPT = `You are an expert Oracle database migration assistant for a specific Sybase to Oracle migration project.
 
@@ -336,91 +112,140 @@ async function callGeminiAPI(messages) {
   }
 }
 
-// Advanced semantic search with fuzzy matching
-function semanticSearch(query, knowledgeBase) {
+// Advanced semantic search with fuzzy matching using master documentation
+function semanticSearch(query, masterDocs) {
   const queryLower = query.toLowerCase();
   const queryWords = queryLower.split(/\s+/).filter(word => word.length > 2);
   
   const results = [];
   
-  for (const [key, content] of Object.entries(knowledgeBase)) {
-    const contentLower = content.toLowerCase();
-    let score = 0;
-    let matches = [];
+  // Search through all sections
+  for (const [sectionKey, section] of Object.entries(masterDocs.sections)) {
+    const sectionLower = section.title.toLowerCase();
+    let sectionScore = 0;
+    let sectionMatches = [];
     
-    // Exact phrase matching (highest priority)
-    if (contentLower.includes(queryLower)) {
-      score += 100;
-      matches.push('exact_phrase');
+    // Check section title
+    if (sectionLower.includes(queryLower)) {
+      sectionScore += 50;
+      sectionMatches.push('section_title_exact');
     }
     
-    // Word matching with context
+    // Check section keywords
+    for (const keyword of section.keywords) {
+      if (queryLower.includes(keyword.toLowerCase())) {
+        sectionScore += 20;
+        sectionMatches.push(`keyword_${keyword}`);
+      }
+    }
+    
+    // Check individual words against section title and keywords
     for (const word of queryWords) {
-      if (contentLower.includes(word)) {
-        score += 10;
-        matches.push(word);
+      if (sectionLower.includes(word)) {
+        sectionScore += 10;
+        sectionMatches.push(`word_${word}`);
+      }
+      if (section.keywords.some(k => k.toLowerCase().includes(word))) {
+        sectionScore += 8;
+        sectionMatches.push(`keyword_word_${word}`);
       }
     }
     
-    // Semantic similarity matching
-    const semanticMatches = {
-      'start': ['begin', 'start', 'first', 'initial', 'setup', 'getting started', 'workflow'],
-      'migration': ['migrate', 'convert', 'conversion', 'oracle', 'sybase', 'workflow', 'process'],
-      'admin': ['administrator', 'management', 'user management', 'system', 'dashboard'],
-      'history': ['history', 'comment', 'tracking', 'log', 'previous', 'past'],
-      'performance': ['metrics', 'quality', 'analysis', 'optimization', 'speed'],
-      'upload': ['file', 'upload', 'import', 'add', 'submit'],
-      'convert': ['migration', 'conversion', 'transform', 'change', 'oracle'],
-      'report': ['report', 'analytics', 'metrics', 'results', 'summary'],
-      'settings': ['config', 'configuration', 'setup', 'preferences', 'options'],
-      'help': ['guide', 'documentation', 'support', 'troubleshooting', 'how to']
-    };
-    
-    for (const [semanticKey, synonyms] of Object.entries(semanticMatches)) {
-      if (queryWords.some(word => synonyms.includes(word))) {
-        if (contentLower.includes(semanticKey) || synonyms.some(syn => contentLower.includes(syn))) {
-          score += 5;
-          matches.push(`semantic_${semanticKey}`);
+    // Search through section content
+    for (const [contentKey, contentItem] of Object.entries(section.content)) {
+      const contentLower = contentItem.content.toLowerCase();
+      const titleLower = contentItem.title.toLowerCase();
+      let contentScore = sectionScore; // Inherit section score
+      let contentMatches = [...sectionMatches];
+      
+      // Check content title
+      if (titleLower.includes(queryLower)) {
+        contentScore += 30;
+        contentMatches.push('content_title_exact');
+      }
+      
+      // Check content body
+      if (contentLower.includes(queryLower)) {
+        contentScore += 25;
+        contentMatches.push('content_body_exact');
+      }
+      
+      // Check individual words in content
+      for (const word of queryWords) {
+        if (contentLower.includes(word)) {
+          contentScore += 5;
+          contentMatches.push(`content_word_${word}`);
+        }
+        if (titleLower.includes(word)) {
+          contentScore += 8;
+          contentMatches.push(`title_word_${word}`);
         }
       }
-    }
-    
-    // Context-based matching
-    const contextMatches = {
-      'how do i': ['getting started', 'workflow', 'step', 'process', 'guide'],
-      'what is': ['overview', 'description', 'features', 'capabilities'],
-      'where can i': ['interface', 'dashboard', 'navigation', 'menu'],
-      'can i': ['features', 'capabilities', 'permissions', 'access'],
-      'why': ['explanation', 'reason', 'purpose', 'benefit']
-    };
-    
-    for (const [contextKey, contexts] of Object.entries(contextMatches)) {
-      if (queryLower.includes(contextKey)) {
-        if (contexts.some(ctx => contentLower.includes(ctx))) {
-          score += 3;
-          matches.push(`context_${contextKey}`);
+      
+      // Semantic similarity matching
+      const semanticMatches = {
+        'start': ['begin', 'start', 'first', 'initial', 'setup', 'getting started', 'workflow'],
+        'migration': ['migrate', 'convert', 'conversion', 'oracle', 'sybase', 'workflow', 'process'],
+        'admin': ['administrator', 'management', 'user management', 'system', 'dashboard'],
+        'history': ['history', 'comment', 'tracking', 'log', 'previous', 'past'],
+        'performance': ['metrics', 'quality', 'analysis', 'optimization', 'speed'],
+        'upload': ['file', 'upload', 'import', 'add', 'submit'],
+        'convert': ['migration', 'conversion', 'transform', 'change', 'oracle'],
+        'report': ['report', 'analytics', 'metrics', 'results', 'summary'],
+        'settings': ['config', 'configuration', 'setup', 'preferences', 'options'],
+        'help': ['guide', 'documentation', 'support', 'troubleshooting', 'how to']
+      };
+      
+      for (const [semanticKey, synonyms] of Object.entries(semanticMatches)) {
+        if (queryWords.some(word => synonyms.includes(word))) {
+          if (contentLower.includes(semanticKey) || synonyms.some(syn => contentLower.includes(syn))) {
+            contentScore += 3;
+            contentMatches.push(`semantic_${semanticKey}`);
+          }
         }
       }
-    }
-    
-    if (score > 0) {
-      results.push({
-        key,
-        content,
-        score,
-        matches
-      });
+      
+      // Context-based matching
+      const contextMatches = {
+        'how do i': ['getting started', 'workflow', 'step', 'process', 'guide'],
+        'what is': ['overview', 'description', 'features', 'capabilities'],
+        'where can i': ['interface', 'dashboard', 'navigation', 'menu'],
+        'can i': ['features', 'capabilities', 'permissions', 'access'],
+        'why': ['explanation', 'reason', 'purpose', 'benefit']
+      };
+      
+      for (const [contextKey, contexts] of Object.entries(contextMatches)) {
+        if (queryLower.includes(contextKey)) {
+          if (contexts.some(ctx => contentLower.includes(ctx))) {
+            contentScore += 2;
+            contentMatches.push(`context_${contextKey}`);
+          }
+        }
+      }
+      
+      if (contentScore > 0) {
+        results.push({
+          section: section.title,
+          sectionKey,
+          contentKey,
+          title: contentItem.title,
+          content: contentItem.content,
+          score: contentScore,
+          matches: contentMatches
+        });
+      }
     }
   }
   
   // Sort by score and return top results
   results.sort((a, b) => b.score - a.score);
-  return results.slice(0, 3); // Return top 3 most relevant
+  return results.slice(0, 5); // Return top 5 most relevant
 }
 
 // RAG: Retrieve relevant knowledge based on user query
 function retrieveRelevantKnowledge(query) {
-  const searchResults = semanticSearch(query, PROJECT_KNOWLEDGE);
+  const masterDocs = loadMasterDocumentation();
+  const searchResults = semanticSearch(query, masterDocs);
   
   if (searchResults.length === 0) {
     return '';
@@ -429,7 +254,7 @@ function retrieveRelevantKnowledge(query) {
   let relevantKnowledge = '';
   
   searchResults.forEach((result, index) => {
-    relevantKnowledge += `${result.content}\n\n`;
+    relevantKnowledge += `${result.section} - ${result.title}:\n${result.content}\n\n`;
   });
   
   return relevantKnowledge.trim();
@@ -556,7 +381,7 @@ exports.handler = async function(event, context) {
     // Extract intent from user message
     const intent = extractIntent(message);
     
-    // Advanced RAG: Retrieve relevant project knowledge using semantic search
+    // Advanced RAG: Retrieve relevant project knowledge using semantic search from master docs
     const relevantKnowledge = retrieveRelevantKnowledge(message);
     
     // Prepare conversation history for API with RAG context
