@@ -254,13 +254,18 @@ exports.handler = async function(event, context) {
     console.log('🔍 Event headers:', event.headers);
     console.log('🔍 Event host:', event.headers?.host);
     console.log('🔍 Starting RAG API call...');
+    console.log('🔍 About to call retrieveRelevantKnowledge function...');
     
-    const relevantKnowledge = await retrieveRelevantKnowledge(message, event);
-    console.log('📄 RAG knowledge length:', relevantKnowledge.length);
-    if (relevantKnowledge.length > 0) {
-      console.log('📝 RAG knowledge preview:', relevantKnowledge.substring(0, 200) + '...');
-    } else {
-      console.log('⚠️ No RAG knowledge retrieved - this might indicate an issue');
+    try {
+      const relevantKnowledge = await retrieveRelevantKnowledge(message, event);
+      console.log('📄 RAG knowledge length:', relevantKnowledge.length);
+      if (relevantKnowledge.length > 0) {
+        console.log('📝 RAG knowledge preview:', relevantKnowledge.substring(0, 200) + '...');
+      } else {
+        console.log('⚠️ No RAG knowledge retrieved - this might indicate an issue');
+      }
+    } catch (error) {
+      console.error('❌ Error in retrieveRelevantKnowledge:', error);
     }
     
     console.log('🔍 RAG API call completed');
