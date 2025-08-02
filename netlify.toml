@@ -1,6 +1,7 @@
 [build]
   command = "npm run build"
   publish = "dist"
+  functions = "netlify/functions"
 
 [dev]
   command = "npm run dev"
@@ -8,7 +9,15 @@
   targetPort = 8081
   publish = "dist"
 
-# Functions are handled automatically by Netlify
+[build.environment]
+  NODE_VERSION = "18"
 
-[functions]
-  directory = "netlify/functions" 
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
