@@ -201,12 +201,14 @@ async function callOpenRouterAPI(messages, model = 'qwen/qwen3-coder:free') {
 }
 
 async function callGeminiAPI(messages) {
-  const lastUserMessage = messages.filter(m => m.role === 'user').pop()?.content || '';
-   
+  // Build the full conversation context including RAG knowledge
+  const systemMessage = messages.find(m => m.role === 'system')?.content || SYSTEM_PROMPT;
+  const conversationMessages = messages.filter(m => m.role !== 'system');
+  
   const body = {
     contents: [{
       parts: [{
-        text: SYSTEM_PROMPT + '\n\nUser: ' + lastUserMessage
+        text: systemMessage + '\n\n' + conversationMessages.map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`).join('\n\n')
       }]
     }]
   };
