@@ -126,12 +126,12 @@ const Help: React.FC<HelpProps> = ({ onClose }) => {
         </div>
         
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-          <Tabs defaultValue="shortcuts" className="w-full">
+          <Tabs defaultValue="faq" className="w-full">
             <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="shortcuts">Shortcuts</TabsTrigger>
               <TabsTrigger value="faq">FAQs</TabsTrigger>
               <TabsTrigger value="contact">Contact Us</TabsTrigger>
               <TabsTrigger value="resources">Resources</TabsTrigger>
+              <TabsTrigger value="shortcuts">Shortcuts</TabsTrigger>
             </TabsList>
             
             <TabsContent value="shortcuts" className="space-y-6">
