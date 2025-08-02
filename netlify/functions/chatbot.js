@@ -256,8 +256,9 @@ exports.handler = async function(event, context) {
     console.log('🔍 Starting RAG API call...');
     console.log('🔍 About to call retrieveRelevantKnowledge function...');
     
+    let relevantKnowledge = '';
     try {
-      const relevantKnowledge = await retrieveRelevantKnowledge(message, event);
+      relevantKnowledge = await retrieveRelevantKnowledge(message, event);
       console.log('📄 RAG knowledge length:', relevantKnowledge.length);
       if (relevantKnowledge.length > 0) {
         console.log('📝 RAG knowledge preview:', relevantKnowledge.substring(0, 200) + '...');
