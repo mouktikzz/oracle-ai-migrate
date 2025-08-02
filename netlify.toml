@@ -5,13 +5,10 @@
 [dev]
   command = "npm run dev"
   port = 8888
-  targetPort = 8083
+  targetPort = 8081
   publish = "dist"
 
-[[redirects]]
-  from = "/.netlify/functions/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
+# Functions are handled automatically by Netlify
 
 [functions]
   directory = "netlify/functions" 

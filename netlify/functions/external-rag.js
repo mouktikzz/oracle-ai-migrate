@@ -29,8 +29,23 @@ exports.handler = async (event, context) => {
     }
 
     // Initialize Pinecone
+    if (!process.env.PINECONE_API_KEY) {
+      console.error('❌ PINECONE_API_KEY environment variable is not set');
+      return {
+        statusCode: 500,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          error: 'PINECONE_API_KEY environment variable is not configured',
+          details: 'Please set PINECONE_API_KEY in your Netlify environment variables'
+        })
+      };
+    }
+
     const pinecone = new Pinecone({
-      apiKey: 'pcsk_78yTUT_KFDPJ5ptM7vnJRZ2bSxo3i6ve7ugE96VSXecy7MjkPJCZn9eUHtMoVniHSofttc'
+      apiKey: process.env.PINECONE_API_KEY
     });
 
     // Generate query embedding using simple text similarity
