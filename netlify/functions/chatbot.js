@@ -82,7 +82,7 @@ async function callGeminiAPI(messages) {
 }
 
 // RAG: Retrieve relevant knowledge from external RAG API
-async function retrieveRelevantKnowledge(query) {
+async function retrieveRelevantKnowledge(query, event) {
   try {
     // Determine the base URL for the RAG API
     const isLocalhost = process.env.NODE_ENV === 'development' || process.env.NETLIFY_DEV;
@@ -245,7 +245,7 @@ exports.handler = async function(event, context) {
     
     // RAG: Retrieve relevant project knowledge from RAG API
     console.log('🔍 Retrieving RAG knowledge for query:', message);
-    const relevantKnowledge = await retrieveRelevantKnowledge(message);
+    const relevantKnowledge = await retrieveRelevantKnowledge(message, event);
     console.log('📄 RAG knowledge length:', relevantKnowledge.length);
     console.log('📝 RAG knowledge preview:', relevantKnowledge.substring(0, 200) + '...');
     
