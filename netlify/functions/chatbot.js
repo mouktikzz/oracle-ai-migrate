@@ -81,7 +81,7 @@ async function callGeminiAPI(messages) {
   }
 }
 
-// RAG: Retrieve relevant knowledge from RAG API
+// RAG: Retrieve relevant knowledge from external RAG API
 async function retrieveRelevantKnowledge(query) {
   try {
     // Determine the base URL for the RAG API
@@ -90,7 +90,7 @@ async function retrieveRelevantKnowledge(query) {
       ? 'http://localhost:8888' 
       : `https://${process.env.URL || 'your-site.netlify.app'}`;
     
-    const ragApiUrl = `${baseUrl}/.netlify/functions/rag-api`;
+    const ragApiUrl = `${baseUrl}/.netlify/functions/external-rag`;
     
     const response = await fetch(ragApiUrl, {
       method: 'POST',
@@ -101,14 +101,14 @@ async function retrieveRelevantKnowledge(query) {
     });
 
     if (!response.ok) {
-      console.error('RAG API error:', response.status);
+      console.error('External RAG API error:', response.status);
       return '';
     }
 
     const data = await response.json();
     return data.context || '';
   } catch (error) {
-    console.error('Error calling RAG API:', error);
+    console.error('Error calling external RAG API:', error);
     return '';
   }
 }
