@@ -15,6 +15,15 @@ export interface ChatbotAPIResponse {
   intent: string;
   suggestions: string[];
   timestamp: string;
+  docsContext?: {
+    file: string;
+    description: string;
+    sections: Array<{
+      section: string;
+      content: string;
+      lineNumber: number;
+    }>;
+  }[];
 }
 
 export const sendChatMessage = async (request: ChatbotRequest): Promise<ChatbotResponse> => {
@@ -56,6 +65,7 @@ export const sendChatMessage = async (request: ChatbotRequest): Promise<ChatbotR
     return {
       message: assistantMessage,
       suggestions: data.suggestions,
+      docsContext: data.docsContext,
     };
   } catch (error) {
     console.error('Chatbot API error:', error);
