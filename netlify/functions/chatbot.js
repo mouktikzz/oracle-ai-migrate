@@ -1,38 +1,7 @@
 const fetch = require('node-fetch');
-const fs = require('fs');
-const path = require('path');
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const GEMINI_API_KEY = process.env.VITE_GEMINI_API_KEY;
-
-// Path to master documentation file
-const MASTER_DOCS_PATH = path.join(__dirname, '../docs/master-documentation.json');
-
-// Load master documentation
-function loadMasterDocumentation() {
-  try {
-    const docsPath = path.join(__dirname, '../docs/master-documentation.json');
-    const docsContent = fs.readFileSync(docsPath, 'utf8');
-    return JSON.parse(docsContent);
-  } catch (error) {
-    console.error('Error loading master documentation:', error);
-    // Fallback to minimal documentation if file can't be read
-    return {
-      sections: {
-        'getting-started': {
-          title: 'Getting Started',
-          keywords: ['start', 'begin', 'first', 'initial', 'setup'],
-          content: {
-            'account-setup': {
-              title: 'Account Setup',
-              content: 'Create an account using email or social login, verify your email, complete profile with organization details'
-            }
-          }
-        }
-      }
-    };
-  }
-}
 
 const SYSTEM_PROMPT = `You are an expert Oracle database migration assistant for a specific Sybase to Oracle migration project.
 
@@ -112,152 +81,36 @@ async function callGeminiAPI(messages) {
   }
 }
 
-// Advanced semantic search with fuzzy matching using master documentation
-function semanticSearch(query, masterDocs) {
-  const queryLower = query.toLowerCase();
-  const queryWords = queryLower.split(/\s+/).filter(word => word.length > 2);
-  
-  const results = [];
-  
-  // Search through all sections
-  for (const [sectionKey, section] of Object.entries(masterDocs.sections)) {
-    const sectionLower = section.title.toLowerCase();
-    let sectionScore = 0;
-    let sectionMatches = [];
+// RAG: Retrieve relevant knowledge from RAG API
+async function retrieveRelevantKnowledge(query) {
+  try {
+    // Determine the base URL for the RAG API
+    const isLocalhost = process.env.NODE_ENV === 'development' || process.env.NETLIFY_DEV;
+    const baseUrl = isLocalhost 
+      ? 'http://localhost:8888' 
+      : `https://${process.env.URL || 'your-site.netlify.app'}`;
     
-    // Check section title
-    if (sectionLower.includes(queryLower)) {
-      sectionScore += 50;
-      sectionMatches.push('section_title_exact');
-    }
+    const ragApiUrl = `${baseUrl}/.netlify/functions/rag-api`;
     
-    // Check section keywords
-    for (const keyword of section.keywords) {
-      if (queryLower.includes(keyword.toLowerCase())) {
-        sectionScore += 20;
-        sectionMatches.push(`keyword_${keyword}`);
-      }
-    }
-    
-    // Check individual words against section title and keywords
-    for (const word of queryWords) {
-      if (sectionLower.includes(word)) {
-        sectionScore += 10;
-        sectionMatches.push(`word_${word}`);
-      }
-      if (section.keywords.some(k => k.toLowerCase().includes(word))) {
-        sectionScore += 8;
-        sectionMatches.push(`keyword_word_${word}`);
-      }
-    }
-    
-    // Search through section content
-    for (const [contentKey, contentItem] of Object.entries(section.content)) {
-      const contentLower = contentItem.content.toLowerCase();
-      const titleLower = contentItem.title.toLowerCase();
-      let contentScore = sectionScore; // Inherit section score
-      let contentMatches = [...sectionMatches];
-      
-      // Check content title
-      if (titleLower.includes(queryLower)) {
-        contentScore += 30;
-        contentMatches.push('content_title_exact');
-      }
-      
-      // Check content body
-      if (contentLower.includes(queryLower)) {
-        contentScore += 25;
-        contentMatches.push('content_body_exact');
-      }
-      
-      // Check individual words in content
-      for (const word of queryWords) {
-        if (contentLower.includes(word)) {
-          contentScore += 5;
-          contentMatches.push(`content_word_${word}`);
-        }
-        if (titleLower.includes(word)) {
-          contentScore += 8;
-          contentMatches.push(`title_word_${word}`);
-        }
-      }
-      
-      // Semantic similarity matching
-      const semanticMatches = {
-        'start': ['begin', 'start', 'first', 'initial', 'setup', 'getting started', 'workflow'],
-        'migration': ['migrate', 'convert', 'conversion', 'oracle', 'sybase', 'workflow', 'process'],
-        'admin': ['administrator', 'management', 'user management', 'system', 'dashboard'],
-        'history': ['history', 'comment', 'tracking', 'log', 'previous', 'past'],
-        'performance': ['metrics', 'quality', 'analysis', 'optimization', 'speed'],
-        'upload': ['file', 'upload', 'import', 'add', 'submit'],
-        'convert': ['migration', 'conversion', 'transform', 'change', 'oracle'],
-        'report': ['report', 'analytics', 'metrics', 'results', 'summary'],
-        'settings': ['config', 'configuration', 'setup', 'preferences', 'options'],
-        'help': ['guide', 'documentation', 'support', 'troubleshooting', 'how to']
-      };
-      
-      for (const [semanticKey, synonyms] of Object.entries(semanticMatches)) {
-        if (queryWords.some(word => synonyms.includes(word))) {
-          if (contentLower.includes(semanticKey) || synonyms.some(syn => contentLower.includes(syn))) {
-            contentScore += 3;
-            contentMatches.push(`semantic_${semanticKey}`);
-          }
-        }
-      }
-      
-      // Context-based matching
-      const contextMatches = {
-        'how do i': ['getting started', 'workflow', 'step', 'process', 'guide'],
-        'what is': ['overview', 'description', 'features', 'capabilities'],
-        'where can i': ['interface', 'dashboard', 'navigation', 'menu'],
-        'can i': ['features', 'capabilities', 'permissions', 'access'],
-        'why': ['explanation', 'reason', 'purpose', 'benefit']
-      };
-      
-      for (const [contextKey, contexts] of Object.entries(contextMatches)) {
-        if (queryLower.includes(contextKey)) {
-          if (contexts.some(ctx => contentLower.includes(ctx))) {
-            contentScore += 2;
-            contentMatches.push(`context_${contextKey}`);
-          }
-        }
-      }
-      
-      if (contentScore > 0) {
-        results.push({
-          section: section.title,
-          sectionKey,
-          contentKey,
-          title: contentItem.title,
-          content: contentItem.content,
-          score: contentScore,
-          matches: contentMatches
-        });
-      }
-    }
-  }
-  
-  // Sort by score and return top results
-  results.sort((a, b) => b.score - a.score);
-  return results.slice(0, 5); // Return top 5 most relevant
-}
+    const response = await fetch(ragApiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ query })
+    });
 
-// RAG: Retrieve relevant knowledge based on user query
-function retrieveRelevantKnowledge(query) {
-  const masterDocs = loadMasterDocumentation();
-  const searchResults = semanticSearch(query, masterDocs);
-  
-  if (searchResults.length === 0) {
+    if (!response.ok) {
+      console.error('RAG API error:', response.status);
+      return '';
+    }
+
+    const data = await response.json();
+    return data.context || '';
+  } catch (error) {
+    console.error('Error calling RAG API:', error);
     return '';
   }
-  
-  let relevantKnowledge = '';
-  
-  searchResults.forEach((result, index) => {
-    relevantKnowledge += `${result.section} - ${result.title}:\n${result.content}\n\n`;
-  });
-  
-  return relevantKnowledge.trim();
 }
 
 function extractIntent(userMessage) {
@@ -381,8 +234,8 @@ exports.handler = async function(event, context) {
     // Extract intent from user message
     const intent = extractIntent(message);
     
-    // Advanced RAG: Retrieve relevant project knowledge using semantic search from master docs
-    const relevantKnowledge = retrieveRelevantKnowledge(message);
+    // RAG: Retrieve relevant project knowledge from RAG API
+    const relevantKnowledge = await retrieveRelevantKnowledge(message);
     
     // Prepare conversation history for API with RAG context
     const messages = [
