@@ -360,7 +360,7 @@ async function analyzeCodeQuality(sqlContent: string): Promise<CodeQualityMetric
     });
   }
 
-  // Add more embedded documentation as needed
+  // Comprehensive embedded documentation content
   const architectureContent = `
 # System Architecture
 
@@ -384,8 +384,314 @@ async function analyzeCodeQuality(sqlContent: string): Promise<CodeQualityMetric
 5. Performance metrics are collected throughout the process
 `;
 
-  const architectureKeywords = ['architecture', 'system', 'components', 'frontend', 'backend', 'data flow'];
+  const aiModelsContent = `
+# AI Model Configuration and Usage
+
+## Supported AI Models
+- **Gemini Pro**: 95%+ accuracy, Fast, Medium cost - Complex procedures, production
+- **Default**: 85%+ accuracy, Very Fast, Free - Simple conversions, testing
+- **Custom**: Variable accuracy/speed/cost - Specialized requirements
+
+## Google Gemini AI Configuration
+- API Key: VITE_GEMINI_API_KEY environment variable
+- Model: gemini-pro for production, gemini-2.0-flash-exp for speed
+- Temperature: 0.1 for consistent code generation
+- Max Output Tokens: 8192 for comprehensive responses
+- Safety Settings: Configured for code generation tasks
+
+## Prompt Engineering
+- Base prompt template for Sybase to Oracle conversion
+- Conversion rules: Parameter syntax, data types, functions, result sets
+- Error handling and comment preservation
+- Oracle-specific optimizations and best practices
+
+## Model Selection Guidelines
+- Use Gemini Pro for complex stored procedures
+- Use Default model for simple scripts and testing
+- Custom models for specialized requirements
+- Performance optimization based on file size and complexity
+`;
+
+  const databaseSchemaContent = `
+# Database Schema Documentation
+
+## Schema Overview
+- PostgreSQL via Supabase
+- Authentication: auth.users, auth.sessions
+- Core: profiles, migrations, migration_files, migration_reports, deployment_logs
+- Admin: admin_logs, system_settings
+
+## Core Tables
+
+### profiles
+- Extends user information with application-specific data
+- Columns: id, email, full_name, organization, role, avatar_url, metadata
+- Roles: user, moderator, admin
+
+### migrations
+- Stores migration session information
+- Status: pending, processing, completed, failed, cancelled
+- AI model tracking and file processing statistics
+
+### migration_files
+- Individual file conversion tracking
+- Original and converted content storage
+- Conversion status and error tracking
+
+### migration_reports
+- Generated migration reports and analytics
+- Performance metrics and quality scores
+- Manual review requirements and recommendations
+
+## Security
+- Row Level Security (RLS) policies
+- User-based access control
+- Admin role restrictions
+- Audit logging for sensitive operations
+`;
+
+  const userGuideContent = `
+# User Guide
+
+## Getting Started
+1. Account Setup: Registration, email verification, profile setup
+2. Initial Configuration: AI model selection, preferences, test connection
+3. First Login: Access migration dashboard
+
+## User Interface Overview
+- Main Dashboard: File upload, conversion status, recent activity, settings
+- Navigation: Home, History, Reports, Profile, Admin
+- Code Editor: Source panel, conversion panel, diff viewer, issues panel
+
+## Migration Workflow
+1. Upload Files: Single file or batch upload, supported types (.sql, .sp, .ddl, .func, .trg)
+2. Review Conversions: Success/warning/failed status, side-by-side comparison
+3. Generate Reports: Detailed analytics, performance metrics, recommendations
+
+## Advanced Features
+- Batch processing for multiple files
+- Real-time conversion progress tracking
+- Code quality analysis and optimization suggestions
+- Integration with Oracle deployment tools
+
+## Best Practices
+- Test conversions on small files first
+- Review all warnings and conversion notes
+- Use appropriate AI model for complexity level
+- Validate converted code in Oracle environment
+`;
+
+  const developerGuideContent = `
+# Developer Guide
+
+## Development Setup
+- Prerequisites: Node.js v18+, npm/bun, Git, Docker (optional), VS Code
+- Environment Setup: Clone repo, install dependencies, configure .env.local
+- IDE Configuration: VS Code extensions and settings for optimal development
+
+## Project Structure
+- src/components/: Reusable UI components (shadcn/ui, custom components)
+- src/pages/: Application pages and routing
+- src/api/: API integration and data fetching
+- src/contexts/: React context providers
+- src/hooks/: Custom React hooks
+- src/utils/: Utility functions and helpers
+
+## Contributing Guidelines
+- Code style: TypeScript, ESLint, Prettier
+- Component development: shadcn/ui patterns
+- Testing: Unit tests, integration tests
+- Documentation: JSDoc comments, README updates
+
+## API Reference
+- Netlify Functions: Serverless API endpoints
+- Supabase Client: Database operations and authentication
+- AI Integration: Gemini and OpenRouter API calls
+- File Processing: Upload, conversion, and download operations
+
+## Testing
+- Unit tests with Vitest
+- Component testing with React Testing Library
+- E2E testing with Playwright
+- API testing with Postman/Thunder Client
+
+## Deployment
+- Netlify for frontend and functions
+- Supabase for database and authentication
+- Environment variable configuration
+- CI/CD pipeline setup
+`;
+
+  const apiContent = `
+# API Documentation
+
+## Netlify Functions
+- /api/ai-convert: Main conversion endpoint
+- /api/ai-explain: Code explanation endpoint
+- /api/chatbot: AI assistant endpoint
+- /api/upload: File upload handling
+- /api/reports: Report generation
+
+## Supabase Integration
+- Authentication: Sign up, sign in, session management
+- Database: CRUD operations for migrations, files, reports
+- Storage: File upload and download
+- Real-time: Live updates for conversion progress
+
+## AI Services Integration
+- Google Gemini: Primary conversion engine
+- OpenRouter: Fallback AI service
+- Model selection and configuration
+- Error handling and retry logic
+
+## File Processing
+- Upload validation and processing
+- Conversion pipeline management
+- Result storage and retrieval
+- Download and export functionality
+`;
+
+  const configurationContent = `
+# Configuration Guide
+
+## Environment Variables
+- VITE_SUPABASE_URL: Supabase project URL
+- VITE_SUPABASE_ANON_KEY: Supabase anonymous key
+- VITE_GEMINI_API_KEY: Google Gemini API key
+- OPENROUTER_API_KEY: OpenRouter API key (fallback)
+- ORACLE_CONNECTION_STRING: Oracle database connection
+
+## AI Model Configuration
+- Model selection: Gemini Pro, Default, Custom
+- Temperature and token limits
+- Safety settings and prompt templates
+- Performance optimization settings
+
+## Database Configuration
+- Supabase project setup
+- Table creation and schema management
+- Row Level Security policies
+- Backup and recovery procedures
+
+## Application Settings
+- File size limits and upload restrictions
+- Conversion timeout settings
+- Notification preferences
+- User interface customization
+`;
+
+  const deploymentContent = `
+# Deployment Guide
+
+## Netlify Deployment
+- Frontend build and deployment
+- Netlify Functions configuration
+- Environment variable setup
+- Custom domain configuration
+
+## Supabase Setup
+- Project creation and configuration
+- Database schema deployment
+- Authentication setup
+- Storage bucket configuration
+
+## Production Configuration
+- SSL certificate setup
+- CDN configuration
+- Monitoring and logging
+- Performance optimization
+
+## CI/CD Pipeline
+- GitHub Actions workflow
+- Automated testing
+- Deployment automation
+- Rollback procedures
+
+## Monitoring and Maintenance
+- Error tracking and alerting
+- Performance monitoring
+- Database maintenance
+- Security updates
+`;
+
+  const troubleshootingContent = `
+# Troubleshooting Guide
+
+## Common Issues
+
+### Conversion Failures
+- Check file format and syntax
+- Verify AI model availability
+- Review error logs and messages
+- Test with smaller files first
+
+### Authentication Problems
+- Verify Supabase configuration
+- Check environment variables
+- Clear browser cache and cookies
+- Review user permissions
+
+### Performance Issues
+- Monitor API response times
+- Check database query performance
+- Review file size limits
+- Optimize AI model settings
+
+### Deployment Issues
+- Verify environment variables
+- Check Netlify function logs
+- Review build configuration
+- Test local development setup
+
+## Debug Tools
+- Browser developer tools
+- Netlify function logs
+- Supabase dashboard
+- AI service monitoring
+
+## Support Resources
+- Documentation and guides
+- Community forums
+- Issue tracking system
+- Direct support channels
+`;
+
+  // Check for different documentation areas
+  const architectureKeywords = ['architecture', 'system', 'components', 'frontend', 'backend', 'data flow', 'structure'];
+  const aiModelKeywords = ['ai model', 'gemini', 'openrouter', 'model configuration', 'prompt engineering', 'conversion engine'];
+  const databaseKeywords = ['database', 'schema', 'tables', 'supabase', 'postgresql', 'profiles', 'migrations', 'reports'];
+  const userGuideKeywords = ['user guide', 'getting started', 'workflow', 'upload', 'conversion', 'interface', 'dashboard'];
+  const developerKeywords = ['developer', 'development', 'setup', 'contributing', 'testing', 'deployment', 'project structure'];
+  const apiKeywords = ['api', 'endpoints', 'functions', 'integration', 'supabase client', 'netlify functions'];
+  const configKeywords = ['configuration', 'environment variables', 'settings', 'setup', 'config'];
+  const deploymentKeywords = ['deployment', 'netlify', 'production', 'ci/cd', 'monitoring', 'maintenance'];
+  const troubleshootingKeywords = ['troubleshooting', 'debug', 'issues', 'problems', 'errors', 'support'];
+
   const isArchitectureQuery = architectureKeywords.some(keyword => 
+    query.toLowerCase().includes(keyword)
+  );
+  const isAiModelQuery = aiModelKeywords.some(keyword => 
+    query.toLowerCase().includes(keyword)
+  );
+  const isDatabaseQuery = databaseKeywords.some(keyword => 
+    query.toLowerCase().includes(keyword)
+  );
+  const isUserGuideQuery = userGuideKeywords.some(keyword => 
+    query.toLowerCase().includes(keyword)
+  );
+  const isDeveloperQuery = developerKeywords.some(keyword => 
+    query.toLowerCase().includes(keyword)
+  );
+  const isApiQuery = apiKeywords.some(keyword => 
+    query.toLowerCase().includes(keyword)
+  );
+  const isConfigQuery = configKeywords.some(keyword => 
+    query.toLowerCase().includes(keyword)
+  );
+  const isDeploymentQuery = deploymentKeywords.some(keyword => 
+    query.toLowerCase().includes(keyword)
+  );
+  const isTroubleshootingQuery = troubleshootingKeywords.some(keyword => 
     query.toLowerCase().includes(keyword)
   );
 
@@ -394,6 +700,86 @@ async function analyzeCodeQuality(sqlContent: string): Promise<CodeQualityMetric
     results.push({
       file: 'architecture.md',
       description: 'System architecture and component overview',
+      relevance: searchTerms.length,
+      sections: relevantSections
+    });
+  }
+
+  if (isAiModelQuery) {
+    const relevantSections = extractRelevantSections(aiModelsContent, searchTerms);
+    results.push({
+      file: 'ai-models.md',
+      description: 'AI model configuration and usage guidelines',
+      relevance: searchTerms.length,
+      sections: relevantSections
+    });
+  }
+
+  if (isDatabaseQuery) {
+    const relevantSections = extractRelevantSections(databaseSchemaContent, searchTerms);
+    results.push({
+      file: 'database-schema.md',
+      description: 'Database schema and table structures',
+      relevance: searchTerms.length,
+      sections: relevantSections
+    });
+  }
+
+  if (isUserGuideQuery) {
+    const relevantSections = extractRelevantSections(userGuideContent, searchTerms);
+    results.push({
+      file: 'user-guide/README.md',
+      description: 'Complete user guide and workflow',
+      relevance: searchTerms.length,
+      sections: relevantSections
+    });
+  }
+
+  if (isDeveloperQuery) {
+    const relevantSections = extractRelevantSections(developerGuideContent, searchTerms);
+    results.push({
+      file: 'developer-guide/README.md',
+      description: 'Developer documentation and setup',
+      relevance: searchTerms.length,
+      sections: relevantSections
+    });
+  }
+
+  if (isApiQuery) {
+    const relevantSections = extractRelevantSections(apiContent, searchTerms);
+    results.push({
+      file: 'api/README.md',
+      description: 'API documentation and endpoints',
+      relevance: searchTerms.length,
+      sections: relevantSections
+    });
+  }
+
+  if (isConfigQuery) {
+    const relevantSections = extractRelevantSections(configurationContent, searchTerms);
+    results.push({
+      file: 'configuration/README.md',
+      description: 'System configuration options',
+      relevance: searchTerms.length,
+      sections: relevantSections
+    });
+  }
+
+  if (isDeploymentQuery) {
+    const relevantSections = extractRelevantSections(deploymentContent, searchTerms);
+    results.push({
+      file: 'deployment/README.md',
+      description: 'Deployment instructions and configuration',
+      relevance: searchTerms.length,
+      sections: relevantSections
+    });
+  }
+
+  if (isTroubleshootingQuery) {
+    const relevantSections = extractRelevantSections(troubleshootingContent, searchTerms);
+    results.push({
+      file: 'troubleshooting/README.md',
+      description: 'Troubleshooting guides and solutions',
       relevance: searchTerms.length,
       sections: relevantSections
     });
