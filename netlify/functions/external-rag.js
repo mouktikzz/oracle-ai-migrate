@@ -105,12 +105,12 @@ exports.handler = async (event, context) => {
 
     console.log('📊 Pinecone results:', {
       totalMatches: results.matches.length,
-      matches: results.matches.map(m => ({ id: m.id, score: m.score, hasContent: !!m.metadata?.content }))
+      matches: results.matches.map(m => ({ id: m.id, score: m.score, hasText: !!m.metadata?.text, hasContent: !!m.metadata?.content }))
     });
 
     // Extract context from results
     const context = results.matches
-      .map(match => match.metadata?.content || '')
+      .map(match => match.metadata?.text || match.metadata?.content || '')
       .filter(content => content.length > 0)
       .join('\n\n');
 
