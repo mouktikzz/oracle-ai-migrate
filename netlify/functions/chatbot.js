@@ -52,12 +52,9 @@ RESPONSE GUIDELINES:
 // RAG Integration Function
 async function getRAGContext(query) {
   try {
-    console.log('🔍 Calling RAG API for query:', query);
-    
     // Call the external-rag function
     const baseUrl = process.env.URL || 'http://localhost:8888';
     const ragUrl = `${baseUrl}/.netlify/functions/external-rag`;
-    console.log('🔗 RAG URL:', ragUrl);
     
     const ragResponse = await fetch(ragUrl, {
       method: 'POST',
@@ -67,16 +64,11 @@ async function getRAGContext(query) {
       body: JSON.stringify({ query }),
     });
 
-    console.log('📡 RAG response status:', ragResponse.status);
-
     if (!ragResponse.ok) {
-      console.error('❌ RAG API error:', ragResponse.status);
       return null;
     }
 
     const ragData = await ragResponse.json();
-    console.log('✅ RAG response received, context length:', ragData.context?.length || 0);
-    console.log('✅ RAG response data:', JSON.stringify(ragData, null, 2));
     
     return {
       context: ragData.context,
@@ -84,7 +76,6 @@ async function getRAGContext(query) {
       debug: ragData.debug
     };
   } catch (error) {
-    console.error('❌ RAG API call failed:', error.message);
     return null;
   }
 }
@@ -136,7 +127,6 @@ async function callOpenRouterAPI(messages, model = 'qwen/qwen3-coder:free') {
     const data = await response.json();
     return data.choices?.[0]?.message?.content || 'Sorry, I couldn\'t generate a response.';
   } catch (error) {
-    console.error('OpenRouter API error:', error);
     throw error;
   }
 }
@@ -154,10 +144,6 @@ async function callGeminiAPI(messages) {
     }]
   };
 
-  console.log('🤖 Calling Gemini API...');
-  console.log('🔑 Gemini API Key available:', !!GEMINI_API_KEY);
-  console.log('📝 Request body length:', JSON.stringify(body).length);
-
   try {
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
@@ -167,20 +153,14 @@ async function callGeminiAPI(messages) {
       body: JSON.stringify(body)
     });
 
-    console.log('📡 Gemini response status:', response.status);
-    console.log('📡 Gemini response headers:', Object.fromEntries(response.headers.entries()));
-
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ Gemini API error response:', errorText);
       throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    console.log('✅ Gemini API success, response length:', JSON.stringify(data).length);
     return data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I couldn\'t generate a response.';
   } catch (error) {
-    console.error('❌ Gemini API error:', error.message);
     throw error;
   }
 }
@@ -202,13 +182,10 @@ function generateSuggestions(intent) {
 // Hybrid Knowledge Function
 function getHybridResponse(userMessage) {
   const message = userMessage.toLowerCase();
-  console.log('🔍 Checking FAQ for message:', message);
   
   // First, try exact matches
   for (const [key, data] of Object.entries(FAQ_DATA)) {
-    console.log('🔍 Checking exact match for key:', key);
     if (message.includes(key.toLowerCase())) {
-      console.log('✅ Exact match found for:', key);
       const category = data.category;
       const docLink = DOC_LINKS[category];
       
@@ -223,22 +200,15 @@ function getHybridResponse(userMessage) {
   
   // Then, try word-based matching for more specific queries
   for (const [key, data] of Object.entries(FAQ_DATA)) {
-    console.log('🔍 Checking word-based match for key:', key);
     const keyWords = key.toLowerCase().split(' ');
     const messageWords = message.split(' ');
-    
-    console.log('🔍 Key words:', keyWords);
-    console.log('🔍 Message words:', messageWords);
     
     // Check if all key words are present in the message
     const allKeyWordsPresent = keyWords.every(keyWord => 
       messageWords.some(msgWord => msgWord.includes(keyWord) || keyWord.includes(msgWord))
     );
     
-    console.log('🔍 All key words present:', allKeyWordsPresent);
-    
     if (allKeyWordsPresent) {
-      console.log('✅ Word-based match found for:', key);
       const category = data.category;
       const docLink = DOC_LINKS[category];
       
@@ -266,7 +236,6 @@ function getHybridResponse(userMessage) {
   
   for (const [flexibleKey, faqKey] of Object.entries(flexibleMatches)) {
     if (message.includes(flexibleKey)) {
-      console.log('✅ Flexible match found:', flexibleKey, '->', faqKey);
       const data = FAQ_DATA[faqKey];
       if (data) {
         const category = data.category;
@@ -284,7 +253,6 @@ function getHybridResponse(userMessage) {
   
   // Check for documentation requests
   if (message.includes('documentation') || message.includes('docs') || message.includes('guide')) {
-    console.log('✅ Documentation request detected');
     return {
       type: 'docs',
       answer: "Here are the available documentation links:\n" + 
@@ -293,7 +261,6 @@ function getHybridResponse(userMessage) {
     };
   }
   
-  console.log('❌ No FAQ match found, will use AI');
   return null; // Let AI handle it
 }
 
@@ -364,12 +331,9 @@ exports.handler = async function(event, context) {
     const intent = extractIntent(message);
     
     // Hybrid Knowledge System: Check FAQ and docs first
-    console.log('🔍 Checking hybrid knowledge system for query:', message);
     const hybridResponse = getHybridResponse(message);
     
     if (hybridResponse) {
-      console.log('✅ Found hybrid response:', hybridResponse.type);
-      console.log('📋 SOURCE: HARDCODED FAQ RESPONSE');
       
       let finalAnswer = hybridResponse.answer;
       if (hybridResponse.docLink) {
@@ -389,29 +353,12 @@ exports.handler = async function(event, context) {
       };
     }
     
-    console.log('🤖 No hybrid response found, using AI with RAG...');
-    console.log('📋 SOURCE: RAG-POWERED AI RESPONSE');
-    
     // Get RAG context
     const ragContext = await getRAGContext(message);
-    console.log('📚 RAG context retrieved:', ragContext ? 'Yes' : 'No');
-    
-    if (ragContext && ragContext.context) {
-      console.log('📄 RAG context length:', ragContext.context.length, 'characters');
-      console.log('🔗 RAG matches found:', ragContext.matches || 0);
-      console.log('📄 RAG context preview:', ragContext.context.substring(0, 200) + '...');
-      console.log('📄 RAG context full:', ragContext.context);
-    } else {
-      console.log('⚠️ No RAG context found - using AI without documentation');
-    }
     
     // Prepare conversation history for API
     const baseSystemPrompt = SYSTEM_PROMPT;
     const enhancedSystemPrompt = buildEnhancedPrompt(baseSystemPrompt, ragContext);
-    
-    console.log('🤖 Enhanced prompt length:', enhancedSystemPrompt.length, 'characters');
-    console.log('🤖 Enhanced prompt preview:', enhancedSystemPrompt.substring(0, 300) + '...');
-    console.log('🤖 Enhanced prompt full:', enhancedSystemPrompt);
     
     const messages = [
       { role: 'system', content: enhancedSystemPrompt },
@@ -437,7 +384,6 @@ exports.handler = async function(event, context) {
     } catch (error) {
       // If Gemini fails, try OpenRouter as fallback
       if (OPENROUTER_API_KEY && error.message.includes('Gemini API error')) {
-        console.log('Gemini failed, falling back to OpenRouter');
         response = await callOpenRouterAPI(messages);
       } else {
         throw error;

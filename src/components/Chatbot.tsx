@@ -145,14 +145,6 @@ const MessageBubble: React.FC<{
               {message.timestamp.toLocaleTimeString()}
             </div>
             <div className="flex items-center gap-2">
-              {!isUser && message.metadata?.source && (
-                <Badge 
-                  variant={message.metadata.source === 'hardcoded_faq' ? 'secondary' : 'default'}
-                  className="text-xs px-2 py-0 h-5"
-                >
-                  {message.metadata.source === 'hardcoded_faq' ? 'FAQ' : 'RAG'}
-                </Badge>
-              )}
               {!isUser && onCopy && (
                 <Button
                   onClick={() => onCopy(message.content, message.id)}

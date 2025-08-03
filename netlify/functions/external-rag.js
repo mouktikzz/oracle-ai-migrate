@@ -87,7 +87,6 @@ exports.handler = async (event, context) => {
 
     // Extract key terms from the query for better matching
     const keyTerms = extractKeyTerms(query);
-    console.log('🔍 Extracted key terms:', keyTerms);
     
     // Try multiple search strategies
     let bestResults = null;
@@ -110,7 +109,7 @@ exports.handler = async (event, context) => {
         }
       }
     } catch (error) {
-      console.error('Original query search failed:', error.message);
+      // Original query search failed
     }
     
     // Strategy 2: Key terms search
@@ -131,19 +130,8 @@ exports.handler = async (event, context) => {
           }
         }
       } catch (error) {
-        console.error(`Term search failed for "${term}":`, error.message);
+        // Term search failed
       }
-    }
-
-    console.log('📊 Best results score:', bestScore);
-    console.log('📊 Best results matches:', bestResults?.matches.length || 0);
-
-    // Debug: Log all matches to see what's being found
-    if (bestResults && bestResults.matches.length > 0) {
-      console.log('🔍 All matches found:');
-      bestResults.matches.forEach((match, index) => {
-        console.log(`  ${index + 1}. Score: ${match.score}, Source: ${match.metadata?.source || 'unknown'}, Text: ${(match.metadata?.text || match.metadata?.content || '').substring(0, 100)}...`);
-      });
     }
 
     // Extract context from results
@@ -153,11 +141,6 @@ exports.handler = async (event, context) => {
         .map(match => match.metadata?.text || match.metadata?.content || '')
         .filter(content => content.length > 0)
         .join('\n\n');
-    }
-
-    console.log('📄 Context length:', context.length);
-    if (context.length === 0) {
-      console.log('⚠️ No context found - this might indicate an issue with the RAG system');
     }
 
     return {
