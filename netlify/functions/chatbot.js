@@ -302,11 +302,12 @@ exports.handler = async function(event, context) {
   const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, Cache-Control, Pragma',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
     'Pragma': 'no-cache',
-    'Expires': '0'
+    'Expires': '0',
+    'Surrogate-Control': 'no-store'
   };
 
   // Handle preflight requests

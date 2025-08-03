@@ -31,10 +31,12 @@ export const sendChatMessage = async (request: ChatbotRequest): Promise<ChatbotR
     console.log('Sending request to:', `${API_BASE_URL}/chatbot`);
     console.log('Request payload:', request);
     
-    const response = await fetch(`${API_BASE_URL}/chatbot`, {
+    const response = await fetch(`${API_BASE_URL}/chatbot?t=${Date.now()}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
       },
       body: JSON.stringify(request),
     });
