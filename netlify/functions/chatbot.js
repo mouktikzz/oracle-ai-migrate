@@ -49,6 +49,53 @@ RESPONSE GUIDELINES:
 - Be concise and direct
 - Do not use any external knowledge or general information`;
 
+// RAG Integration Function
+async function getRAGContext(query) {
+  try {
+    console.log('🔍 Calling RAG API for query:', query);
+    
+    // Call the external-rag function
+    const ragResponse = await fetch(`${process.env.URL || 'http://localhost:8888'}/.netlify/functions/external-rag`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ query }),
+    });
+
+    if (!ragResponse.ok) {
+      console.error('❌ RAG API error:', ragResponse.status);
+      return null;
+    }
+
+    const ragData = await ragResponse.json();
+    console.log('✅ RAG response received, context length:', ragData.context?.length || 0);
+    
+    return {
+      context: ragData.context,
+      matches: ragData.matches,
+      debug: ragData.debug
+    };
+  } catch (error) {
+    console.error('❌ RAG API call failed:', error.message);
+    return null;
+  }
+}
+
+// Enhanced system prompt with RAG context
+function buildEnhancedPrompt(basePrompt, ragContext) {
+  if (!ragContext || !ragContext.context) {
+    return basePrompt;
+  }
+
+  return `${basePrompt}
+
+RELEVANT PROJECT DOCUMENTATION:
+${ragContext.context}
+
+Use the above documentation to provide accurate and specific answers about the project. If the documentation doesn't contain relevant information, clearly state that you don't have specific information about that aspect.`;
+}
+
 async function callOpenRouterAPI(messages, model = 'qwen/qwen3-coder:free') {
   const body = {
     model: model,
@@ -125,8 +172,6 @@ async function callGeminiAPI(messages) {
     throw error;
   }
 }
-
-
 
 function extractIntent(userMessage) {
   // Simple intent extraction without hardcoded knowledge
@@ -284,11 +329,18 @@ exports.handler = async function(event, context) {
       };
     }
     
-    console.log('🤖 No hybrid response found, using AI...');
+    console.log('🤖 No hybrid response found, using AI with RAG...');
+    
+    // Get RAG context
+    const ragContext = await getRAGContext(message);
+    console.log('📚 RAG context retrieved:', ragContext ? 'Yes' : 'No');
     
     // Prepare conversation history for API
+    const baseSystemPrompt = SYSTEM_PROMPT;
+    const enhancedSystemPrompt = buildEnhancedPrompt(baseSystemPrompt, ragContext);
+    
     const messages = [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: enhancedSystemPrompt },
       ...conversationHistory.map(msg => ({
         role: msg.role,
         content: msg.content
@@ -321,6 +373,21 @@ exports.handler = async function(event, context) {
     // Generate contextual suggestions
     const suggestions = generateSuggestions(intent);
 
+    // Prepare docsContext for UI display
+    let docsContext = null;
+    if (ragContext && ragContext.context) {
+      // Parse the context into a structured format for the UI
+      docsContext = [{
+        file: 'Project Documentation',
+        description: 'Relevant documentation retrieved from RAG system',
+        sections: [{
+          section: 'Retrieved Context',
+          content: ragContext.context.substring(0, 500) + (ragContext.context.length > 500 ? '...' : ''),
+          lineNumber: 1
+        }]
+      }];
+    }
+
     return {
       statusCode: 200,
       headers,
@@ -328,7 +395,9 @@ exports.handler = async function(event, context) {
         message: response,
         intent: intent,
         suggestions: suggestions,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        docsContext: docsContext,
+        source: 'ai_with_rag'
       })
     };
 
