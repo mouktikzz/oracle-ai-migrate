@@ -190,10 +190,13 @@ function generateSuggestions(intent) {
 // Hybrid Knowledge Function
 function getHybridResponse(userMessage) {
   const message = userMessage.toLowerCase();
+  console.log('🔍 Checking FAQ for message:', message);
   
   // First, try exact matches
   for (const [key, data] of Object.entries(FAQ_DATA)) {
+    console.log('🔍 Checking exact match for key:', key);
     if (message.includes(key.toLowerCase())) {
+      console.log('✅ Exact match found for:', key);
       const category = data.category;
       const docLink = DOC_LINKS[category];
       
@@ -208,15 +211,22 @@ function getHybridResponse(userMessage) {
   
   // Then, try word-based matching for more specific queries
   for (const [key, data] of Object.entries(FAQ_DATA)) {
+    console.log('🔍 Checking word-based match for key:', key);
     const keyWords = key.toLowerCase().split(' ');
     const messageWords = message.split(' ');
+    
+    console.log('🔍 Key words:', keyWords);
+    console.log('🔍 Message words:', messageWords);
     
     // Check if all key words are present in the message
     const allKeyWordsPresent = keyWords.every(keyWord => 
       messageWords.some(msgWord => msgWord.includes(keyWord) || keyWord.includes(msgWord))
     );
     
+    console.log('🔍 All key words present:', allKeyWordsPresent);
+    
     if (allKeyWordsPresent) {
+      console.log('✅ Word-based match found for:', key);
       const category = data.category;
       const docLink = DOC_LINKS[category];
       
@@ -229,8 +239,40 @@ function getHybridResponse(userMessage) {
     }
   }
   
+  // Additional flexible matching for common variations
+  const flexibleMatches = {
+    'code quality': 'code quality metrics',
+    'quality metrics': 'code quality metrics',
+    'metrics': 'code quality metrics',
+    'admin': 'admin panel',
+    'history': 'history page',
+    'dev review': 'dev review',
+    'development review': 'dev review',
+    'migration': 'migration process',
+    'conversion': 'conversion process'
+  };
+  
+  for (const [flexibleKey, faqKey] of Object.entries(flexibleMatches)) {
+    if (message.includes(flexibleKey)) {
+      console.log('✅ Flexible match found:', flexibleKey, '->', faqKey);
+      const data = FAQ_DATA[faqKey];
+      if (data) {
+        const category = data.category;
+        const docLink = DOC_LINKS[category];
+        
+        return {
+          type: 'faq',
+          answer: data.answer,
+          docLink: docLink ? `For more details, check: ${docLink}` : null,
+          confidence: 'flexible'
+        };
+      }
+    }
+  }
+  
   // Check for documentation requests
   if (message.includes('documentation') || message.includes('docs') || message.includes('guide')) {
+    console.log('✅ Documentation request detected');
     return {
       type: 'docs',
       answer: "Here are the available documentation links:\n" + 
@@ -239,6 +281,7 @@ function getHybridResponse(userMessage) {
     };
   }
   
+  console.log('❌ No FAQ match found, will use AI');
   return null; // Let AI handle it
 }
 
