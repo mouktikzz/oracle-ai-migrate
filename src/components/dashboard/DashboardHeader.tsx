@@ -1,11 +1,12 @@
 
 import React, { useContext } from 'react';
 import { Button } from '@/components/ui/button';
-import { Database, History, HelpCircle } from 'lucide-react';
+import { Database, History, HelpCircle, BookOpen } from 'lucide-react';
 import UserDropdown from '@/components/UserDropdown';
 import HomeButton from '@/components/HomeButton';
 import { ChatbotToggle } from '@/components/ChatbotToggle';
 import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 // import { CodeEditorThemeContext } from '@/contexts/CodeEditorThemeContext';
 
 interface DashboardHeaderProps {

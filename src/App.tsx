@@ -13,6 +13,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import ReportPage from "./pages/ReportPage";
 import AdminPanel from "./pages/AdminPanel";
+import Docs from "./pages/Docs";
 import { CodeEditorThemeProvider } from "@/contexts/CodeEditorThemeContext";
 import { ChatbotProvider } from "@/contexts/ChatbotContext";
 import { ChatbotToggle } from "@/components/ChatbotToggle";
@@ -38,12 +39,13 @@ const AppContent = () => {
         <Route path="/legacy" element={<Index />} />
         <Route path="/report/:reportId" element={<ReportPage />} />
         <Route path="/admin" element={<AdminPanel />} />
+        <Route path="/docs" element={<Docs />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>
       
       {/* Show floating chatbot toggle for pages that don't have it in header */}
-      {user && !isHomePage && location.pathname !== '/migration' && location.pathname !== '/history' && !location.pathname.startsWith('/report/') && location.pathname !== '/admin' && location.pathname !== '/auth' && (
+      {user && !isHomePage && location.pathname !== '/migration' && location.pathname !== '/history' && !location.pathname.startsWith('/report/') && location.pathname !== '/admin' && location.pathname !== '/auth' && location.pathname !== '/docs' && (
         <ChatbotToggle 
           isVisible={true}
           isCollapsed={true}
