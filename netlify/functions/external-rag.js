@@ -64,9 +64,6 @@ exports.handler = async (event, context) => {
       apiKey: process.env.PINECONE_API_KEY
     });
 
-    // Generate query embedding using simple text similarity
-    const queryEmbedding = generateSimpleEmbedding(query);
-
     // Get the index
     const indexName = 'oracle-migration-docs';
     let index;
@@ -88,31 +85,67 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // Search Pinecone with timeout
-    console.log('🔍 Searching Pinecone with query:', query);
-    const searchPromise = index.query({
-      vector: queryEmbedding,
-      topK: 3, // Reduced from 5 to 3 for faster response
-      includeMetadata: true
-    });
+    // Extract key terms from the query for better matching
+    const keyTerms = extractKeyTerms(query);
+    console.log('🔍 Extracted key terms:', keyTerms);
     
-    // Add timeout to prevent 504 errors
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Pinecone search timeout')), 8000); // 8 second timeout
-    });
+    // Try multiple search strategies
+    let bestResults = null;
+    let bestScore = 0;
     
-    const results = await Promise.race([searchPromise, timeoutPromise]);
+    // Strategy 1: Original query
+    try {
+      const originalQueryEmbedding = generateSimpleEmbedding(query);
+      const originalResults = await index.query({
+        vector: originalQueryEmbedding,
+        topK: 3,
+        includeMetadata: true
+      });
+      
+      if (originalResults.matches.length > 0) {
+        const avgScore = originalResults.matches.reduce((sum, m) => sum + m.score, 0) / originalResults.matches.length;
+        if (avgScore > bestScore) {
+          bestResults = originalResults;
+          bestScore = avgScore;
+        }
+      }
+    } catch (error) {
+      console.error('Original query search failed:', error.message);
+    }
+    
+    // Strategy 2: Key terms search
+    for (const term of keyTerms) {
+      try {
+        const termEmbedding = generateSimpleEmbedding(term);
+        const termResults = await index.query({
+          vector: termEmbedding,
+          topK: 2,
+          includeMetadata: true
+        });
+        
+        if (termResults.matches.length > 0) {
+          const avgScore = termResults.matches.reduce((sum, m) => sum + m.score, 0) / termResults.matches.length;
+          if (avgScore > bestScore) {
+            bestResults = termResults;
+            bestScore = avgScore;
+          }
+        }
+      } catch (error) {
+        console.error(`Term search failed for "${term}":`, error.message);
+      }
+    }
 
-    console.log('📊 Pinecone results:', {
-      totalMatches: results.matches.length,
-      matches: results.matches.map(m => ({ id: m.id, score: m.score, hasText: !!m.metadata?.text, hasContent: !!m.metadata?.content }))
-    });
+    console.log('📊 Best results score:', bestScore);
+    console.log('📊 Best results matches:', bestResults?.matches.length || 0);
 
     // Extract context from results
-    const context = results.matches
-      .map(match => match.metadata?.text || match.metadata?.content || '')
-      .filter(content => content.length > 0)
-      .join('\n\n');
+    let context = '';
+    if (bestResults && bestResults.matches.length > 0) {
+      context = bestResults.matches
+        .map(match => match.metadata?.text || match.metadata?.content || '')
+        .filter(content => content.length > 0)
+        .join('\n\n');
+    }
 
     console.log('📄 Context length:', context.length);
     if (context.length === 0) {
@@ -127,12 +160,14 @@ exports.handler = async (event, context) => {
       },
       body: JSON.stringify({ 
         context,
-        matches: results.matches.length,
+        matches: bestResults?.matches.length || 0,
         query: query,
+        keyTerms: keyTerms,
         debug: {
-          totalMatches: results.matches.length,
+          totalMatches: bestResults?.matches.length || 0,
           contextLength: context.length,
-          hasResults: results.matches.length > 0
+          hasResults: (bestResults?.matches.length || 0) > 0,
+          bestScore: bestScore
         }
       })
     };
@@ -153,6 +188,34 @@ exports.handler = async (event, context) => {
     };
   }
 };
+
+// Extract key terms from query for better search
+function extractKeyTerms(query) {
+  const words = query.toLowerCase().split(/\s+/);
+  const stopWords = new Set(['how', 'do', 'i', 'you', 'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'this', 'that', 'these', 'those', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'will', 'would', 'could', 'should', 'can', 'may', 'might', 'must', 'shall']);
+  
+  const keyTerms = words
+    .filter(word => word.length > 2 && !stopWords.has(word))
+    .map(word => word.replace(/[^\w]/g, ''))
+    .filter(word => word.length > 0);
+  
+  // Add common variations
+  const variations = [];
+  keyTerms.forEach(term => {
+    variations.push(term);
+    if (term.endsWith('ing')) {
+      variations.push(term.slice(0, -3)); // remove 'ing'
+    }
+    if (term.endsWith('ed')) {
+      variations.push(term.slice(0, -2)); // remove 'ed'
+    }
+    if (term.endsWith('s')) {
+      variations.push(term.slice(0, -1)); // remove 's'
+    }
+  });
+  
+  return [...new Set(variations)]; // remove duplicates
+}
 
 // Simple text similarity function (no external API needed)
 function generateSimpleEmbedding(text) {

@@ -2,6 +2,9 @@ const { Pinecone } = require('@pinecone-database/pinecone');
 const fs = require('fs');
 const path = require('path');
 
+// Load environment variables from .env file
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+
 // Simple embedding function (same as used in external-rag.js)
 function generateSimpleEmbedding(text) {
   const hash = require('crypto').createHash('sha256').update(text).digest('hex');

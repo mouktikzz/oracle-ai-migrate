@@ -44,8 +44,9 @@ const SYSTEM_PROMPT = `You are an AI assistant for a Sybase to Oracle migration 
 RESPONSE GUIDELINES:
 - Use the provided project knowledge and documentation to answer questions
 - If relevant documentation is provided, use it to give detailed, helpful answers
-- If no relevant documentation is provided, clearly state that you don't have specific information about that aspect
-- Be concise and direct
+- If the documentation contains related information, provide what you can and suggest additional resources
+- Only say you don't have information if the documentation truly doesn't contain any relevant content
+- Be helpful and provide actionable advice based on available information
 - Focus on practical, actionable advice for Oracle migration projects`;
 
 // RAG Integration Function
@@ -54,13 +55,19 @@ async function getRAGContext(query) {
     console.log('🔍 Calling RAG API for query:', query);
     
     // Call the external-rag function
-    const ragResponse = await fetch(`${process.env.URL || 'http://localhost:8888'}/.netlify/functions/external-rag`, {
+    const baseUrl = process.env.URL || 'http://localhost:8888';
+    const ragUrl = `${baseUrl}/.netlify/functions/external-rag`;
+    console.log('🔗 RAG URL:', ragUrl);
+    
+    const ragResponse = await fetch(ragUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ query }),
     });
+
+    console.log('📡 RAG response status:', ragResponse.status);
 
     if (!ragResponse.ok) {
       console.error('❌ RAG API error:', ragResponse.status);
@@ -69,6 +76,7 @@ async function getRAGContext(query) {
 
     const ragData = await ragResponse.json();
     console.log('✅ RAG response received, context length:', ragData.context?.length || 0);
+    console.log('✅ RAG response data:', JSON.stringify(ragData, null, 2));
     
     return {
       context: ragData.context,
@@ -93,10 +101,11 @@ RELEVANT PROJECT DOCUMENTATION:
 ${ragContext.context}
 
 INSTRUCTIONS:
-- Use the above documentation to provide accurate and specific answers
+- Use the above documentation to provide accurate and helpful answers
 - If the documentation contains relevant information, provide detailed responses
-- If the documentation doesn't contain relevant information, clearly state that you don't have specific information about that aspect
-- Always reference the documentation when providing answers`;
+- If the documentation has related information, provide what you can and suggest additional resources
+- Be helpful and provide actionable advice based on the available documentation
+- Only say you don't have information if the documentation truly doesn't contain any relevant content`;
 }
 
 async function callOpenRouterAPI(messages, model = 'qwen/qwen3-coder:free') {
@@ -387,6 +396,7 @@ exports.handler = async function(event, context) {
       console.log('📄 RAG context length:', ragContext.context.length, 'characters');
       console.log('🔗 RAG matches found:', ragContext.matches || 0);
       console.log('📄 RAG context preview:', ragContext.context.substring(0, 200) + '...');
+      console.log('📄 RAG context full:', ragContext.context);
     } else {
       console.log('⚠️ No RAG context found - using AI without documentation');
     }
@@ -397,6 +407,7 @@ exports.handler = async function(event, context) {
     
     console.log('🤖 Enhanced prompt length:', enhancedSystemPrompt.length, 'characters');
     console.log('🤖 Enhanced prompt preview:', enhancedSystemPrompt.substring(0, 300) + '...');
+    console.log('🤖 Enhanced prompt full:', enhancedSystemPrompt);
     
     const messages = [
       { role: 'system', content: enhancedSystemPrompt },
