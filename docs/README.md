@@ -53,4 +53,4 @@ See the [Contributing Guide](./developer-guide/contributing.md) for information 
 
 ## 📄 License
 
-This project is proprietary. See the main repository for license information.
+This project is licensed under the [MIT License](LICENSE).
