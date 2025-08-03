@@ -55,6 +55,15 @@ export interface ChatbotResponse {
     language: string;
     description: string;
   }[];
+  docsContext?: {
+    file: string;
+    description: string;
+    sections: Array<{
+      section: string;
+      content: string;
+      lineNumber: number;
+    }>;
+  }[];
 }
 
 export type ChatbotIntent = 

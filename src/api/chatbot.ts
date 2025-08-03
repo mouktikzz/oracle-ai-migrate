@@ -15,6 +15,15 @@ export interface ChatbotAPIResponse {
   intent: string;
   suggestions: string[];
   timestamp: string;
+  docsContext?: {
+    file: string;
+    description: string;
+    sections: Array<{
+      section: string;
+      content: string;
+      lineNumber: number;
+    }>;
+  }[];
 }
 
 export const sendChatMessage = async (request: ChatbotRequest): Promise<ChatbotResponse> => {
@@ -22,10 +31,12 @@ export const sendChatMessage = async (request: ChatbotRequest): Promise<ChatbotR
     console.log('Sending request to:', `${API_BASE_URL}/chatbot`);
     console.log('Request payload:', request);
     
-    const response = await fetch(`${API_BASE_URL}/chatbot`, {
+    const response = await fetch(`${API_BASE_URL}/chatbot?t=${Date.now()}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
       },
       body: JSON.stringify(request),
     });
@@ -50,12 +61,14 @@ export const sendChatMessage = async (request: ChatbotRequest): Promise<ChatbotR
       type: 'text',
       metadata: {
         suggestions: data.suggestions,
+        source: data.source,
       },
     };
 
     return {
       message: assistantMessage,
       suggestions: data.suggestions,
+      docsContext: data.docsContext,
     };
   } catch (error) {
     console.error('Chatbot API error:', error);

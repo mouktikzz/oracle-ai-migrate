@@ -1,25 +1,103 @@
 const fetch = require('node-fetch');
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-const GEMINI_API_KEY = process.env.VITE_GEMINI_API_KEY;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
 
-const SYSTEM_PROMPT = `You are an expert Oracle database migration assistant for a specific Sybase to Oracle migration project.
+// Hybrid Knowledge System
+const FAQ_DATA = {
+  "admin panel": {
+    answer: "The admin panel provides comprehensive management capabilities for the Oracle migration tool. It includes user management, migration monitoring, performance analytics, and system configuration. Administrators can view all user activities, manage migration projects, and access detailed reports. The panel features a dashboard with real-time metrics, user activity logs, and system health monitoring.",
+    category: "administration"
+  },
+  "history page": {
+    answer: "The history page tracks migration history, conversion results, and user activities. It shows completed migrations, conversion statistics, and detailed reports. Users can review past migrations, download conversion results, and analyze performance metrics. The page includes filtering options and export capabilities for comprehensive migration tracking.",
+    category: "tracking"
+  },
+  "dev review": {
+    answer: "The dev review tab allows developers to review and approve migration changes. It shows pending conversions that need review, code quality metrics, and suggested improvements. Developers can approve, reject, or request changes to converted code. The review process ensures code quality and maintains standards across the migration project.",
+    category: "development"
+  },
+  "code quality metrics": {
+    answer: "Code quality metrics include cyclomatic complexity, lines of code (LOC), comment ratio, maintainability index, performance score, modern features usage, bulk operations, scalability indicators, and overall performance score. These metrics help evaluate the quality of converted Oracle code and ensure it meets high standards.",
+    category: "quality"
+  },
+  "migration process": {
+    answer: "The migration process involves uploading Sybase code, converting it to Oracle syntax, analyzing code quality, and generating reports. The system supports stored procedures, functions, triggers, and data type conversions. Users can review conversions, download results, and track migration progress through the dashboard.",
+    category: "process"
+  },
+  "conversion process": {
+    answer: "The conversion process automatically transforms Sybase code to Oracle-compatible syntax. It handles data type mappings, function conversions, and syntax adjustments. The system provides real-time conversion status, quality metrics, and detailed reports. Users can review and approve conversions before deployment.",
+    category: "process"
+  }
+};
 
-PROJECT CONTEXT:
-- This is a Sybase to Oracle migration project
-- The project uses React/TypeScript frontend with Vite
-- Backend uses Netlify Functions for serverless API calls
-- Database: Supabase (PostgreSQL-based)
-- AI Integration: Google Gemini and OpenRouter APIs
-- Migration tools: Custom conversion utilities for stored procedures
-- File handling: Supports SQL file uploads and conversions
+const DOC_LINKS = {
+  "admin": "/docs/admin-panel.md",
+  "history": "/docs/history-page.md",
+  "migration": "/docs/migration-process.md",
+  "quality": "/docs/code-quality.md",
+  "conversion": "/docs/conversion-guide.md"
+};
+
+const SYSTEM_PROMPT = `You are an AI assistant for a Sybase to Oracle migration project.
 
 RESPONSE GUIDELINES:
-- Provide natural, conversational responses without robotic phrases like "Okay, based on the project context..."
-- Prioritize project-specific answers when questions relate to this codebase
-- Use generic Oracle migration guidance only when questions aren't project-related
-- Be concise, practical, and direct
-- Start responses naturally without repetitive introductions`;
+- Use the provided project knowledge and documentation to answer questions
+- If relevant documentation is provided, use it to give detailed, helpful answers
+- If the documentation contains related information, provide what you can and suggest additional resources
+- Only say you don't have information if the documentation truly doesn't contain any relevant content
+- Be helpful and provide actionable advice based on available information
+- Focus on practical, actionable advice for Oracle migration projects`;
+
+// RAG Integration Function
+async function getRAGContext(query) {
+  try {
+    // Call the external-rag function
+    const baseUrl = process.env.URL || 'http://localhost:8888';
+    const ragUrl = `${baseUrl}/.netlify/functions/external-rag`;
+    
+    const ragResponse = await fetch(ragUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ query }),
+    });
+
+    if (!ragResponse.ok) {
+      return null;
+    }
+
+    const ragData = await ragResponse.json();
+    
+    return {
+      context: ragData.context,
+      matches: ragData.matches,
+      debug: ragData.debug
+    };
+  } catch (error) {
+    return null;
+  }
+}
+
+// Enhanced system prompt with RAG context
+function buildEnhancedPrompt(basePrompt, ragContext) {
+  if (!ragContext || !ragContext.context) {
+    return basePrompt;
+  }
+
+  return `${basePrompt}
+
+RELEVANT PROJECT DOCUMENTATION:
+${ragContext.context}
+
+INSTRUCTIONS:
+- Use the above documentation to provide accurate and helpful answers
+- If the documentation contains relevant information, provide detailed responses
+- If the documentation has related information, provide what you can and suggest additional resources
+- Be helpful and provide actionable advice based on the available documentation
+- Only say you don't have information if the documentation truly doesn't contain any relevant content`;
+}
 
 async function callOpenRouterAPI(messages, model = 'qwen/qwen3-coder:free') {
   const body = {
@@ -49,18 +127,19 @@ async function callOpenRouterAPI(messages, model = 'qwen/qwen3-coder:free') {
     const data = await response.json();
     return data.choices?.[0]?.message?.content || 'Sorry, I couldn\'t generate a response.';
   } catch (error) {
-    console.error('OpenRouter API error:', error);
     throw error;
   }
 }
 
 async function callGeminiAPI(messages) {
-  const lastUserMessage = messages.filter(m => m.role === 'user').pop()?.content || '';
+  // Build the full conversation context
+  const systemMessage = messages.find(m => m.role === 'system')?.content || SYSTEM_PROMPT;
+  const conversationMessages = messages.filter(m => m.role !== 'system');
   
   const body = {
     contents: [{
       parts: [{
-        text: SYSTEM_PROMPT + '\n\nUser: ' + lastUserMessage
+        text: systemMessage + '\n\n' + conversationMessages.map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`).join('\n\n')
       }]
     }]
   };
@@ -75,74 +154,114 @@ async function callGeminiAPI(messages) {
     });
 
     if (!response.ok) {
-      throw new Error(`Gemini API error: ${response.status}`);
+      const errorText = await response.text();
+      throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
     return data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I couldn\'t generate a response.';
   } catch (error) {
-    console.error('Gemini API error:', error);
     throw error;
   }
 }
 
 function extractIntent(userMessage) {
-  const message = userMessage.toLowerCase();
-  
-  if (message.includes('explain') || message.includes('what does') || message.includes('how does')) {
-    return 'code_explanation';
-  }
-  if (message.includes('migrate') || message.includes('convert') || message.includes('oracle')) {
-    return 'migration_help';
-  }
-  if (message.includes('data type') || message.includes('varchar') || message.includes('int')) {
-    return 'data_type_mapping';
-  }
-  if (message.includes('syntax') || message.includes('error') || message.includes('fix')) {
-    return 'syntax_help';
-  }
-  if (message.includes('performance') || message.includes('optimize') || message.includes('fast')) {
-    return 'best_practices';
-  }
-  
+  // Simple intent extraction without hardcoded knowledge
   return 'general_question';
 }
 
 function generateSuggestions(intent) {
-  const suggestions = {
-    code_explanation: [
-      "Can you show me the converted Oracle version?",
-      "What are the key differences between Sybase and Oracle?",
-      "How can I optimize this code for Oracle?"
-    ],
-    migration_help: [
-      "What are the main challenges in Sybase to Oracle migration?",
-      "How do I handle stored procedures?",
-      "What about triggers and functions?"
-    ],
-    data_type_mapping: [
-      "Show me the complete data type mapping table",
-      "How do I handle TEXT and IMAGE types?",
-      "What about custom data types?"
-    ],
-    syntax_help: [
-      "How do I convert Sybase date functions?",
-      "What's the Oracle equivalent of @@IDENTITY?",
-      "How do I handle temporary tables?"
-    ],
-    best_practices: [
-      "What are Oracle performance best practices?",
-      "How do I use bulk operations?",
-      "What about indexing strategies?"
-    ],
-    general_question: [
-      "How do I start a migration project?",
-      "What tools do you recommend?",
-      "Can you explain the migration process?"
-    ]
+  // Return generic suggestions that don't contain specific knowledge
+  return [
+    "Can you help me with this?",
+    "What should I know about this?",
+    "Tell me more about this topic"
+  ];
+}
+
+// Hybrid Knowledge Function
+function getHybridResponse(userMessage) {
+  const message = userMessage.toLowerCase();
+  
+  // First, try exact matches
+  for (const [key, data] of Object.entries(FAQ_DATA)) {
+    if (message.includes(key.toLowerCase())) {
+      const category = data.category;
+      const docLink = DOC_LINKS[category];
+      
+      return {
+        type: 'faq',
+        answer: data.answer,
+        docLink: docLink ? `For more details, check: ${docLink}` : null,
+        confidence: 'high'
+      };
+    }
+  }
+  
+  // Then, try word-based matching for more specific queries
+  for (const [key, data] of Object.entries(FAQ_DATA)) {
+    const keyWords = key.toLowerCase().split(' ');
+    const messageWords = message.split(' ');
+    
+    // Check if all key words are present in the message
+    const allKeyWordsPresent = keyWords.every(keyWord => 
+      messageWords.some(msgWord => msgWord.includes(keyWord) || keyWord.includes(msgWord))
+    );
+    
+    if (allKeyWordsPresent) {
+      const category = data.category;
+      const docLink = DOC_LINKS[category];
+      
+      return {
+        type: 'faq',
+        answer: data.answer,
+        docLink: docLink ? `For more details, check: ${docLink}` : null,
+        confidence: 'medium'
+      };
+    }
+  }
+  
+  // Additional flexible matching for common variations
+  const flexibleMatches = {
+    'code quality': 'code quality metrics',
+    'quality metrics': 'code quality metrics',
+    'metrics': 'code quality metrics',
+    'admin': 'admin panel',
+    'history': 'history page',
+    'dev review': 'dev review',
+    'development review': 'dev review',
+    'migration': 'migration process',
+    'conversion': 'conversion process'
   };
   
-  return suggestions[intent] || suggestions.general_question;
+  for (const [flexibleKey, faqKey] of Object.entries(flexibleMatches)) {
+    if (message.includes(flexibleKey)) {
+      const data = FAQ_DATA[faqKey];
+      if (data) {
+        const category = data.category;
+        const docLink = DOC_LINKS[category];
+        
+        return {
+          type: 'faq',
+          answer: data.answer,
+          docLink: docLink ? `For more details, check: ${docLink}` : null,
+          confidence: 'flexible'
+        };
+      }
+    }
+  }
+  
+  // Check for documentation requests
+  if (message.includes('documentation') || message.includes('docs') || message.includes('guide')) {
+    return {
+      type: 'docs',
+      answer: "Here are the available documentation links:\n" + 
+              Object.entries(DOC_LINKS).map(([key, link]) => `- ${key}: ${link}`).join('\n'),
+      confidence: 'medium'
+    };
+  }
+  
+  return null; // Let AI handle it
 }
 
 exports.handler = async function(event, context) {
@@ -150,8 +269,12 @@ exports.handler = async function(event, context) {
   const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS'
+    'Access-Control-Allow-Headers': 'Content-Type, Cache-Control, Pragma',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+    'Surrogate-Control': 'no-store'
   };
 
   // Handle preflight requests
@@ -195,7 +318,7 @@ exports.handler = async function(event, context) {
 
   try {
     const { message, conversationHistory = [], model = 'gemini' } = JSON.parse(event.body);
-    
+     
     if (!message) {
       return { 
         statusCode: 400, 
@@ -207,9 +330,38 @@ exports.handler = async function(event, context) {
     // Extract intent from user message
     const intent = extractIntent(message);
     
+    // Hybrid Knowledge System: Check FAQ and docs first
+    const hybridResponse = getHybridResponse(message);
+    
+    if (hybridResponse) {
+      
+      let finalAnswer = hybridResponse.answer;
+      if (hybridResponse.docLink) {
+        finalAnswer += '\n\n' + hybridResponse.docLink;
+      }
+      
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          message: finalAnswer,
+          intent: intent,
+          suggestions: generateSuggestions(intent),
+          timestamp: new Date().toISOString(),
+          source: 'hardcoded_faq'
+        })
+      };
+    }
+    
+    // Get RAG context
+    const ragContext = await getRAGContext(message);
+    
     // Prepare conversation history for API
+    const baseSystemPrompt = SYSTEM_PROMPT;
+    const enhancedSystemPrompt = buildEnhancedPrompt(baseSystemPrompt, ragContext);
+    
     const messages = [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: enhancedSystemPrompt },
       ...conversationHistory.map(msg => ({
         role: msg.role,
         content: msg.content
@@ -232,7 +384,6 @@ exports.handler = async function(event, context) {
     } catch (error) {
       // If Gemini fails, try OpenRouter as fallback
       if (OPENROUTER_API_KEY && error.message.includes('Gemini API error')) {
-        console.log('Gemini failed, falling back to OpenRouter');
         response = await callOpenRouterAPI(messages);
       } else {
         throw error;
@@ -242,6 +393,21 @@ exports.handler = async function(event, context) {
     // Generate contextual suggestions
     const suggestions = generateSuggestions(intent);
 
+    // Prepare docsContext for UI display
+    let docsContext = null;
+    if (ragContext && ragContext.context) {
+      // Parse the context into a structured format for the UI
+      docsContext = [{
+        file: 'Project Documentation',
+        description: 'Relevant documentation retrieved from RAG system',
+        sections: [{
+          section: 'Retrieved Context',
+          content: ragContext.context.substring(0, 500) + (ragContext.context.length > 500 ? '...' : ''),
+          lineNumber: 1
+        }]
+      }];
+    }
+
     return {
       statusCode: 200,
       headers,
@@ -249,7 +415,9 @@ exports.handler = async function(event, context) {
         message: response,
         intent: intent,
         suggestions: suggestions,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        docsContext: docsContext,
+        source: 'ai_with_rag'
       })
     };
 

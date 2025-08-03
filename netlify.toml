@@ -3,6 +3,12 @@
   publish = "dist"
   functions = "netlify/functions"
 
+[dev]
+  command = "npm run dev"
+  port = 8888
+  targetPort = 8081
+  publish = "dist"
+
 [build.environment]
   NODE_VERSION = "18"
 
@@ -14,4 +20,4 @@
 [[redirects]]
   from = "/*"
   to = "/index.html"
-  status = 200 
+  status = 200

@@ -46,3 +46,6 @@ pnpm-lock.yaml
 test-*.js
 test-*.ts
 test-*.tsx
+
+# Local Netlify folder
+.netlify

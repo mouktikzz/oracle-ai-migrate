@@ -71,7 +71,16 @@ const MessageBubble: React.FC<{
   message: ChatMessage; 
   onCopy?: (content: string, messageId: string) => void;
   copiedMessageId?: string | null;
-}> = ({ message, onCopy, copiedMessageId }) => {
+  docsContext?: {
+    file: string;
+    description: string;
+    sections: Array<{
+      section: string;
+      content: string;
+      lineNumber: number;
+    }>;
+  }[];
+}> = ({ message, onCopy, copiedMessageId, docsContext }) => {
   const isUser = message.role === 'user';
   
   return (
@@ -108,6 +117,26 @@ const MessageBubble: React.FC<{
               </pre>
             </div>
           )}
+          {docsContext && docsContext.length > 0 && !isUser && (
+            <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-2">
+                📚 Relevant Documentation
+              </div>
+              {docsContext.map((doc, index) => (
+                <div key={index} className="mb-2 last:mb-0">
+                  <div className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                    {doc.file} - {doc.description}
+                  </div>
+                  {doc.sections.map((section, sectionIndex) => (
+                    <div key={sectionIndex} className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                      <div className="font-medium">{section.section}</div>
+                      <div className="mt-1">{section.content}</div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
           <div className="flex items-center justify-between mt-2">
             <div className={cn(
               'text-xs opacity-60',
@@ -115,20 +144,22 @@ const MessageBubble: React.FC<{
             )}>
               {message.timestamp.toLocaleTimeString()}
             </div>
-            {!isUser && onCopy && (
-              <Button
-                onClick={() => onCopy(message.content, message.id)}
-                variant="ghost"
-                size="sm"
-                className="h-5 w-5 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                {copiedMessageId === message.id ? (
-                  <Check className="h-3 w-3" />
-                ) : (
-                  <Copy className="h-3 w-3" />
-                )}
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              {!isUser && onCopy && (
+                <Button
+                  onClick={() => onCopy(message.content, message.id)}
+                  variant="ghost"
+                  size="sm"
+                  className="h-5 w-5 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  {copiedMessageId === message.id ? (
+                    <Check className="h-3 w-3" />
+                  ) : (
+                    <Copy className="h-3 w-3" />
+                  )}
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -197,6 +228,15 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen, onClose, className }) 
   const [inputValue, setInputValue] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+  const [docsContext, setDocsContext] = useState<{
+    file: string;
+    description: string;
+    sections: Array<{
+      section: string;
+      content: string;
+      lineNumber: number;
+    }>;
+  }[] | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const resizeRef = useRef<HTMLDivElement>(null);
@@ -287,6 +327,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen, onClose, className }) 
 
         addMessage(newConversationId, response.message);
         setSuggestions(response.suggestions || []);
+        setDocsContext(response.docsContext || null);
       } catch (err) {
         console.error('Chatbot error:', err);
         setError('Failed to send message');
@@ -365,6 +406,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen, onClose, className }) 
     createConversation('New Conversation');
     setSuggestions([]);
     setInputValue('');
+    setDocsContext(null);
   };
 
   // Fallback responses for when AI is unavailable
@@ -685,12 +727,13 @@ What would you like to know about your migration project?`;
              </div>
           ) : (
                          <div>
-               {currentConversation.messages.map((message) => (
+               {currentConversation.messages.map((message, index) => (
                  <MessageBubble 
                    key={message.id} 
                    message={message} 
                    onCopy={copyMessage}
                    copiedMessageId={copiedMessageId}
+                   docsContext={message.role === 'assistant' && index === currentConversation.messages.length - 1 ? docsContext : undefined}
                  />
                ))}
                            {isLoading && (
