@@ -29,9 +29,7 @@ export const ChatbotSettings: React.FC<ChatbotSettingsProps> = ({ isOpen, onClos
     updateConfig({ maxTokens: value[0] });
   };
 
-  const handleSystemPromptChange = (prompt: string) => {
-    updateConfig({ systemPrompt: prompt });
-  };
+
 
   if (!isOpen) return null;
 
@@ -113,21 +111,7 @@ export const ChatbotSettings: React.FC<ChatbotSettingsProps> = ({ isOpen, onClos
             </div>
           </div>
 
-          <Separator />
 
-          {/* System Prompt */}
-          <div className="space-y-2">
-            <Label htmlFor="systemPrompt">System Prompt</Label>
-            <textarea
-              id="systemPrompt"
-              value={config.systemPrompt}
-              onChange={(e) => handleSystemPromptChange(e.target.value)}
-              className="w-full min-h-[80px] p-2 text-sm border rounded-md resize-none"
-              placeholder="Customize how the AI assistant behaves..."
-            />
-          </div>
-
-          <Separator />
 
           {/* Actions */}
           <div className="flex gap-2 pt-2">
