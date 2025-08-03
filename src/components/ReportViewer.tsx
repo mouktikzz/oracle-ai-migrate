@@ -199,6 +199,7 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ report, onBack }) => {
           }
         }));
       }
+      const deploymentResults = [];
       for (const file of filesToInsert) {
         const deployResult = await deployToOracle(
           { 
@@ -211,6 +212,11 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ report, onBack }) => {
           },
           file.converted_content
         );
+        deploymentResults.push({
+          fileName: file.file_name,
+          success: deployResult.success,
+          message: deployResult.message
+        });
         if (!deployResult.success) allSuccess = false;
       }
       const { data: migration, error: migrationError } = await supabase
@@ -227,28 +233,47 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ report, onBack }) => {
         );
         await supabase.from('unreviewed_files').delete().eq('user_id', user.id).eq('status', 'reviewed');
       }
+      // Create detailed error message if any files failed
+      let errorMessage = undefined;
+      if (!allSuccess) {
+        const failedFiles = deploymentResults.filter(r => !r.success);
+        if (failedFiles.length === 1) {
+          errorMessage = `Failed to deploy ${failedFiles[0].fileName}: ${failedFiles[0].message}`;
+        } else {
+          const failedFileNames = failedFiles.map(f => f.fileName).join(', ');
+          errorMessage = `Failed to deploy ${failedFiles.length} files: ${failedFileNames}`;
+        }
+      }
+
       const logEntry = await saveDeploymentLog(
         allSuccess ? 'Success' : 'Failed',
         linesOfSql,
         fileCount,
-        allSuccess ? undefined : 'One or more files failed to deploy.'
+        errorMessage
       );
       toast({
         title: allSuccess ? 'Deployment Successful' : 'Deployment Failed',
-        description: allSuccess ? 'All files deployed successfully.' : 'Some files failed to deploy.',
+        description: allSuccess 
+          ? `All ${fileCount} files deployed successfully.` 
+          : `Failed to deploy ${deploymentResults.filter(r => !r.success).length} of ${fileCount} files.`,
         variant: allSuccess ? 'default' : 'destructive',
       });
       if (logEntry) {
         console.log('Deployment log saved:', logEntry);
+        // Refresh the deployment logs to show the new entry
+        await fetchDeploymentLogs();
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      await saveDeploymentLog(
+      const errorLogEntry = await saveDeploymentLog(
         'Failed',
         report.summary.split('\n').length,
         report.filesProcessed,
         errorMessage
       );
+      if (errorLogEntry) {
+        await fetchDeploymentLogs();
+      }
       toast({
         title: 'Deployment Failed',
         description: 'An unexpected error occurred during deployment.',
@@ -608,6 +633,9 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ report, onBack }) => {
         </CardHeader>
         <CardContent>
           <h3 className="text-lg font-medium mb-3 flex items-center gap-2"><Database className="h-5 w-5 text-blue-500" /> Deployment Logs</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+            Tracks actual deployment attempts to Oracle database. This is separate from file conversion status shown in History.
+          </p>
           <ScrollArea className="h-64 border rounded-md">
                 {deploymentLogs.length === 0 ? (
               <div className="flex items-center justify-center h-full text-gray-500">
