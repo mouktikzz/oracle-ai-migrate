@@ -42,12 +42,15 @@ export const deployToOracle = async (
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 2000));
   
-  // Randomly succeed or fail for demo purposes
-  const success = Math.random() > 0.1;
+  // For demo purposes, always succeed unless there's a syntax error
+  // This provides a more realistic experience while avoiding random false failures
+  // that could confuse users about deployment status
+  const hasSyntaxError = code.includes('SYNTAX_ERROR') || code.includes('INVALID_SQL');
+  const success = !hasSyntaxError;
   
   return {
     success,
-    message: success ? 'Code deployed successfully!' : 'Deployment failed. Check the code and database connection.'
+    message: success ? 'Code deployed successfully!' : 'Deployment failed due to syntax error in the code.'
   };
 };
 
