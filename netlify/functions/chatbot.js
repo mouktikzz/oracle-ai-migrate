@@ -41,13 +41,12 @@ const DOC_LINKS = {
 
 const SYSTEM_PROMPT = `You are an AI assistant for a Sybase to Oracle migration project.
 
-IMPORTANT: You can ONLY use the provided project knowledge to answer questions. If no relevant knowledge is provided, say "I don't have information about that specific aspect of the project."
-
 RESPONSE GUIDELINES:
-- Use ONLY the provided project knowledge
-- If no knowledge is provided, clearly state you don't have information
+- Use the provided project knowledge and documentation to answer questions
+- If relevant documentation is provided, use it to give detailed, helpful answers
+- If no relevant documentation is provided, clearly state that you don't have specific information about that aspect
 - Be concise and direct
-- Do not use any external knowledge or general information`;
+- Focus on practical, actionable advice for Oracle migration projects`;
 
 // RAG Integration Function
 async function getRAGContext(query) {
@@ -93,7 +92,11 @@ function buildEnhancedPrompt(basePrompt, ragContext) {
 RELEVANT PROJECT DOCUMENTATION:
 ${ragContext.context}
 
-Use the above documentation to provide accurate and specific answers about the project. If the documentation doesn't contain relevant information, clearly state that you don't have specific information about that aspect.`;
+INSTRUCTIONS:
+- Use the above documentation to provide accurate and specific answers
+- If the documentation contains relevant information, provide detailed responses
+- If the documentation doesn't contain relevant information, clearly state that you don't have specific information about that aspect
+- Always reference the documentation when providing answers`;
 }
 
 async function callOpenRouterAPI(messages, model = 'qwen/qwen3-coder:free') {
@@ -383,6 +386,7 @@ exports.handler = async function(event, context) {
     if (ragContext && ragContext.context) {
       console.log('📄 RAG context length:', ragContext.context.length, 'characters');
       console.log('🔗 RAG matches found:', ragContext.matches || 0);
+      console.log('📄 RAG context preview:', ragContext.context.substring(0, 200) + '...');
     } else {
       console.log('⚠️ No RAG context found - using AI without documentation');
     }
@@ -390,6 +394,9 @@ exports.handler = async function(event, context) {
     // Prepare conversation history for API
     const baseSystemPrompt = SYSTEM_PROMPT;
     const enhancedSystemPrompt = buildEnhancedPrompt(baseSystemPrompt, ragContext);
+    
+    console.log('🤖 Enhanced prompt length:', enhancedSystemPrompt.length, 'characters');
+    console.log('🤖 Enhanced prompt preview:', enhancedSystemPrompt.substring(0, 300) + '...');
     
     const messages = [
       { role: 'system', content: enhancedSystemPrompt },
