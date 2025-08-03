@@ -144,20 +144,30 @@ const MessageBubble: React.FC<{
             )}>
               {message.timestamp.toLocaleTimeString()}
             </div>
-            {!isUser && onCopy && (
-              <Button
-                onClick={() => onCopy(message.content, message.id)}
-                variant="ghost"
-                size="sm"
-                className="h-5 w-5 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                {copiedMessageId === message.id ? (
-                  <Check className="h-3 w-3" />
-                ) : (
-                  <Copy className="h-3 w-3" />
-                )}
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              {!isUser && message.metadata?.source && (
+                <Badge 
+                  variant={message.metadata.source === 'hardcoded_faq' ? 'secondary' : 'default'}
+                  className="text-xs px-2 py-0 h-5"
+                >
+                  {message.metadata.source === 'hardcoded_faq' ? 'FAQ' : 'RAG'}
+                </Badge>
+              )}
+              {!isUser && onCopy && (
+                <Button
+                  onClick={() => onCopy(message.content, message.id)}
+                  variant="ghost"
+                  size="sm"
+                  className="h-5 w-5 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  {copiedMessageId === message.id ? (
+                    <Check className="h-3 w-3" />
+                  ) : (
+                    <Copy className="h-3 w-3" />
+                  )}
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>

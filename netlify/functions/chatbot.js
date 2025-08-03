@@ -310,6 +310,7 @@ exports.handler = async function(event, context) {
     
     if (hybridResponse) {
       console.log('✅ Found hybrid response:', hybridResponse.type);
+      console.log('📋 SOURCE: HARDCODED FAQ RESPONSE');
       
       let finalAnswer = hybridResponse.answer;
       if (hybridResponse.docLink) {
@@ -324,16 +325,24 @@ exports.handler = async function(event, context) {
           intent: intent,
           suggestions: generateSuggestions(intent),
           timestamp: new Date().toISOString(),
-          source: 'hybrid'
+          source: 'hardcoded_faq'
         })
       };
     }
     
     console.log('🤖 No hybrid response found, using AI with RAG...');
+    console.log('📋 SOURCE: RAG-POWERED AI RESPONSE');
     
     // Get RAG context
     const ragContext = await getRAGContext(message);
     console.log('📚 RAG context retrieved:', ragContext ? 'Yes' : 'No');
+    
+    if (ragContext && ragContext.context) {
+      console.log('📄 RAG context length:', ragContext.context.length, 'characters');
+      console.log('🔗 RAG matches found:', ragContext.matches || 0);
+    } else {
+      console.log('⚠️ No RAG context found - using AI without documentation');
+    }
     
     // Prepare conversation history for API
     const baseSystemPrompt = SYSTEM_PROMPT;

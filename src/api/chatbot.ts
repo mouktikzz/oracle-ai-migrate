@@ -59,6 +59,7 @@ export const sendChatMessage = async (request: ChatbotRequest): Promise<ChatbotR
       type: 'text',
       metadata: {
         suggestions: data.suggestions,
+        source: data.source,
       },
     };
 
