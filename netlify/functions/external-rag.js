@@ -98,7 +98,7 @@ exports.handler = async (event, context) => {
       const originalQueryEmbedding = generateSimpleEmbedding(query);
       const originalResults = await index.query({
         vector: originalQueryEmbedding,
-        topK: 3,
+        topK: 10,
         includeMetadata: true
       });
       
@@ -119,7 +119,7 @@ exports.handler = async (event, context) => {
         const termEmbedding = generateSimpleEmbedding(term);
         const termResults = await index.query({
           vector: termEmbedding,
-          topK: 2,
+          topK: 5,
           includeMetadata: true
         });
         
@@ -137,6 +137,14 @@ exports.handler = async (event, context) => {
 
     console.log('📊 Best results score:', bestScore);
     console.log('📊 Best results matches:', bestResults?.matches.length || 0);
+
+    // Debug: Log all matches to see what's being found
+    if (bestResults && bestResults.matches.length > 0) {
+      console.log('🔍 All matches found:');
+      bestResults.matches.forEach((match, index) => {
+        console.log(`  ${index + 1}. Score: ${match.score}, Source: ${match.metadata?.source || 'unknown'}, Text: ${(match.metadata?.text || match.metadata?.content || '').substring(0, 100)}...`);
+      });
+    }
 
     // Extract context from results
     let context = '';
