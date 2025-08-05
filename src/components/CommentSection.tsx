@@ -42,13 +42,41 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
       // Get current user for user email handling
       const { data: { user } } = await supabase.auth.getUser();
       
-      // Only get comments by file_id - don't fall back to file_name
-      // This ensures re-uploaded files start with 0 comments
-      const { data, error } = await supabase
+      // First try to get comments by file_id
+      let { data, error } = await supabase
         .from('conversion_comments')
         .select('*')
         .eq('file_id', fileId)
         .order('created_at', { ascending: false });
+      
+      // If no comments found by file_id, try by file_name and user_id
+      if ((!data || data.length === 0) && fileName && user?.id) {
+        const { data: nameData, error: nameError } = await supabase
+          .from('conversion_comments')
+          .select('*')
+          .eq('file_name', fileName)
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+        
+        if (!nameError && nameData !== null) {
+          data = nameData;
+          error = nameError;
+        }
+      }
+      
+      // If still no comments found, try by file_name only (for comments from other users or when user_id is not set)
+      if ((!data || data.length === 0) && fileName) {
+        const { data: nameOnlyData, error: nameOnlyError } = await supabase
+          .from('conversion_comments')
+          .select('*')
+          .eq('file_name', fileName)
+          .order('created_at', { ascending: false });
+        
+        if (!nameOnlyError && nameOnlyData !== null) {
+          data = nameOnlyData;
+          error = nameOnlyError;
+        }
+      }
       
       if (error) {
         console.error('Error fetching comments:', error);

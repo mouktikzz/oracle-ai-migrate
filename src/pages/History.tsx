@@ -227,6 +227,18 @@ const History = () => {
           }
         }
         
+        // If still no comments found, try by file_name only (for comments from other users or when user_id is not set)
+        if ((!data || data.length === 0) && file.file_name) {
+          const { data: nameOnlyData, error: nameOnlyError } = await supabase
+            .from('conversion_comments')
+            .select('id', { count: 'exact' })
+            .eq('file_name', file.file_name);
+          
+          if (!nameOnlyError && nameOnlyData !== null) {
+            data = nameOnlyData;
+          }
+        }
+        
         commentCounts[file.id] = data?.length || 0;
       }
       
