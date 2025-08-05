@@ -390,26 +390,52 @@ exports.handler = async function(event, context) {
     
     // Determine if we should use general knowledge
     const hasProjectContext = ragContext && ragContext.context && ragContext.context.length > 0;
-    const isGeneralMigrationQuestion = migrationKeywords.some(keyword => 
-      message.toLowerCase().includes(keyword)
+    
+    // Check for general knowledge questions (what is, define, explain basic concepts)
+    const generalKnowledgePatterns = [
+      /what is (sybase|oracle)/i,
+      /define (sybase|oracle)/i,
+      /explain (sybase|oracle)/i,
+      /tell me about (sybase|oracle)/i
+    ];
+    
+    const isGeneralKnowledgeQuestion = generalKnowledgePatterns.some(pattern => 
+      pattern.test(message)
+    );
+    
+    // Check for migration-specific questions
+    const migrationSpecificPatterns = [
+      /how to convert/i,
+      /migration process/i,
+      /conversion process/i,
+      /data type mapping/i,
+      /function conversion/i,
+      /syntax differences/i
+    ];
+    
+    const isMigrationSpecificQuestion = migrationSpecificPatterns.some(pattern => 
+      pattern.test(message)
     );
     
     // Prepare conversation history for API
     const baseSystemPrompt = SYSTEM_PROMPT;
     let enhancedSystemPrompt;
     
-    if (hasProjectContext) {
-      // Use project documentation
+    if (hasProjectContext && isMigrationSpecificQuestion) {
+      // Use project documentation for specific migration questions
       enhancedSystemPrompt = buildEnhancedPrompt(baseSystemPrompt, ragContext);
-    } else if (isGeneralMigrationQuestion) {
-      // Use general knowledge for migration questions
+    } else if (isGeneralKnowledgeQuestion) {
+      // Use general knowledge for basic concept questions
       enhancedSystemPrompt = `${baseSystemPrompt}
 
 INSTRUCTIONS:
-- This is a general migration question that wasn't found in project documentation
-- Use your general knowledge about Sybase to Oracle migration to provide a comprehensive answer
-- Be helpful and provide detailed, actionable advice
-- Focus on best practices and technical details`;
+- This is a general knowledge question about basic concepts
+- Use your general knowledge to provide comprehensive, informative answers
+- Be helpful and don't restrict yourself unnecessarily
+- Provide detailed explanations about Sybase, Oracle, and database concepts`;
+    } else if (hasProjectContext) {
+      // Use project documentation if available
+      enhancedSystemPrompt = buildEnhancedPrompt(baseSystemPrompt, ragContext);
     } else {
       // Use general knowledge for other questions
       enhancedSystemPrompt = `${baseSystemPrompt}
