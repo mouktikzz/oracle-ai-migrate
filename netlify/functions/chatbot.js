@@ -56,6 +56,9 @@ async function getRAGContext(query) {
     const baseUrl = process.env.URL || 'http://localhost:8888';
     const ragUrl = `${baseUrl}/.netlify/functions/external-rag`;
     
+    console.log('🔍 Calling RAG API at:', ragUrl);
+    console.log('🔍 Query:', query);
+    
     const ragResponse = await fetch(ragUrl, {
       method: 'POST',
       headers: {
@@ -65,10 +68,16 @@ async function getRAGContext(query) {
     });
 
     if (!ragResponse.ok) {
+      console.log('❌ RAG API error:', ragResponse.status);
       return null;
     }
 
     const ragData = await ragResponse.json();
+    console.log('✅ RAG API response:', {
+      contextLength: ragData.context?.length || 0,
+      matches: ragData.matches || 0,
+      hasContext: !!ragData.context
+    });
     
     return {
       context: ragData.context,
@@ -76,6 +85,7 @@ async function getRAGContext(query) {
       debug: ragData.debug
     };
   } catch (error) {
+    console.log('❌ RAG API exception:', error.message);
     return null;
   }
 }
@@ -333,7 +343,13 @@ exports.handler = async function(event, context) {
     // Hybrid Knowledge System: Check FAQ and docs first
     const hybridResponse = getHybridResponse(message);
     
-    if (hybridResponse) {
+    // For migration-related questions, prioritize RAG over hardcoded responses
+    const migrationKeywords = ['conversion', 'migration', 'sybase', 'oracle', 'process', 'work', 'how'];
+    const isMigrationQuestion = migrationKeywords.some(keyword => 
+      message.toLowerCase().includes(keyword)
+    );
+    
+    if (hybridResponse && !isMigrationQuestion) {
       
       let finalAnswer = hybridResponse.answer;
       if (hybridResponse.docLink) {
