@@ -87,6 +87,23 @@ export const getComments = async (fileId: string, fileName?: string): Promise<Co
       }
     }
 
+    // If still no comments found, try by file_name only (for comments from other users or when user_id is not set)
+    if ((!data || data.length === 0) && fileName) {
+      console.log('No comments found by file_id or file_name+user_id, trying file_name only');
+      const { data: nameOnlyData, error: nameOnlyError } = await supabase
+        .from('conversion_comments')
+        .select('*')
+        .eq('file_name', fileName)
+        .order('created_at', { ascending: false });
+      
+      if (nameOnlyError) {
+        console.error('Supabase error (file_name only search):', nameOnlyError);
+      } else {
+        data = nameOnlyData;
+        error = nameOnlyError;
+      }
+    }
+
     if (error) {
       console.error('Supabase error:', error);
       throw error;

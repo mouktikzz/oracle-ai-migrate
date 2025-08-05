@@ -217,6 +217,39 @@ export type Database = {
         }
         Relationships: []
       },
+      conversion_comments: {
+        Row: {
+          id: string;
+          user_id: string;
+          file_id: string | null;
+          file_name: string;
+          comment: string;
+          conversion_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          file_id?: string | null;
+          file_name: string;
+          comment: string;
+          conversion_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          file_id?: string | null;
+          file_name?: string;
+          comment?: string;
+          conversion_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      },
       conversion_cache: {
         Row: {
           id: string;
