@@ -4,7 +4,7 @@ import type { IncomingMessage, ServerResponse } from 'http';
 // This file is no longer used since the frontend calls Netlify functions directly
 // Keeping for reference only
 
-const OPENROUTER_API_KEY = process.env.VITE_OPENROUTER_API_KEY;
+const GEMINI_API_KEY = process.env.VITE_GEMINI_API_KEY;
 
 export async function aiRewriteHandler(req: IncomingMessage, res: ServerResponse) {
   if (req.method !== 'POST') {
@@ -27,33 +27,33 @@ export async function aiRewriteHandler(req: IncomingMessage, res: ServerResponse
         res.end(JSON.stringify({ error: 'Missing code or prompt' }));
         return;
       }
-      if (!OPENROUTER_API_KEY) {
+      if (!GEMINI_API_KEY) {
         res.statusCode = 500;
         res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify({ error: 'VITE_OPENROUTER_API_KEY not configured for local development. Please add it to your .env file or use the production Netlify functions.' }));
+        res.end(JSON.stringify({ error: 'VITE_GEMINI_API_KEY not configured for local development. Please add it to your .env file or use the production Netlify functions.' }));
         return;
       }
-      const apiRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      const apiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'qwen/qwen3-coder:free',
-          messages: [
-            {
-              role: 'user',
-              content: `Rewrite this ${language || 'code'}:\n${code}\n\nInstruction: ${prompt}`,
-            },
-          ],
+          contents: [{
+            parts: [{
+              text: `You are a code rewriting assistant. CRITICAL: Return ONLY the rewritten code. NO explanations, NO comments, NO markdown, NO text before or after. ONLY the code.\n\nRewrite this ${language || 'code'}:\n${code}\n\nInstruction: ${prompt}\n\nIMPORTANT: Return ONLY the rewritten code, nothing else.`
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.1
+          }
         }),
       });
       if (!apiRes.ok) {
-        throw new Error('OpenRouter API error');
+        throw new Error('Gemini API error');
       }
       const data = await apiRes.json();
-      const rewrittenCode = data.choices?.[0]?.message?.content || '';
+      const rewrittenCode = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
       res.statusCode = 200;
       res.setHeader('Content-Type', 'application/json');
       res.end(JSON.stringify({ rewrittenCode }));
@@ -79,4 +79,4 @@ export function aiRewriteApiPlugin() {
       });
     },
   };
-} 
+}
