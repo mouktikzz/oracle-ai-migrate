@@ -423,10 +423,28 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
                                               headers: { 'Content-Type': 'application/json' },
                                               body: JSON.stringify({ code: file.convertedContent, language: 'oracle sql' }),
                                             });
+                                            
+                                            if (!res.ok) {
+                                              throw new Error(`Network response error: ${res.status} ${res.statusText}`);
+                                            }
+                                            
                                             const data = await res.json();
-                                            setExplanation(data.explanation || 'No explanation returned.');
+                                            
+                                            if (data.explanation && data.explanation.includes('AI service error')) {
+                                              // This is an API error from Gemini
+                                              console.error('AI explanation API error:', data.explanation);
+                                              setExplanation(`${data.explanation}\n\nPlease contact the administrator to check the API configuration.`);
+                                            } else if (data.explanation && data.explanation.includes('No explanation returned')) {
+                                              // This is when the API returned empty content
+                                              console.warn('AI explanation returned empty content');
+                                              setExplanation(`${data.explanation}\n\nPlease try again later or contact the administrator.`);
+                                            } else {
+                                              // Normal case with explanation
+                                              setExplanation(data.explanation || 'No explanation available for this code.');
+                                            }
                                           } catch (err) {
-                                            setExplanation('Failed to get explanation.');
+                                            console.error('AI explanation request failed:', err);
+                                            setExplanation(`Failed to get explanation: ${err.message || 'Unknown error'}\n\nPlease check your network connection and try again.`);
                                           } finally {
                                             setIsExplaining(false);
                                           }
@@ -903,7 +921,14 @@ const ConversionViewer: React.FC<ConversionViewerProps> = ({
               </div>
             ) : (
               <div className="w-full">
-                <pre className="whitespace-pre-wrap text-sm bg-gray-50 p-4 rounded overflow-x-auto max-w-full break-words">{explanation}</pre>
+                {explanation.includes('Error') || explanation.includes('No explanation returned') ? (
+                  <div className="bg-amber-50 border border-amber-200 rounded p-4 text-amber-800">
+                    <h4 className="font-medium mb-2">AI Analysis Issue</h4>
+                    <p className="whitespace-pre-wrap text-sm">{explanation}</p>
+                  </div>
+                ) : (
+                  <pre className="whitespace-pre-wrap text-sm bg-gray-50 p-4 rounded overflow-x-auto max-w-full break-words">{explanation}</pre>
+                )}
               </div>
             )}
           </div>
