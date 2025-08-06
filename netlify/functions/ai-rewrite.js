@@ -1,21 +1,20 @@
 const fetch = require('node-fetch');
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const GEMINI_API_KEY = process.env.VITE_GEMINI_API_KEY;
 
 async function fetchWithRetry(body, maxRetries = 3) {
   let lastError = null;
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(body)
       });
       const data = await response.json();
-      const text = data.choices?.[0]?.message?.content || '';
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
       if (text && text.trim().length > 0) {
         return { success: true, text };
       }
@@ -38,12 +37,14 @@ exports.handler = async function(event, context) {
     return { statusCode: 400, body: JSON.stringify({ error: 'Missing code or prompt' }) };
   }
   const body = {
-    model: 'qwen/qwen3-coder:free',
-    messages: [
-      { role: 'system', content: 'You are a code rewriting assistant. CRITICAL: Return ONLY the rewritten code. NO explanations, NO comments, NO markdown, NO text before or after. ONLY the code. If you include any explanations, the response will be rejected.' },
-      { role: 'user', content: `Rewrite this code: ${prompt}\n\n${code}\n\nIMPORTANT: Return ONLY the rewritten code, nothing else.` }
-    ],
-    temperature: 0.1
+    contents: [{
+      parts: [{
+        text: `You are a code rewriting assistant. CRITICAL: Return ONLY the rewritten code. NO explanations, NO comments, NO markdown, NO text before or after. ONLY the code. If you include any explanations, the response will be rejected.\n\nRewrite this code: ${prompt}\n\n${code}\n\nIMPORTANT: Return ONLY the rewritten code, nothing else.`
+      }]
+    }],
+    generationConfig: {
+      temperature: 0.1
+    }
   };
   const result = await fetchWithRetry(body, 3);
   if (result.success) {
@@ -51,4 +52,4 @@ exports.handler = async function(event, context) {
   } else {
     return { statusCode: 500, body: JSON.stringify({ error: result.error || 'AI rewrite failed' }) };
   }
-}; 
+};
