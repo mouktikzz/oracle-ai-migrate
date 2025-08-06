@@ -1,0 +1,221 @@
+{
+  "project": "Oracle AI Migration Tool",
+  "version": "1.0.0",
+  "lastUpdated": "2024-12-19",
+  "sections": {
+    "getting-started": {
+      "title": "Getting Started",
+      "keywords": ["start", "begin", "first", "initial", "setup", "getting started", "workflow", "how to", "beginner"],
+      "content": {
+        "account-setup": {
+          "title": "Account Setup",
+          "content": "Create an account using email or social login, verify your email, complete profile with organization details"
+        },
+        "initial-configuration": {
+          "title": "Initial Configuration", 
+          "content": "Choose AI model (Default or Gemini), set preferences for file size limits and notifications, test Oracle database connection"
+        },
+        "first-login": {
+          "title": "First Login",
+          "content": "Access the migration dashboard to start your first migration"
+        }
+      }
+    },
+    "migration-workflow": {
+      "title": "Migration Workflow",
+      "keywords": ["migrate", "convert", "conversion", "oracle", "sybase", "workflow", "process", "steps"],
+      "content": {
+        "step1-upload": {
+          "title": "Step 1: Upload Files",
+          "content": "Single File Upload: Click 'Upload Files' button, select .sql/.sp/.ddl files, choose AI model, click 'Start Upload'. Batch Upload: Click 'Upload Folder' button, select directory with Sybase files, review file list, configure batch options. Supported Types: Stored Procedures (.sp, .proc), SQL Scripts (.sql), DDL Scripts (.ddl), Functions (.func), Triggers (.trg)"
+        },
+        "step2-review": {
+          "title": "Step 2: Review Conversions",
+          "content": "Conversion Results: Successful (converted without issues), With Warnings (minor issues), Failed (couldn't convert), Pending (waiting). Code Review: Select file from results, review side-by-side comparison, check differences, review notes and warnings. Understanding Issues: Syntax differences, function mappings, data type changes, performance optimizations"
+        },
+        "step3-reports": {
+          "title": "Step 3: Generate Reports",
+          "content": "Detailed analytics and performance metrics, code quality analysis and recommendations, manual review requirements and optimization suggestions"
+        }
+      }
+    },
+    "user-interface": {
+      "title": "User Interface",
+      "keywords": ["interface", "dashboard", "navigation", "menu", "ui", "user interface"],
+      "content": {
+        "main-dashboard": {
+          "title": "Main Dashboard",
+          "content": "File upload area, conversion status, recent activity, settings"
+        },
+        "navigation": {
+          "title": "Navigation",
+          "content": "Home, History, Reports, Profile, Admin"
+        },
+        "code-editor": {
+          "title": "Code Editor",
+          "content": "Source panel (original Sybase), conversion panel (Oracle), diff viewer, issues panel"
+        }
+      }
+    },
+    "admin-panel": {
+      "title": "Admin Panel",
+      "keywords": ["admin", "administrator", "management", "user management", "system", "dashboard", "admin panel"],
+      "content": {
+        "overview": {
+          "title": "Admin Panel Overview",
+          "content": "The admin panel provides comprehensive system administration capabilities for the Oracle AI Migration application. It includes user management, system monitoring, activity logging, and configuration management."
+        },
+        "features": {
+          "title": "Admin Features",
+          "content": "1. Overview Dashboard: Real-time system statistics, user activity metrics, migration success rates, system health indicators. 2. User Management: View all registered users, update user roles (user, moderator, admin), delete user accounts, monitor user activity. 3. System Settings: Configure AI models, set file size limits, toggle cache settings, enable/disable maintenance mode. 4. Activity Logs: Track all administrative actions, monitor system events, audit trail for compliance. 5. System Monitoring: Real-time performance metrics, CPU, memory, and disk usage, application-specific metrics, queue monitoring"
+        },
+        "user-roles": {
+          "title": "User Roles",
+          "content": "Admin: Full system access, user management, system configuration, activity monitoring. Moderator: Limited admin access, user management (no deletion), view activity logs, basic system monitoring. User: Standard application access, no admin capabilities"
+        },
+        "security": {
+          "title": "Security Features",
+          "content": "Role-based access control (RBAC), Row-level security (RLS) policies, activity logging for all admin actions, secure API endpoints"
+        },
+        "api-endpoints": {
+          "title": "API Endpoints",
+          "content": "The admin panel uses Supabase tables including profiles (user information and roles), admin_logs (activity logging), system_settings (configuration management), migrations (migration tracking), migration_files (file conversion tracking)"
+        },
+        "monitoring": {
+          "title": "Monitoring and Alerts",
+          "content": "Real-time monitoring for system resource usage, active conversions, queue lengths, cache performance, response times"
+        }
+      }
+    },
+    "history-section": {
+      "title": "History Section",
+      "keywords": ["history", "comment", "tracking", "log", "previous", "past", "comments", "history tab"],
+      "content": {
+        "overview": {
+          "title": "History Section Overview",
+          "content": "The History section provides comprehensive tracking of all migration activities and user interactions. Users can view their complete migration history with detailed information about each conversion."
+        },
+        "features": {
+          "title": "History Features",
+          "content": "Complete migration history with timestamps and status, file conversion tracking with before/after comparisons, conversion status indicators (success, warning, failed, pending), detailed conversion reports and analytics, performance metrics for each conversion, download links for converted files"
+        },
+        "comments-notes": {
+          "title": "Comments and Notes",
+          "content": "Users can add comments to specific conversions, conversion notes and warnings are displayed, manual review requirements are tracked, performance recommendations and optimization suggestions, Oracle-specific migration notes and explanations"
+        },
+        "interface": {
+          "title": "History Interface",
+          "content": "Chronological list of all migrations, filtering by status, date range, and file type, search functionality for finding specific conversions, export capabilities for migration reports, integration with the code editor for detailed review"
+        },
+        "comments-system": {
+          "title": "Comments System",
+          "content": "Add comments to individual file conversions, track manual review requirements, note Oracle-specific changes needed, document performance optimizations, flag issues requiring attention"
+        }
+      }
+    },
+    "performance-metrics": {
+      "title": "Performance Metrics and Code Quality",
+      "keywords": ["performance", "metrics", "quality", "analysis", "optimization", "speed", "cyclomatic", "complexity", "bulk", "maintainability"],
+      "content": {
+        "overview": {
+          "title": "Performance Metrics Overview",
+          "content": "The Sybase to Oracle Migration Tool includes comprehensive performance monitoring, metrics collection, and code quality analysis to ensure optimal system performance and maintainable code."
+        },
+        "code-quality-metrics": {
+          "title": "Code Quality Metrics",
+          "content": "Cyclomatic Complexity: Measures code complexity based on decision points (1-10=Good, 11-20=Moderate, 21-50=Complex, 50+=Refactor needed). Lines of Code Analysis: Total lines, effective lines, comment ratio, change impact. Loop Analysis: FOR, WHILE, CURSOR loops, nested loops, performance impact. Comment Ratio: Comments per function, documentation quality, Oracle-specific notes. Maintainability Index: 0-100 scale based on complexity, lines, and comments. Bulk Operations Analysis: BULK COLLECT usage, BULK INSERT/UPDATE, performance gains. Scalability Assessment: Resource usage, concurrent access, growth projections. Modern Features Detection: Oracle 12c+ features, JSON, LISTAGG, LATERAL joins. Overall Performance Score: Weighted average of all metrics. Manual Edit Requirements: Critical issues, optimizations, Oracle-specific changes"
+        },
+        "database-schema": {
+          "title": "Database Schema",
+          "content": "Database Schema includes: code_quality_metrics, loop_analysis, performance_recommendations tables. Implementation uses TypeScript interfaces and analysis functions for SQL content evaluation."
+        }
+      }
+    },
+    "system-architecture": {
+      "title": "System Architecture",
+      "keywords": ["architecture", "system", "frontend", "backend", "data flow", "structure"],
+      "content": {
+        "overview": {
+          "title": "System Architecture Overview",
+          "content": "Frontend: React 18 with TypeScript, Vite build tool, shadcn/ui components with Tailwind CSS. Backend: Netlify Functions for serverless API calls. Database: Supabase (PostgreSQL-based) for authentication and data storage. AI Integration: Google Gemini (primary) and OpenRouter (fallback) APIs. Migration Tools: Custom conversion utilities for stored procedures. File Handling: Supports SQL file uploads (.sql, .sp, .ddl, .func, .trg) and conversions"
+        },
+        "data-flow": {
+          "title": "Data Flow",
+          "content": "User uploads SQL files → AI conversion engine processes → Results stored in Supabase → User views/downloads converted code → Performance metrics collected throughout"
+        }
+      }
+    },
+    "ai-models": {
+      "title": "AI Model Configuration",
+      "keywords": ["ai model", "gemini", "openrouter", "model configuration", "prompt"],
+      "content": {
+        "models": {
+          "title": "Available Models",
+          "content": "Gemini Pro: 95%+ accuracy, Fast, Medium cost - Complex procedures, production use. Default: 85%+ accuracy, Very Fast, Free - Simple conversions, testing. Custom: Variable accuracy/speed/cost - Specialized requirements"
+        },
+        "gemini-config": {
+          "title": "Google Gemini Configuration",
+          "content": "API Key: VITE_GEMINI_API_KEY environment variable. Model: gemini-pro for production, gemini-2.0-flash-exp for speed. Temperature: 0.1 for consistent code generation. Max Output Tokens: 8192 for comprehensive responses. Safety Settings: Configured for code generation tasks"
+        },
+        "prompt-engineering": {
+          "title": "Prompt Engineering",
+          "content": "Base template for Sybase to Oracle conversion, conversion rules for parameter syntax, data types, functions, result sets, error handling, comment preservation, Oracle-specific optimizations"
+        },
+        "model-selection": {
+          "title": "Model Selection",
+          "content": "Use Gemini Pro for complex stored procedures, Default for simple scripts, Custom for specialized requirements, optimize based on file size and complexity"
+        }
+      }
+    },
+    "database-schema": {
+      "title": "Database Schema",
+      "keywords": ["database", "schema", "tables", "supabase", "profiles", "migrations"],
+      "content": {
+        "overview": {
+          "title": "Database Overview",
+          "content": "Database Schema (PostgreSQL via Supabase): Authentication: auth.users, auth.sessions. Core Tables: profiles, migrations, migration_files, migration_reports, deployment_logs. Admin: admin_logs, system_settings"
+        },
+        "core-tables": {
+          "title": "Core Tables",
+          "content": "profiles: Extends user info with application data (id, email, full_name, organization, role, avatar_url, metadata), roles: user, moderator, admin. migrations: Stores migration session info, status: pending/processing/completed/failed/cancelled, AI model tracking, file processing statistics. migration_files: Individual file conversion tracking, original and converted content storage, conversion status and error tracking. migration_reports: Generated reports and analytics, performance metrics, quality scores, manual review requirements"
+        },
+        "security": {
+          "title": "Security",
+          "content": "Row Level Security (RLS) policies, user-based access control, admin role restrictions, audit logging"
+        }
+      }
+    },
+    "best-practices": {
+      "title": "Best Practices",
+      "keywords": ["best practices", "recommendations", "guidelines", "tips"],
+      "content": {
+        "migration": {
+          "title": "Migration Best Practices",
+          "content": "Test conversions on small files first, review all warnings and conversion notes, use appropriate AI model for complexity level, validate converted code in Oracle environment"
+        },
+        "performance": {
+          "title": "Performance Best Practices",
+          "content": "Use bulk operations for large datasets, optimize queries with proper indexing, leverage Oracle-specific features, monitor resource usage during conversions"
+        }
+      }
+    },
+    "troubleshooting": {
+      "title": "Troubleshooting",
+      "keywords": ["troubleshooting", "debug", "issues", "problems", "errors", "support"],
+      "content": {
+        "common-issues": {
+          "title": "Common Issues",
+          "content": "Conversion Failures: Check file format and syntax, verify AI model availability, review error logs, test with smaller files first. Authentication Problems: Verify Supabase configuration, check environment variables, clear browser cache, review user permissions. Performance Issues: Monitor API response times, check database query performance, review file size limits, optimize AI model settings. Deployment Issues: Verify environment variables, check Netlify function logs, review build configuration, test local development setup"
+        },
+        "debug-tools": {
+          "title": "Debug Tools",
+          "content": "Browser developer tools, Netlify function logs, Supabase dashboard, AI service monitoring"
+        },
+        "support": {
+          "title": "Support Resources",
+          "content": "Documentation and guides, community forums, issue tracking system, direct support channels"
+        }
+      }
+    }
+  }
+} 
