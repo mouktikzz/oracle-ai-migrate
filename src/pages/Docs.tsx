@@ -123,7 +123,8 @@ const Docs: React.FC = () => {
   const loadFileContent = async (file: DocFile) => {
     setLoading(true);
     try {
-      const response = await fetch(`/${file.path}`);
+      // Change the path to use the correct public URL for the docs
+      const response = await fetch(`/docs/${file.path.replace('docs/', '')}`);
       if (response.ok) {
         const content = await response.text();
         setFileContent(content);
@@ -132,9 +133,10 @@ const Docs: React.FC = () => {
         throw new Error('Failed to load file');
       }
     } catch (error) {
+      console.error('Error loading file:', error);
       toast({
         title: "Error",
-        description: "Failed to load documentation file",
+        description: "Failed to load documentation file. Please check if the file exists in the public directory.",
         variant: "destructive",
       });
     } finally {
@@ -262,4 +264,4 @@ const Docs: React.FC = () => {
   );
 };
 
-export default Docs; 
+export default Docs;
